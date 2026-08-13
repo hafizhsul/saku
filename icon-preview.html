@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ikon Saku — Pratinjau</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #F7F6F3; color: #23272B; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 48px 24px 80px; }
+  header { max-width: 960px; margin: 0 auto 40px; }
+  h1 { font-size: 30px; letter-spacing: -0.02em; margin-bottom: 8px; }
+  p.sub { color: #5C6267; font-size: 15px; }
+  section { max-width: 960px; margin: 0 auto 40px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; color: #8B8F92; margin-bottom: 16px; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+  .card { background: #FFFFFF; border-radius: 16px; padding: 20px 16px 14px; text-align: center; box-shadow: 0 1px 2px rgba(35,39,43,0.04), 0 4px 12px rgba(35,39,43,0.06); }
+  .stage { height: 128px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .stage img { border-radius: 22%; box-shadow: 0 2px 8px rgba(35,39,43,0.14); }
+  .label { font-size: 12px; font-weight: 600; }
+  .size { font-size: 11px; color: #8B8F92; margin-top: 2px; }
+  .adaptive { border-radius: 50%; background: #F7F6F3; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 8px rgba(35,39,43,0.14); }
+  .adaptive img { border-radius: 0; box-shadow: none; }
+  .mono-stage { background: #23272B; border-radius: 22%; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Ikon Saku</h1>
+    <p class="sub">Kantong + koin amber di atas tile charcoal — pratinjau semua varian platform dan ukuran.</p>
+  </header>
+
+  <section>
+    <h2>iOS — App Store &amp; Home Screen</h2>
+    <div class="grid">
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="128" height="128" alt="Ikon iOS 1024"></div><div class="label">App Store</div><div class="size">1024 × 1024 px</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="96" height="96" alt="Ikon iOS 180"></div><div class="label">iPhone @3x</div><div class="size">180 × 180 px</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="80" height="80" alt="Ikon iOS 120"></div><div class="label">iPhone @2x</div><div class="size">120 × 120 px</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="48" height="48" alt="Ikon iOS 60"></div><div class="label">iPhone kecil</div><div class="size">60 × 60 px</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Android — Adaptive Icon</h2>
+    <div class="grid">
+      <div class="card"><div class="stage"><div class="adaptive" style="width:108px;height:108px"><img src="assets/images/android-icon-foreground.png" width="108" height="108" alt="Adaptive composite"></div></div><div class="label">Komposit (mask lingkaran)</div><div class="size">foreground + background bone</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/android-icon-foreground.png" width="108" height="108" alt="Adaptive foreground"></div><div class="label">Foreground</div><div class="size">512 × 512 px (konten 85%)</div></div>
+      <div class="card"><div class="stage"><div style="width:108px;height:108px;background:#F7F6F3;border-radius:50%"></div></div><div class="label">Background</div><div class="size">512 × 512 px bone</div></div>
+      <div class="card"><div class="stage"><div class="mono-stage" style="width:108px;height:108px"><img src="assets/images/android-icon-monochrome.png" width="72" height="72" alt="Monochrome"></div></div><div class="label">Monokrom (themed)</div><div class="size">432 × 432 px</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Android — Legacy &amp; Web</h2>
+    <div class="grid">
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="112" height="112" alt="Legacy 512"></div><div class="label">Play Store</div><div class="size">512 × 512 px</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="96" height="96" alt="Legacy 192"></div><div class="label">Launcher</div><div class="size">192 × 192 px</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="64" height="64" alt="Favicon 48"></div><div class="label">Favicon (terang)</div><div class="size">48 × 48 px · tile charcoal</div></div>
+      <div class="card"><div class="stage" style="background:#1B1E21;border-radius:22%"><img src="public/favicon-dark.png" width="48" height="48" alt="Favicon gelap"></div><div class="label">Favicon (gelap)</div><div class="size">48 × 48 px · tile bone</div></div>
+      <div class="card"><div class="stage"><img src="assets/images/icon.png" width="32" height="32" alt="Favicon 32"></div><div class="label">Favicon kecil</div><div class="size">32 / 16 px</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Splash Screen</h2>
+    <div class="grid">
+      <div class="card"><div class="stage" style="background:#FFFFFF;border:1px solid #E8E4DB;border-radius:16px"><img src="assets/images/splash-icon.png" width="160" height="160" alt="Splash"></div><div class="label">Splash launch</div><div class="size">1024 × 1024 px · bg putih</div></div>
+    </div>
+  </section>
+</body>
+</html>
