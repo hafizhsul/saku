@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 
 export type SegmentOption = {
   readonly value: string
@@ -50,7 +50,7 @@ function createStyles(colors: ThemeColors) {
     container: {
       backgroundColor: colors.surfaceMuted,
       borderColor: colors.border,
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       borderWidth: 1,
       flexDirection: "row",
       gap: spacing.unit,
@@ -67,7 +67,9 @@ function createStyles(colors: ThemeColors) {
     },
     option: {
       alignItems: "center",
-      borderRadius: radii.pill,
+      borderColor: "transparent",
+      borderRadius: radii.md,
+      borderWidth: 1,
       flex: 1,
       justifyContent: "center",
       minHeight: 42,
@@ -78,7 +80,8 @@ function createStyles(colors: ThemeColors) {
     },
     selected: {
       backgroundColor: colors.surfaceElevated,
-      ...shadows.card,
+      borderColor: colors.borderStrong,
+      borderWidth: 1,
     },
     selectedLabel: {
       color: colors.textPrimary,

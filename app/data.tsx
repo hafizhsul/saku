@@ -341,7 +341,7 @@ function createStyles(colors: ThemeColors) {
       color: colors.error,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

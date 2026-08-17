@@ -12,7 +12,7 @@ import { useBudgets } from "../src/features/budgets/BudgetsProvider"
 import { useDailyBudget } from "../src/features/budgets/useDailyBudget"
 import { useTransactions } from "../src/features/transactions/TransactionsProvider"
 import { EXPENSE_CATEGORY_OPTIONS } from "../src/features/transactions/types"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { formatCurrency } from "../src/utils/currency"
 import { toMonthKey } from "../src/utils/dates"
 
@@ -86,7 +86,8 @@ export default function BudgetsScreen(): React.ReactElement {
                 </View>
                 <View style={styles.statChip}>
                   <Text style={styles.statLabel}>Sisa harian</Text>
-                  <Text style={styles.statValue}>≈ {formatCurrency(dailyBudget)} <Text style={styles.statHint}>/hari · {daysLeft} hari</Text></Text>
+                  <Text style={styles.statValue}>{formatCurrency(dailyBudget)}</Text>
+                  <Text style={styles.statHint}>/hari · {daysLeft} hari</Text>
                 </View>
               </View>
             ) : null}
@@ -183,13 +184,10 @@ function BudgetsHeader({ colors, styles }: { readonly colors: ThemeColors; reado
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     budgetCard: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
       gap: spacing.row,
-      padding: spacing.lg,
-      ...shadows.card,
+      paddingVertical: spacing.lg,
     },
     cardBottom: {
       alignItems: "baseline",
@@ -255,10 +253,10 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceMuted,
     },
     list: {
-      gap: spacing.row,
+      gap: 0,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,
@@ -281,11 +279,8 @@ function createStyles(colors: ThemeColors) {
       width: "100%",
     },
     statChip: {
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radii.md,
       flex: 1,
       gap: spacing.unit,
-      padding: spacing.md,
     },
     statHint: {
       color: colors.textTertiary,

@@ -25,7 +25,7 @@ import {
   selectMonthlySummary,
   selectRecentTransactions,
 } from "../../src/features/transactions/selectors"
-import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { darkColors, fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatMonthLabel, shiftMonth, toMonthKey } from "../../src/utils/dates"
 
 export default function HomeScreen(): React.ReactElement {
@@ -215,16 +215,16 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.heading.lineHeight,
     },
     statRow: {
-      flexDirection: "row",
-      gap: spacing.row,
-    },
-    transactionList: {
       backgroundColor: colors.surface,
       borderColor: colors.border,
       borderRadius: radii.lg,
       borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      ...shadows.card,
+      flexDirection: "row",
+      gap: spacing.row,
+      padding: spacing.lg,
+    },
+    transactionList: {
+      gap: 0,
     },
   })
 }

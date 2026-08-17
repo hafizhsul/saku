@@ -10,7 +10,7 @@
 
 ## 1. Atmosphere & Identity
 
-Saku feels like a quiet money journal on a tidy desk: tactile enough to feel personal, structured enough to build trust, and calm enough to invite a quick entry after a busy day. The name plays on the Indonesian habit of keeping everyday money in a pocket (saku) — a small, personal place where income is counted and spending is set aside per category. The signature is a matte bone canvas with one strong balance card, charcoal typography, and restrained green/terracotta marks that carry financial meaning rather than decoration.
+Saku feels like a quiet money journal on a tidy desk: tactile enough to feel personal, structured enough to build trust, and calm enough to invite a quick entry after a busy day. The name plays on the Indonesian habit of keeping everyday money in a pocket (saku) — a small, personal place where income is counted and spending is set aside per category. The signature is a cool graphite canvas with one strong elevated balance card, hairline-led lists, and a single desaturated green that carries money meaning.
 
 The product is cross-platform neutral. It borrows Expo's airy surface contrast and friendly rounded controls, then warms the canvas and keeps the hierarchy specific to personal finance. Both light and dark palettes are live and switchable through the system/terang/gelap preference in the Settings tab.
 
@@ -20,32 +20,34 @@ The product is cross-platform neutral. It borrows Expo's airy surface contrast a
 
 | Role | Token | Light | Dark | Usage |
 |------|-------|-------|--------------|-------|
-| Canvas | `colors.canvas` | `#F7F6F3` | `#171918` | Root screen background |
-| Surface | `colors.surface` | `#FFFFFF` | `#232724` | Cards, rows, form groups |
-| Surface muted | `colors.surfaceMuted` | `#F0EFE9` | `#2C322D` | Secondary areas, icon wells |
-| Surface elevated | `colors.surfaceElevated` | `#FFFFFF` | `#2A2E2B` | Modal and primary controls |
-| Text primary | `colors.textPrimary` | `#23272B` | `#F7F6F3` | Headings, amounts, labels |
-| Text secondary | `colors.textSecondary` | `#5C6267` | `#C9CEC9` | Supporting copy and metadata |
-| Text tertiary | `colors.textTertiary` | `#6C6C6C` | `#9CA49E` | De-emphasized metadata; ≥4.5:1 on canvas, surface, and muted |
-| Border | `colors.border` | `#E8E4DB` | `#3B423D` | Cards, fields, separators |
-| Border strong | `colors.borderStrong` | `#D9D4C9` | `#4E574F` | Focused or selected containers |
-| Action | `colors.action` | `#23272B` | `#F7F6F3` | Primary CTA background |
-| Action pressed | `colors.actionPressed` | `#101316` | `#FFFFFF` | Pressed CTA state |
-| Income | `colors.income` | `#2F7A4D` | `#92CD99` | Pemasukan and positive balance |
-| Income surface | `colors.incomeSurface` | `#E7F1EA` | `#24382A` | Income icon wells and selected state |
-| Expense | `colors.expense` | `#B03B33` | `#F1A5A0` | Pengeluaran and negative values |
-| Expense surface | `colors.expenseSurface` | `#F9E8E6` | `#462C2A` | Expense icon wells and selected state |
-| Accent | `colors.accent` | `#9A6B00` | `#F3C468` | Small positive emphasis, never the main CTA |
-| Accent surface | `colors.accentSurface` | `#F8F0D7` | `#473F26` | Small callouts and category wells |
-| Focus | `colors.focus` | `#2547D0` | `#9FB3FF` | Keyboard and accessibility focus |
-| Error | `colors.error` | `#A12723` | `#FFB4AE` | Field errors and storage failure |
+| Canvas | `colors.canvas` | `#F4F5F4` | `#16181A` | Root screen background (cool graphite) |
+| Surface | `colors.surface` | `#FFFFFF` | `#1F2226` | Bordered groups and form panels |
+| Surface muted | `colors.surfaceMuted` | `#ECEEED` | `#262A2F` | Secondary areas, icon wells, progress tracks |
+| Surface elevated | `colors.surfaceElevated` | `#FFFFFF` | `#23272C` | Balance card, tab bar, selected control |
+| Text primary | `colors.textPrimary` | `#1D2228` | `#F2F4F3` | Headings, amounts, labels |
+| Text secondary | `colors.textSecondary` | `#5B636B` | `#C3C9CD` | Supporting copy, overlines, metadata |
+| Text tertiary | `colors.textTertiary` | `#6A7077` | `#8E969C` | De-emphasized metadata; ≥4.5:1 on canvas and surface |
+| Border | `colors.border` | `#D8DCDA` | `#31363B` | Hairlines, fields, separators |
+| Border strong | `colors.borderStrong` | `#C2C8C5` | `#43494F` | Focused or selected containers |
+| Action | `colors.action` | `#1D2228` | `#F2F4F3` | Primary CTA background (graphite) |
+| Action pressed | `colors.actionPressed` | `#101419` | `#FFFFFF` | Pressed CTA state |
+| Income | `colors.income` | `#1E6F4E` | `#7FC19B` | Pemasukan and positive balance |
+| Income surface | `colors.incomeSurface` | `#E3EEE8` | `#1F3228` | Income icon wells and selected state |
+| Expense | `colors.expense` | `#B3402E` | `#E6917C` | Pengeluaran and negative values |
+| Expense surface | `colors.expenseSurface` | `#F5E7E4` | `#392522` | Expense icon wells and selected state |
+| Accent | `colors.accent` | `#1E6F4E` | `#7FC19B` | Same green as income; single accent for links, empty states, onboarding |
+| Accent surface | `colors.accentSurface` | `#E3EEE8` | `#1F3228` | Small callouts and icon wells |
+| Warning | `colors.warning` | `#B8761C` | `#D8A257` | Budget near-limit progress bars (semantic caution) |
+| Focus | `colors.focus` | `#2E5BD8` | `#8FA8FF` | Keyboard and accessibility focus |
+| Error | `colors.error` | `#B02A20` | `#FF9C94` | Field errors and storage failure |
 
 ### Rules
 
 - Colors are semantic tokens only; screens do not introduce raw hex values.
 - Green and terracotta always pair with a text label or directional icon. Color is never the sole carrier of meaning.
-- The main action is charcoal, not green, so “add transaction” remains a neutral product action.
-- The light theme uses charcoal text on bone/white surfaces for a minimum AA contrast target; `textTertiary` stays ≥4.5:1 on every light surface it appears on.
+- One accent: green. It is reserved for money meaning (income, positive balance) and the few primary links and empty-state moments. Overlines and section labels are neutral (`textSecondary`), never green.
+- The main action is graphite, not green, so “add transaction” remains a neutral product action.
+- Text tokens hold ≥4.5:1 on the light surfaces they appear on (tertiary included).
 - The dark palette is live and follows the system scheme when the preference is set to system.
 
 ## 3. Typography
@@ -114,12 +116,12 @@ Semantic aliases for the vertical rhythm. `gap` uses these; padding/margin keeps
 | Token | Value | Usage |
 |-------|-------|-------|
 | `radius.sm` | 8 | Icon wells and compact fields |
-| `radius.md` | 12 | Inputs, segmented controls, primary buttons |
-| `radius.lg` | 16 | Stat cards and secondary panels |
+| `radius.md` | 10 | Inputs, segmented controls, primary buttons |
+| `radius.lg` | 16 | Bordered groups and panels |
 | `radius.xl` | 20 | Balance card and modal sheet |
-| `radius.pill` | 999 | Primary action buttons, compact filters, tags |
+| `radius.pill` | 999 | Compact filters and status chips only |
 
-Large cards never use pill geometry. Pills are reserved for compact filters, tags, and the primary action button.
+Controls use `radius.md`; containers use `radius.lg`; the balance card and tab bar use `radius.xl`. Pills are reserved for compact filters and status chips, never for buttons or cards.
 
 ## 5. Components
 
@@ -147,7 +149,7 @@ Large cards never use pill geometry. Pills are reserved for compact filters, tag
 
 - **Structure**: semantic icon well, label, formatted amount, period caption.
 - **Variants**: income, expense.
-- **Spacing**: `spacing.lg` padding, `radius.lg` surface.
+- **Spacing**: open stat block on canvas; no container, no shadow. Icon well keeps `spacing.md` radius.
 - **States**: default, pressed when tappable, loading, empty.
 - **Accessibility**: includes the semantic label in the accessible name; color is supplementary.
 - **Motion**: 150 ms opacity/scale press feedback.
@@ -187,7 +189,7 @@ Large cards never use pill geometry. Pills are reserved for compact filters, tag
 
 - **Structure**: optional icon plus text label inside a full-width pressable.
 - **Variants**: enabled, pressed, disabled, loading, success.
-- **Spacing**: `spacing.xl` horizontal padding, 54 pt minimum height, `radius.pill`.
+- **Spacing**: `spacing.xl` horizontal padding, 54 pt minimum height, `radius.md`.
 - **States**: default, pressed, disabled, loading, success, error.
 - **Accessibility**: role button, descriptive label, disabled and busy states announced.
 - **Motion**: 150 ms opacity/scale press feedback; success replaces the label without moving layout.
@@ -229,16 +231,16 @@ Signature interaction: pressing “Simpan transaksi” briefly changes the prima
 
 ## 7. Depth & Surface
 
-Strategy: `mixed`, led by tonal contrast and hairline borders, with whisper-soft elevation only for the primary card and modal.
+Strategy: `hairline-led`, with a single elevated moment. Most content sits directly on canvas separated by 1px hairlines; elevation is reserved for the balance card, modal, and floating tab bar.
 
 | Level | Treatment | Usage |
 |-------|-----------|-------|
-| Flat | Canvas `colors.canvas` | Root background |
-| Surface | `colors.surface` + `colors.border` | Cards, rows, fields |
-| Elevated | White surface + `elevation: 2` card, `elevation: 4` elevated | Balance card, modals, primary CTA |
+| Flat | Canvas `colors.canvas` | Root background and all lists (hairline rows) |
+| Bordered group | `colors.surface` + `colors.border` | Form panels, settings, data groups |
+| Elevated | `colors.surfaceElevated` + `elevation: 4` | Balance card, modal, tab bar |
 | Pressed | Action color shift + opacity | Pressable feedback |
 
-No gradients, glassmorphism, heavy shadows, or decorative background blobs. Surface contrast carries most of the depth.
+No gradients, glassmorphism, heavy shadows, or decorative background blobs. Surface contrast and hairlines carry most of the depth.
 
 ## 8. Accessibility Constraints & Accepted Debt
 

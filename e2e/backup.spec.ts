@@ -57,5 +57,5 @@ test("data kosong dipulihkan otomatis dari cadangan saat peluncuran", async ({ p
   await expect(page.getByText("Makan siang pulih", { exact: true })).toBeVisible()
 
   // Pengaturan ikut dipulihkan: tema gelap aktif.
-  await expect.poll(() => hasBackgroundColor(page, "rgb(23, 25, 24)")).toBe(true)
+  await expect.poll(() => hasBackgroundColor(page, "rgb(22, 24, 26)")).toBe(true)
 })

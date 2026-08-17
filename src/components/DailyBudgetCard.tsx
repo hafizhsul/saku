@@ -2,7 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { useMemo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { formatCurrency } from "../utils/currency"
 
 type DailyBudgetCardProps = {
@@ -28,9 +28,7 @@ export function DailyBudgetCard({ remaining, daily, daysLeft, onPress }: DailyBu
       </View>
       <View style={styles.info}>
         <Text style={styles.label}>SISA HARIAN</Text>
-        <Text style={styles.value}>
-          ≈ {formatCurrency(daily)} <Text style={styles.hint}>/hari</Text>
-        </Text>
+        <Text style={styles.valueSmall}>{formatCurrency(daily)}</Text>
       </View>
       <View style={styles.divider} />
       <View style={styles.infoRight}>
@@ -53,19 +51,11 @@ function createStyles(colors: ThemeColors) {
       flexDirection: "row",
       gap: spacing.row,
       padding: spacing.lg,
-      ...shadows.card,
     },
     divider: {
       backgroundColor: colors.border,
       height: 32,
       width: 1,
-    },
-    hint: {
-      color: colors.textTertiary,
-      fontSize: typography.caption.fontSize,
-      fontFamily: typography.caption.fontFamily,
-      fontWeight: typography.caption.fontWeight,
-      lineHeight: typography.caption.lineHeight,
     },
     iconWell: {
       alignItems: "center",
@@ -85,7 +75,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.unit,
     },
     label: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,
@@ -94,14 +84,6 @@ function createStyles(colors: ThemeColors) {
     },
     pressed: {
       opacity: 0.72,
-    },
-    value: {
-      color: colors.textPrimary,
-      fontSize: typography.bodyLarge.fontSize,
-      fontFamily: fontFamilies.bold,
-      fontVariant: ["tabular-nums"],
-      fontWeight: "700",
-      lineHeight: typography.bodyLarge.lineHeight,
     },
     valueSmall: {
       color: colors.textPrimary,

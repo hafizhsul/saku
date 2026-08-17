@@ -5,7 +5,7 @@ import { selectCategoryTrends } from "../features/transactions/selectors"
 import type { Transaction } from "../features/transactions/types"
 import { formatShortMonthLabel, shiftMonth } from "../utils/dates"
 import { formatCompactCurrency } from "../utils/currency"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
 
 type CategoryTrendChartProps = {
@@ -66,7 +66,7 @@ export function CategoryTrendChart({ transactions, month, count = 6 }: CategoryT
                       <View
                         style={[
                           styles.bar,
-                          { height, backgroundColor: isLatest ? colors.accent : colors.expense },
+                          { height, backgroundColor: isLatest ? colors.action : colors.expense },
                         ]}
                       />
                     </View>
@@ -150,13 +150,7 @@ function createStyles(colors: ThemeColors) {
       color: colors.expense,
     },
     list: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
       gap: spacing.lg,
-      padding: spacing.lg,
-      ...shadows.card,
     },
     row: {
       gap: spacing.sm,

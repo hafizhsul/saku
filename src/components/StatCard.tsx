@@ -3,7 +3,7 @@ import { useMemo } from "react"
 import { StyleSheet, Text, View } from "react-native"
 
 import { formatCurrency } from "../utils/currency"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 
 type StatCardProps = {
   readonly type: "income" | "expense"
@@ -46,14 +46,8 @@ function createStyles(colors: ThemeColors) {
       marginTop: spacing.xs,
     },
     card: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
       flex: 1,
       minWidth: 150,
-      padding: spacing.lg,
-      ...shadows.card,
     },
     caption: {
       color: colors.textTertiary,

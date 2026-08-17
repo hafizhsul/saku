@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native"
 
 import type { MonthlyNetPoint } from "../features/transactions/selectors"
 import { formatCompactCurrency } from "../utils/currency"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 
 type MonthlyTrendProps = {
   readonly points: readonly MonthlyNetPoint[]
@@ -90,13 +90,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.compact,
     },
     list: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
       gap: spacing.group,
-      padding: spacing.lg,
-      ...shadows.card,
     },
     month: {
       color: colors.textSecondary,

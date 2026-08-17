@@ -124,7 +124,7 @@ export default function RecurringFormScreen(): React.ReactElement {
               setDayInput(value.replace(/[^0-9]/g, ""))
               setError(null)
             }}
-            placeholder="1–28"
+            placeholder="1-28"
             placeholderTextColor={colors.textTertiary}
             style={formStyles.input}
             value={dayInput}
@@ -243,7 +243,7 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.body.lineHeight,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

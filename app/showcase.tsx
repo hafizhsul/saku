@@ -159,7 +159,7 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.body.lineHeight,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,
@@ -174,8 +174,13 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.title.lineHeight,
     },
     stats: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.row,
+      padding: spacing.lg,
     },
     transactionList: {
       backgroundColor: colors.surface,

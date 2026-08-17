@@ -5,7 +5,7 @@ import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { SegmentedControl } from "../../src/components/SegmentedControl"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
-import { radii, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
+import { spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
 
 const themeDescriptions: Record<ThemePreference, string> = {
   system: "Mengikuti pengaturan perangkatmu.",
@@ -40,19 +40,17 @@ export default function SettingsScreen(): React.ReactElement {
     <ScreenShell>
       <SettingsHeader colors={colors} styles={styles} />
       <Text style={styles.hint}>Pilih tampilan aplikasi. Perubahan langsung terlihat.</Text>
-      <View style={styles.card}>
-        <SegmentedControl
-          accessibilityLabel="Preferensi tema"
-          onChange={(value) => {
-            if (isThemePreference(value)) {
-              void setTheme(value)
-            }
-          }}
-          options={themePreferenceOptions}
-          selectedValue={settings.theme}
-        />
-        <Text style={styles.description}>{themeDescriptions[settings.theme]}</Text>
-      </View>
+      <SegmentedControl
+        accessibilityLabel="Preferensi tema"
+        onChange={(value) => {
+          if (isThemePreference(value)) {
+            void setTheme(value)
+          }
+        }}
+        options={themePreferenceOptions}
+        selectedValue={settings.theme}
+      />
+      <Text style={styles.description}>{themeDescriptions[settings.theme]}</Text>
     </ScreenShell>
   )
 }
@@ -76,14 +74,6 @@ function SettingsHeader({ colors, styles }: { readonly colors: ThemeColors; read
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    card: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      gap: spacing.group,
-      padding: spacing.lg,
-    },
     description: {
       color: colors.textSecondary,
       fontSize: typography.bodyMedium.fontSize,
@@ -102,7 +92,7 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.body.lineHeight,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

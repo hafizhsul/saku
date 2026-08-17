@@ -10,7 +10,7 @@ import { ScreenShell } from "../src/components/ScreenShell"
 import { useBudgets } from "../src/features/budgets/BudgetsProvider"
 import { createAddTransactionStyles } from "../src/features/transactions/addTransactionStyles"
 import { EXPENSE_CATEGORY_OPTIONS } from "../src/features/transactions/types"
-import { radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { formatAmountInput, parseAmountInput } from "../src/utils/dates"
 
 export default function BudgetFormScreen(): React.ReactElement {
@@ -183,7 +183,6 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       gap: spacing.group,
       padding: spacing.lg,
-      ...shadows.elevated,
     },
     formTitle: {
       color: colors.textPrimary,
@@ -198,7 +197,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "space-between",
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

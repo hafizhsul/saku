@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native"
 
 import type { CategoryBreakdownItem } from "../features/transactions/selectors"
 import { formatCurrency } from "../utils/currency"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
 import { EmptyState } from "./EmptyState"
 
@@ -48,8 +48,8 @@ export function CategoryBreakdown({ items }: CategoryBreakdownProps): React.Reac
         />
       ) : (
         <View style={styles.list}>
-          {items.map((item) => (
-            <BudgetRow colors={colors} item={item} key={item.category} styles={styles} />
+          {items.map((item, index) => (
+            <BudgetRow colors={colors} item={item} key={item.category} last={index === items.length - 1} styles={styles} />
           ))}
         </View>
       )}
@@ -60,12 +60,13 @@ export function CategoryBreakdown({ items }: CategoryBreakdownProps): React.Reac
 type BudgetRowProps = {
   readonly item: CategoryBreakdownItem
   readonly colors: ThemeColors
+  readonly last: boolean
   readonly styles: ReturnType<typeof createStyles>
 }
 
-function BudgetRow({ item, colors, styles }: BudgetRowProps): React.ReactElement {
+function BudgetRow({ item, colors, last, styles }: BudgetRowProps): React.ReactElement {
   const state = budgetState(item)
-  const barColor = state.tone === "warning" ? colors.accent : colors.expense
+  const barColor = state.tone === "warning" ? colors.warning : colors.expense
   const budget = item.budget
 
   const accessibilityLabel = budget === undefined
@@ -73,7 +74,7 @@ function BudgetRow({ item, colors, styles }: BudgetRowProps): React.ReactElement
     : `${item.category}, ${formatCurrency(item.amount)}, ${state.label.toLowerCase()} dari anggaran ${formatCurrency(budget)}`
 
   return (
-    <View accessible accessibilityLabel={accessibilityLabel} style={styles.row}>
+    <View accessible accessibilityLabel={accessibilityLabel} style={[styles.row, last && styles.rowLast]}>
       <CategoryIcon category={item.category} tone="expense" size={20} />
       <View style={styles.main}>
         <View style={styles.rowHeader}>
@@ -139,13 +140,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.compact,
     },
     list: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      gap: spacing.group,
-      padding: spacing.lg,
-      ...shadows.card,
+      gap: 0,
     },
     main: {
       flex: 1,
@@ -164,7 +159,7 @@ function createStyles(colors: ThemeColors) {
       color: colors.expense,
     },
     percentageWarning: {
-      color: colors.accent,
+      color: colors.warning,
     },
     progress: {
       borderRadius: radii.pill,
@@ -180,8 +175,14 @@ function createStyles(colors: ThemeColors) {
     },
     row: {
       alignItems: "center",
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
       flexDirection: "row",
       gap: spacing.compact,
+      paddingVertical: spacing.md,
+    },
+    rowLast: {
+      borderBottomWidth: 0,
     },
     rowHeader: {
       alignItems: "center",

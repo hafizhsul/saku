@@ -17,7 +17,7 @@ import {
 } from "../../src/features/transactions/selectors"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
 import type { TransactionType } from "../../src/features/transactions/types"
-import { radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
 
 type TransactionFilter = "all" | TransactionType
@@ -181,15 +181,10 @@ function createStyles(colors: ThemeColors) {
       paddingBottom: spacing.sm,
     },
     listCard: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      ...shadows.card,
+      gap: 0,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,
@@ -216,7 +211,6 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       flexDirection: "row",
       paddingHorizontal: spacing.md,
-      ...shadows.card,
     },
     subtitle: {
       color: colors.textSecondary,

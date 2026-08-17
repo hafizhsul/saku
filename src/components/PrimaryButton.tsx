@@ -73,7 +73,7 @@ function createStyles() {
   return StyleSheet.create({
     button: {
       alignItems: "center",
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       borderWidth: 1,
       justifyContent: "center",
       minHeight: 54,

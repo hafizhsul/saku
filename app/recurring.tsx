@@ -9,7 +9,7 @@ import { PrimaryButton } from "../src/components/PrimaryButton"
 import { ScreenShell } from "../src/components/ScreenShell"
 import { useRecurring } from "../src/features/recurring/RecurringProvider"
 import type { RecurringDefinition } from "../src/features/recurring/types"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { formatSignedCurrency } from "../src/utils/currency"
 
 export default function RecurringScreen(): React.ReactElement {
@@ -169,15 +169,10 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceMuted,
     },
     list: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      ...shadows.card,
+      gap: 0,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

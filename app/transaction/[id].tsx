@@ -9,7 +9,7 @@ import { HeroCard } from "../../src/components/HeroCard"
 import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
-import { radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatSignedCurrency } from "../../src/utils/currency"
 import { formatTransactionDate } from "../../src/utils/dates"
 
@@ -200,7 +200,6 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       gap: spacing.row,
       padding: spacing.xl,
-      ...shadows.card,
     },
     confirmDescription: {
       color: colors.textSecondary,
@@ -270,15 +269,10 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.unit,
     },
     infoCard: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      paddingHorizontal: spacing.lg,
-      ...shadows.card,
+      gap: 0,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

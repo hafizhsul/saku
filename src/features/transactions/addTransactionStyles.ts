@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native"
 
-import { fontFamilies, radii, shadows, spacing, typography, type ThemeColors } from "../../theme"
+import { fontFamilies, radii, spacing, typography, type ThemeColors } from "../../theme"
 
 export function createAddTransactionStyles(colors: ThemeColors) {
   return StyleSheet.create({
@@ -67,7 +67,6 @@ export function createAddTransactionStyles(colors: ThemeColors) {
       flexDirection: "row",
       minHeight: 52,
       paddingHorizontal: spacing.md,
-      ...shadows.card,
     },
     generalError: {
       backgroundColor: colors.expenseSurface,
@@ -97,7 +96,6 @@ export function createAddTransactionStyles(colors: ThemeColors) {
       fontFamily: typography.bodyLarge.fontFamily,
       minHeight: 52,
       paddingHorizontal: spacing.md,
-      ...shadows.card,
     },
     inputError: {
       borderColor: colors.error,
@@ -107,7 +105,7 @@ export function createAddTransactionStyles(colors: ThemeColors) {
       paddingTop: spacing.md,
     },
     overline: {
-      color: colors.accent,
+      color: colors.textSecondary,
       fontSize: typography.overline.fontSize,
       fontFamily: typography.overline.fontFamily,
       fontWeight: typography.overline.fontWeight,

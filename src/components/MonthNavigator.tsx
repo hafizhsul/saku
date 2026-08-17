@@ -2,7 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { useMemo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { formatMonthLabel, toMonthKey } from "../utils/dates"
 
 type MonthNavigatorProps = {
@@ -72,11 +72,10 @@ function createStyles(colors: ThemeColors) {
       alignItems: "center",
       backgroundColor: colors.surface,
       borderColor: colors.border,
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       borderWidth: 1,
       flexDirection: "row",
       padding: 4,
-      ...shadows.card,
     },
     label: {
       color: colors.textPrimary,
@@ -96,7 +95,7 @@ function createStyles(colors: ThemeColors) {
     },
     navButton: {
       alignItems: "center",
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       height: 40,
       justifyContent: "center",
       width: 40,

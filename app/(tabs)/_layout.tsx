@@ -27,7 +27,7 @@ function createIconWellStyles(colors: ReturnType<typeof useThemeColors>) {
   return {
     iconWell: {
       alignItems: "center" as const,
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       height: 30,
       justifyContent: "center" as const,
       width: 52,
@@ -62,7 +62,7 @@ export default function TabLayout(): React.ReactElement {
       tabBarStyle: {
         backgroundColor: colors.surfaceElevated,
         borderColor: colors.border,
-        borderRadius: 30,
+        borderRadius: radii.xl,
         borderTopColor: colors.border,
         borderTopWidth: 1,
         borderWidth: 1,
