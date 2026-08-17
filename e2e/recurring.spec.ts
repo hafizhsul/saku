@@ -25,7 +25,7 @@ test("transaksi berulang tersimpan, tidak membuat transaksi bulan ini, dan berta
 
   // Buka ulang: definisi bertahan dan tetap tidak menambah transaksi.
   await page.goto("/")
-  await expect(page.getByText("Saku", { exact: true }).first()).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByRole("button", { name: "Tambah transaksi" }).first()).toBeVisible({ timeout: 120_000 })
   await expect(page.getByText("Belum ada transaksi", { exact: true })).toBeVisible()
 
   await page.getByRole("button", { name: "Transaksi berulang" }).click()

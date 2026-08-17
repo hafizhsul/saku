@@ -84,7 +84,6 @@ export default function RootLayout(): React.ReactElement | null {
                   <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
                   <Stack.Screen name="recurring" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="recurring-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="settings" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="transaction/[id]" />
                   <Stack.Screen name="showcase" />
                 </Stack>

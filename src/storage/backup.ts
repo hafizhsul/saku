@@ -90,8 +90,9 @@ export async function readAutoRestoreMirror(): Promise<string | null> {
 
 export async function hasAnyStoredData(): Promise<boolean> {
   const keys = [TRANSACTIONS_STORAGE_KEY, BUDGETS_STORAGE_KEY, RECURRING_STORAGE_KEY, SETTINGS_STORAGE_KEY]
-  const found = await AsyncStorage.getMany(keys)
-  return keys.some((key) => found[key] !== null)
+  // multiGet: tersedia di semua versi async-storage (getMany baru ada di v3).
+  const found = await AsyncStorage.multiGet(keys)
+  return found.some(([, value]) => value !== null)
 }
 
 export async function writeRestoredData(payload: BackupPayload): Promise<void> {

@@ -2,15 +2,20 @@
   "expo": {
     "name": "Saku",
     "slug": "bendahara",
+    "description": "Aplikasi catatan keuangan harian yang tenang dan mudah: catat pemasukan & pengeluaran, kendalikan anggaran bulanan, dan biarkan transaksi berulang tercatat otomatis.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bendahara",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hafizhsul.saku",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.hafizhsul.saku",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#F7F6F3",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,8 +35,14 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#F7F6F3",
+          "dark": {
+            "image": "./assets/images/splash-icon-dark.png",
+            "imageWidth": 200,
+            "backgroundColor": "#171918"
+          }
         }
       ],
       "expo-sharing"

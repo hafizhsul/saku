@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
 import { useMemo, useState } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { BalanceCard } from "../../src/components/BalanceCard"
 import { CategoryBreakdown } from "../../src/components/CategoryBreakdown"
@@ -25,7 +25,7 @@ import {
   selectMonthlySummary,
   selectRecentTransactions,
 } from "../../src/features/transactions/selectors"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatMonthLabel, shiftMonth, toMonthKey } from "../../src/utils/dates"
 
 export default function HomeScreen(): React.ReactElement {
@@ -145,26 +145,16 @@ export default function HomeScreen(): React.ReactElement {
 type HomeStyles = ReturnType<typeof createStyles>
 
 function Header({ colors, styles }: { readonly colors: ThemeColors; readonly styles: HomeStyles }): React.ReactElement {
+  const isDark = colors.canvas === darkColors.canvas
+
   return (
     <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <View style={styles.brandMark}>
-          <MaterialCommunityIcons color={colors.accent} name="email-outline" size={22} />
-        </View>
-        <View style={styles.brandText}>
-          <Text style={styles.title}>Saku</Text>
-          <Text style={styles.subtitle}>Saldo, anggaran, dan catatan bulananmu dalam satu tempat.</Text>
-        </View>
-        <Pressable
-          accessibilityLabel="Pengaturan tampilan"
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={() => router.push("/settings")}
-          style={({ pressed, hovered }) => [styles.settingsButton, hovered && styles.iconHovered, pressed && styles.pressed]}
-        >
-          <MaterialCommunityIcons color={colors.textSecondary} name="cog-outline" size={20} />
-        </Pressable>
-      </View>
+      <Image
+        accessibilityIgnoresInvertColors
+        resizeMode="contain"
+        source={isDark ? require("../../assets/images/logo-lockup-dark.png") : require("../../assets/images/logo-lockup.png")}
+        style={styles.brandLockup}
+      />
     </View>
   )
 }
@@ -192,29 +182,12 @@ function createStyles(colors: ThemeColors) {
       flexDirection: "row",
       gap: spacing.section,
     },
+    brandLockup: {
+      height: 80,
+      width: 240,
+    },
     header: {
-      gap: spacing.compact,
       paddingBottom: spacing.compact,
-    },
-    brandMark: {
-      alignItems: "center",
-      backgroundColor: colors.accentSurface,
-      borderRadius: radii.md,
-      height: 44,
-      justifyContent: "center",
-      width: 44,
-    },
-    iconHovered: {
-      backgroundColor: colors.surfaceMuted,
-    },
-    brandRow: {
-      alignItems: "flex-start",
-      flexDirection: "row",
-      gap: spacing.group,
-    },
-    brandText: {
-      flex: 1,
-      gap: spacing.unit,
     },
     pressed: {
       opacity: 0.72,
@@ -241,33 +214,9 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.heading.fontWeight,
       lineHeight: typography.heading.lineHeight,
     },
-    settingsButton: {
-      alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radii.sm,
-      borderWidth: 1,
-      height: 44,
-      justifyContent: "center",
-      width: 44,
-    },
     statRow: {
       flexDirection: "row",
       gap: spacing.row,
-    },
-    subtitle: {
-      color: colors.textSecondary,
-      fontSize: typography.body.fontSize,
-      fontFamily: typography.body.fontFamily,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
-      maxWidth: 320,
-    },
-    title: {
-      color: colors.textPrimary,
-      fontSize: typography.title.fontSize,
-      fontFamily: typography.title.fontFamily,
-      fontWeight: typography.title.fontWeight,
-      lineHeight: typography.title.lineHeight,
     },
     transactionList: {
       backgroundColor: colors.surface,

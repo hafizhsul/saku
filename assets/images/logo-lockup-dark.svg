@@ -1,0 +1,27 @@
+<svg width="960" height="320" viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F6F3"/>
+      <stop offset="1" stop-color="#E8E4DB"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F6CB73"/>
+      <stop offset="1" stop-color="#D9A53F"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0 0) scale(0.3125)">
+    <rect x="96" y="96" width="832" height="832" rx="208" fill="url(#tile)"/>
+    <rect x="96" y="96" width="832" height="832" rx="208" fill="none" stroke="#D9D4C9" stroke-width="6"/>
+    <rect x="224" y="336" width="576" height="448" rx="144" fill="#23272B"/>
+    <g stroke="#F7F6F3" stroke-width="56" stroke-linecap="round" fill="none">
+      <line x1="336" y1="352" x2="512" y2="520"/>
+      <line x1="688" y1="352" x2="512" y2="520"/>
+    </g>
+    <circle cx="512" cy="640" r="120" fill="url(#coin)"/>
+    <circle cx="512" cy="640" r="80" fill="none" stroke="#9A6B00" stroke-width="14" opacity="0.55"/>
+  </g>
+
+  <text x="360" y="192" font-family="Plus Jakarta Sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="140" font-weight="800" letter-spacing="-2" fill="#F7F6F3">Saku</text>
+  <text x="366" y="250" font-family="Plus Jakarta Sans, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="34" font-weight="500" letter-spacing="3" fill="#9CA49E">CATATAN KEUANGAN HARIAN</text>
+</svg>

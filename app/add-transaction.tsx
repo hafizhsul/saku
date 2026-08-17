@@ -14,7 +14,7 @@ import { useTransactions } from "../src/features/transactions/TransactionsProvid
 import { isTransactionType, transactionTypeOptions, type FormErrors } from "../src/features/transactions/addTransactionForm"
 import { createAddTransactionStyles } from "../src/features/transactions/addTransactionStyles"
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
-import { radii, shadows, typography, useThemeColors } from "../src/theme"
+import { darkColors, radii, shadows, typography, useThemeColors } from "../src/theme"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
 function formatNativeDate(date: Date): string {
@@ -53,6 +53,7 @@ function WebDateInput({
   readonly value: string
 }): React.ReactElement {
   const colors = useThemeColors()
+  const isDark = colors.canvas === darkColors.canvas
   const style = useMemo(
     () => ({
       backgroundColor: colors.surface,
@@ -60,15 +61,16 @@ function WebDateInput({
       borderRadius: radii.md,
       boxShadow: shadows.card.boxShadow,
       boxSizing: "border-box" as const,
+      // Mengarahkan browser merender kalender & teks tanggal versi gelap.
+      colorScheme: isDark ? ("dark" as const) : ("light" as const),
       color: colors.textPrimary,
       fontFamily: typography.bodyLarge.fontFamily,
       fontSize: typography.bodyLarge.fontSize,
-      lineHeight: typography.bodyLarge.lineHeight,
       minHeight: 52,
       padding: "13px 12px",
       width: "100%",
     }),
-    [colors, error],
+    [colors, error, isDark],
   )
 
   return createElement("input", {
@@ -258,7 +260,7 @@ export default function AddTransactionScreen(): React.ReactElement {
         </View>
       </Field>
 
-      <Field error={errors.date} hint="Tanggal transaksi" label="Tanggal">
+      <Field error={errors.date} label="Tanggal">
         {Platform.OS === "web" ? (
           <WebDateInput
             ariaLabel="Tanggal transaksi"

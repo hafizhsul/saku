@@ -10,7 +10,7 @@ export async function openHome(page: Page): Promise<void> {
     }
   })
   await page.goto("/")
-  await expect(page.getByText("Saku", { exact: true }).first()).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByRole("button", { name: "Tambah transaksi" }).first()).toBeVisible({ timeout: 120_000 })
 }
 
 // Input tanggal web memakai <input type="date"> native (format YYYY-MM-DD).

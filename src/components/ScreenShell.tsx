@@ -24,7 +24,8 @@ export function ScreenShell({ children, withTabBar = true, contentStyle, ...scro
   const colors = useThemeColors()
   const scheme = useColorScheme()
   const styles = useMemo(() => createStyles(colors), [colors])
-  const bottomReserve = withTabBar ? 88 + insets.bottom : spacing.xl + insets.bottom
+  // 96 = jarak bawah tab bar (20) + tinggi tab bar (68) + napas 8px.
+  const bottomReserve = withTabBar ? 96 + insets.bottom : spacing.xl + insets.bottom
 
   return (
     <View style={styles.root}>

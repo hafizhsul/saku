@@ -1,13 +1,11 @@
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { router } from "expo-router"
 import { useMemo } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
 
-import { EmptyState } from "../src/components/EmptyState"
-import { ScreenShell } from "../src/components/ScreenShell"
-import { SegmentedControl } from "../src/components/SegmentedControl"
-import { useSettings } from "../src/features/settings/SettingsProvider"
-import { radii, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../src/theme"
+import { EmptyState } from "../../src/components/EmptyState"
+import { ScreenShell } from "../../src/components/ScreenShell"
+import { SegmentedControl } from "../../src/components/SegmentedControl"
+import { useSettings } from "../../src/features/settings/SettingsProvider"
+import { radii, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
 
 const themeDescriptions: Record<ThemePreference, string> = {
   system: "Mengikuti pengaturan perangkatmu.",
@@ -22,7 +20,7 @@ export default function SettingsScreen(): React.ReactElement {
 
   if (isLoading) {
     return (
-      <ScreenShell withTabBar={false}>
+      <ScreenShell>
         <SettingsHeader colors={colors} styles={styles} />
         <EmptyState description="Menyiapkan pengaturan." title="Memuat pengaturan..." />
       </ScreenShell>
@@ -31,7 +29,7 @@ export default function SettingsScreen(): React.ReactElement {
 
   if (loadError) {
     return (
-      <ScreenShell withTabBar={false}>
+      <ScreenShell>
         <SettingsHeader colors={colors} styles={styles} />
         <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
       </ScreenShell>
@@ -39,7 +37,7 @@ export default function SettingsScreen(): React.ReactElement {
   }
 
   return (
-    <ScreenShell withTabBar={false}>
+    <ScreenShell>
       <SettingsHeader colors={colors} styles={styles} />
       <Text style={styles.hint}>Pilih tampilan aplikasi. Perubahan langsung terlihat.</Text>
       <View style={styles.card}>
@@ -72,15 +70,6 @@ function SettingsHeader({ colors, styles }: { readonly colors: ThemeColors; read
         <Text style={styles.overline}>PENGATURAN</Text>
         <Text style={styles.title}>Tampilan</Text>
       </View>
-      <Pressable
-        accessibilityLabel="Tutup pengaturan"
-        accessibilityRole="button"
-        hitSlop={10}
-        onPress={() => router.back()}
-        style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
-      >
-        <MaterialCommunityIcons color={colors.textSecondary} name="close" size={22} />
-      </Pressable>
     </View>
   )
 }
@@ -95,15 +84,6 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.group,
       padding: spacing.lg,
     },
-    closeButton: {
-      alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radii.sm,
-      borderWidth: 1,
-      height: 44,
-      justifyContent: "center",
-      width: 44,
-    },
     description: {
       color: colors.textSecondary,
       fontSize: typography.bodyMedium.fontSize,
@@ -112,9 +92,7 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.bodyMedium.lineHeight,
     },
     header: {
-      alignItems: "flex-start",
-      flexDirection: "row",
-      justifyContent: "space-between",
+      gap: spacing.unit,
     },
     hint: {
       color: colors.textSecondary,
@@ -130,9 +108,6 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.overline.fontWeight,
       letterSpacing: 1,
       lineHeight: typography.overline.lineHeight,
-    },
-    pressed: {
-      opacity: 0.72,
     },
     title: {
       color: colors.textPrimary,
