@@ -33,7 +33,7 @@
 | State & storage | React Context + AsyncStorage (offline, tanpa backend) |
 | Validasi | [Zod](https://zod.dev) |
 | Font | Plus Jakarta Sans (via `@expo-google-fonts`) |
-| Desain | Design system graphite–green, hairline-led — lihat [`DESIGN.md`](DESIGN.md) |
+| Desain | Design system emerald M3 (Safe Stewardship) — lihat [`DESIGN.md`](DESIGN.md) |
 
 ## Menjalankan
 
