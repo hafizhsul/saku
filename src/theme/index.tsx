@@ -8,7 +8,7 @@ export const lightColors = {
   surfaceElevated: "#FFFFFF",
   textPrimary: "#23272B",
   textSecondary: "#5C6267",
-  textTertiary: "#8B8F92",
+  textTertiary: "#6C6C6C",
   border: "#E8E4DB",
   borderStrong: "#D9D4C9",
   action: "#23272B",

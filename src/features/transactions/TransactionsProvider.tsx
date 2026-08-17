@@ -70,7 +70,6 @@ export type TransactionsContextValue = TransactionsState & {
   readonly importTransactions: (rows: readonly CsvTransactionRow[]) => Promise<ImportTransactionsResult>
   readonly appendTransactions: (transactions: readonly Transaction[]) => Promise<AppendTransactionsResult>
   readonly retryLoad: () => Promise<void>
-  readonly clearSaveMessage: () => void
 }
 
 const initialState: TransactionsState = {
@@ -281,14 +280,9 @@ export function TransactionsProvider({ children }: PropsWithChildren): React.Rea
     }
   }, [])
 
-  const clearSaveMessage = useCallback((): void => {
-    dispatch({ type: "saveStarted" })
-    dispatch({ type: "saveSucceeded" })
-  }, [])
-
   const value = useMemo<TransactionsContextValue>(
-    () => ({ ...state, addTransaction, updateTransaction, deleteTransaction, importTransactions, appendTransactions, retryLoad, clearSaveMessage }),
-    [addTransaction, appendTransactions, clearSaveMessage, deleteTransaction, importTransactions, retryLoad, state, updateTransaction],
+    () => ({ ...state, addTransaction, updateTransaction, deleteTransaction, importTransactions, appendTransactions, retryLoad }),
+    [addTransaction, appendTransactions, deleteTransaction, importTransactions, retryLoad, state, updateTransaction],
   )
 
   return <TransactionsContext.Provider value={value}>{children}</TransactionsContext.Provider>

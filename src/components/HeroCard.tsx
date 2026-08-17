@@ -34,8 +34,8 @@ export function HeroCard({
   const eyebrowColor = tone === "neutral" ? colors.textSecondary : toneColor
   const background = tone === "neutral" ? colors.surfaceElevated : tone === "income" ? colors.incomeSurface : colors.expenseSurface
   const [reduceMotion, setReduceMotion] = useState(false)
-  const amountOpacity = useRef(new Animated.Value(1)).current
-  const amountTranslateY = useRef(new Animated.Value(0)).current
+  const [amountOpacity] = useState(() => new Animated.Value(1))
+  const [amountTranslateY] = useState(() => new Animated.Value(0))
   const previousAmount = useRef(amount)
 
   useEffect(() => {

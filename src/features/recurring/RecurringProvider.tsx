@@ -129,20 +129,34 @@ export function RecurringProvider({ children }: PropsWithChildren): React.ReactE
     attemptedMonthsRef.current.add(currentMonth)
 
     const { added, updated } = computeDueRecurring(definitionsRef.current, currentMonth, new Date())
+    const previousDefinitions = definitionsRef.current
 
     void (async () => {
       if (updated.length > 0) {
         try {
           await persistRecurring(updated)
-          definitionsRef.current = updated
-          dispatch({ type: "loadSucceeded", definitions: updated })
         } catch {
-          // Leave lastApplied untouched; the next session retries.
+          // lastApplied belum maju; sesi berikutnya mencoba lagi.
+          return
         }
+        definitionsRef.current = updated
+        dispatch({ type: "loadSucceeded", definitions: updated })
       }
 
       if (added.length > 0) {
-        await appendTransactions(added)
+        const result = await appendTransactions(added)
+        if (!result.ok && updated.length > 0) {
+          // Transaksi gagal tersimpan; kembalikan lastApplied ke kondisi
+          // semula supaya bulan ini dicoba lagi di sesi berikutnya.
+          try {
+            await persistRecurring(previousDefinitions)
+            definitionsRef.current = previousDefinitions
+            dispatch({ type: "loadSucceeded", definitions: previousDefinitions })
+          } catch {
+            // Rollback gagal: definisi tetap maju. Lebih aman tidak menambah
+            // transaksi duplikat daripada mengulang tanpa rollback.
+          }
+        }
       }
     })()
   }, [appendTransactions, state.isLoading, state.loadError, transactionsLoading])

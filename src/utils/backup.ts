@@ -29,10 +29,6 @@ export type BackupPayload = {
 
 export class BackupFormatError extends Error {
   readonly name = "BackupFormatError"
-
-  constructor(message: string) {
-    super(message)
-  }
 }
 
 export function buildBackupPayload(input: {

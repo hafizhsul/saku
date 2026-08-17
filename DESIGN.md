@@ -12,31 +12,31 @@
 
 Saku feels like a quiet money journal on a tidy desk: tactile enough to feel personal, structured enough to build trust, and calm enough to invite a quick entry after a busy day. The name plays on the Indonesian habit of keeping everyday money in a pocket (saku) — a small, personal place where income is counted and spending is set aside per category. The signature is a matte bone canvas with one strong balance card, charcoal typography, and restrained green/terracotta marks that carry financial meaning rather than decoration.
 
-The product is cross-platform neutral. It borrows Expo's airy surface contrast and friendly rounded controls, then warms the canvas and keeps the hierarchy specific to personal finance. The interface is light-only in the MVP; dark tokens are reserved for a later theme without being exposed in the product flow.
+The product is cross-platform neutral. It borrows Expo's airy surface contrast and friendly rounded controls, then warms the canvas and keeps the hierarchy specific to personal finance. Both light and dark palettes are live and switchable through the system/terang/gelap preference in the Settings tab.
 
 ## 2. Color
 
 ### Palette
 
-| Role | Token | Light | Dark reserve | Usage |
+| Role | Token | Light | Dark | Usage |
 |------|-------|-------|--------------|-------|
 | Canvas | `colors.canvas` | `#F7F6F3` | `#171918` | Root screen background |
-| Surface | `colors.surface` | `#FFFEFC` | `#222624` | Cards, rows, form groups |
-| Surface muted | `colors.surfaceMuted` | `#F1F0EC` | `#2B302D` | Secondary areas, icon wells |
-| Surface elevated | `colors.surfaceElevated` | `#FFFFFF` | `#2A2D2B` | Modal and primary controls |
-| Text primary | `colors.textPrimary` | `#2F3437` | `#F7F6F3` | Headings, amounts, labels |
-| Text secondary | `colors.textSecondary` | `#60646C` | `#C7CCC8` | Supporting copy and metadata |
-| Text tertiary | `colors.textTertiary` | `#7C817E` | `#9BA39E` | De-emphasized metadata |
-| Border | `colors.border` | `#E6E3DD` | `#3B423E` | Cards, fields, separators |
-| Border strong | `colors.borderStrong` | `#D3D0C8` | `#4D554F` | Focused or selected containers |
-| Action | `colors.action` | `#2F3437` | `#F7F6F3` | Primary CTA background |
-| Action pressed | `colors.actionPressed` | `#1F2426` | `#FFFFFF` | Pressed CTA state |
-| Income | `colors.income` | `#346538` | `#9BCD94` | Pemasukan and positive balance |
-| Income surface | `colors.incomeSurface` | `#EDF3EC` | `#263A2A` | Income icon wells and selected state |
-| Expense | `colors.expense` | `#9F2F2D` | `#F2A7A2` | Pengeluaran and negative values |
-| Expense surface | `colors.expenseSurface` | `#FDEBEC` | `#432827` | Expense icon wells and selected state |
-| Accent | `colors.accent` | `#956400` | `#F5C86C` | Small positive emphasis, never the main CTA |
-| Accent surface | `colors.accentSurface` | `#FBF3DB` | `#453D24` | Small callouts and category wells |
+| Surface | `colors.surface` | `#FFFFFF` | `#232724` | Cards, rows, form groups |
+| Surface muted | `colors.surfaceMuted` | `#F0EFE9` | `#2C322D` | Secondary areas, icon wells |
+| Surface elevated | `colors.surfaceElevated` | `#FFFFFF` | `#2A2E2B` | Modal and primary controls |
+| Text primary | `colors.textPrimary` | `#23272B` | `#F7F6F3` | Headings, amounts, labels |
+| Text secondary | `colors.textSecondary` | `#5C6267` | `#C9CEC9` | Supporting copy and metadata |
+| Text tertiary | `colors.textTertiary` | `#6C6C6C` | `#9CA49E` | De-emphasized metadata; ≥4.5:1 on canvas, surface, and muted |
+| Border | `colors.border` | `#E8E4DB` | `#3B423D` | Cards, fields, separators |
+| Border strong | `colors.borderStrong` | `#D9D4C9` | `#4E574F` | Focused or selected containers |
+| Action | `colors.action` | `#23272B` | `#F7F6F3` | Primary CTA background |
+| Action pressed | `colors.actionPressed` | `#101316` | `#FFFFFF` | Pressed CTA state |
+| Income | `colors.income` | `#2F7A4D` | `#92CD99` | Pemasukan and positive balance |
+| Income surface | `colors.incomeSurface` | `#E7F1EA` | `#24382A` | Income icon wells and selected state |
+| Expense | `colors.expense` | `#B03B33` | `#F1A5A0` | Pengeluaran and negative values |
+| Expense surface | `colors.expenseSurface` | `#F9E8E6` | `#462C2A` | Expense icon wells and selected state |
+| Accent | `colors.accent` | `#9A6B00` | `#F3C468` | Small positive emphasis, never the main CTA |
+| Accent surface | `colors.accentSurface` | `#F8F0D7` | `#473F26` | Small callouts and category wells |
 | Focus | `colors.focus` | `#2547D0` | `#9FB3FF` | Keyboard and accessibility focus |
 | Error | `colors.error` | `#A12723` | `#FFB4AE` | Field errors and storage failure |
 
@@ -45,19 +45,19 @@ The product is cross-platform neutral. It borrows Expo's airy surface contrast a
 - Colors are semantic tokens only; screens do not introduce raw hex values.
 - Green and terracotta always pair with a text label or directional icon. Color is never the sole carrier of meaning.
 - The main action is charcoal, not green, so “add transaction” remains a neutral product action.
-- The light theme uses charcoal text on bone/white surfaces for a minimum AA contrast target.
-- Dark reserve values are documented for future use but are not wired into the MVP theme switch.
+- The light theme uses charcoal text on bone/white surfaces for a minimum AA contrast target; `textTertiary` stays ≥4.5:1 on every light surface it appears on.
+- The dark palette is live and follows the system scheme when the preference is set to system.
 
 ## 3. Typography
 
 ### Scale
 
-React Native uses the platform system sans. This keeps the app readable and avoids a network-dependent font load. The `fontWeight` values below are the only weight variants used.
+Screens use Plus Jakarta Sans, loaded via `@expo-google-fonts/plus-jakarta-sans` (weights 400, 500, 600, 700, 800). The `fontWeight` values below are the only weight variants used.
 
 | Level | Size | Weight | Line height | Usage |
 |-------|------|--------|-------------|-------|
 | Display | 40 | 800 | 46 | Primary balance amount |
-| Title | 28 | 700 | 34 | Screen title and brand wordmark |
+| Title | 30 | 700 | 36 | Screen title and brand wordmark |
 | Heading | 20 | 700 | 26 | Section headings and card titles |
 | Body large | 18 | 400 | 26 | Primary form values and lead copy |
 | Body | 16 | 400 | 24 | Default copy and transaction names |
@@ -102,7 +102,7 @@ Semantic aliases for the vertical rhythm. `gap` uses these; padding/margin keeps
 
 ### Layout rules
 
-- Default horizontal page gutter: `spacing.lg`; use `spacing.xl` on wider tablets.
+- Default horizontal page gutter: `spacing.xl`.
 - Main screens are single-column and scroll vertically. No horizontal scroll or nested horizontal navigation is required for MVP.
 - The balance card gets the strongest visual space; secondary cards and category bars stay subordinate.
 - Content above a bottom tab bar reserves enough bottom padding for the bar and safe-area inset.
@@ -117,9 +117,9 @@ Semantic aliases for the vertical rhythm. `gap` uses these; padding/margin keeps
 | `radius.md` | 12 | Inputs, segmented controls, primary buttons |
 | `radius.lg` | 16 | Stat cards and secondary panels |
 | `radius.xl` | 20 | Balance card and modal sheet |
-| `radius.pill` | 999 | Small category/filter chips only |
+| `radius.pill` | 999 | Primary action buttons, compact filters, tags |
 
-Large cards and primary buttons never use pill geometry. Pills are reserved for compact filters or tags.
+Large cards never use pill geometry. Pills are reserved for compact filters, tags, and the primary action button.
 
 ## 5. Components
 
@@ -187,7 +187,7 @@ Large cards and primary buttons never use pill geometry. Pills are reserved for 
 
 - **Structure**: optional icon plus text label inside a full-width pressable.
 - **Variants**: enabled, pressed, disabled, loading, success.
-- **Spacing**: `spacing.lg` horizontal padding, 52 pt minimum height, `radius.md`.
+- **Spacing**: `spacing.xl` horizontal padding, 54 pt minimum height, `radius.pill`.
 - **States**: default, pressed, disabled, loading, success, error.
 - **Accessibility**: role button, descriptive label, disabled and busy states announced.
 - **Motion**: 150 ms opacity/scale press feedback; success replaces the label without moving layout.
@@ -235,7 +235,7 @@ Strategy: `mixed`, led by tonal contrast and hairline borders, with whisper-soft
 |-------|-----------|-------|
 | Flat | Canvas `colors.canvas` | Root background |
 | Surface | `colors.surface` + `colors.border` | Cards, rows, fields |
-| Elevated | White surface + `shadowOpacity: 0.04`, `elevation: 1` | Balance card and modal |
+| Elevated | White surface + `elevation: 2` card, `elevation: 4` elevated | Balance card, modals, primary CTA |
 | Pressed | Action color shift + opacity | Pressable feedback |
 
 No gradients, glassmorphism, heavy shadows, or decorative background blobs. Surface contrast carries most of the depth.
@@ -257,6 +257,5 @@ No gradients, glassmorphism, heavy shadows, or decorative background blobs. Surf
 
 | Item | Location | Why accepted | Owner / Exit |
 |------|----------|--------------|--------------|
-| Runtime dark mode is not exposed | `src/theme/index.ts` | MVP scope is a light offline journal; dark reserve tokens are documented for a later theme pass. | Add a user/system theme switch in a future settings scope. |
 | AsyncStorage failure cannot be simulated reliably in the UI smoke path | `src/storage/transactions.ts` | The boundary is guarded and the user-facing error state is implemented; device-level storage fault injection is not part of MVP QA. | Add an injected storage adapter in a future resilience test pass. |
 

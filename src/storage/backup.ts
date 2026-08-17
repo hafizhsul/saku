@@ -15,10 +15,6 @@ export const BACKUP_FILE_NAME = "bendahara-cadangan.json"
 
 export class BackupStorageError extends Error {
   readonly name = "BackupStorageError"
-
-  constructor(message: string) {
-    super(message)
-  }
 }
 
 type BackupSettings = { readonly autoRestore: boolean }

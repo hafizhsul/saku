@@ -49,6 +49,7 @@ export function SettingsProvider({ children }: PropsWithChildren): React.ReactEl
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- isLoading awal sudah true; retryLoad butuh flip sinkron saat tombol "Coba lagi".
     void retryLoad()
   }, [retryLoad, restoreEpoch])
 
