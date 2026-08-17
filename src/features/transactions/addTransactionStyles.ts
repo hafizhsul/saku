@@ -27,7 +27,7 @@ export function createAddTransactionStyles(colors: ThemeColors) {
       justifyContent: "center",
       minHeight: 86,
       padding: spacing.sm,
-      width: "31%",
+      width: "48%",
     },
     categorySelected: {
       backgroundColor: colors.surfaceMuted,
