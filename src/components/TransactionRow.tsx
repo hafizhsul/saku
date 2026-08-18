@@ -3,18 +3,19 @@ import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import type { Transaction } from "../features/transactions/types"
 import { formatSignedCurrency } from "../utils/currency"
-import { formatTransactionDate } from "../utils/dates"
-import { fontFamilies, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { formatRelativeTransactionTime } from "../utils/dates"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
 
 type TransactionRowProps = {
   readonly transaction: Transaction
   readonly compact?: boolean
   readonly last?: boolean
+  readonly card?: boolean
   readonly onPress?: () => void
 }
 
-export function TransactionRow({ transaction, compact = false, last = false, onPress }: TransactionRowProps): React.ReactElement {
+export function TransactionRow({ transaction, compact = false, last = false, card = false, onPress }: TransactionRowProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const isIncome = transaction.type === "income"
@@ -23,16 +24,23 @@ export function TransactionRow({ transaction, compact = false, last = false, onP
 
   return (
     <Pressable
-      accessibilityLabel={`${transaction.note ?? transaction.category}, ${typeLabel}, ${transaction.category}, ${formatTransactionDate(transaction.date)}, ${formatSignedCurrency(transaction.amount, transaction.type)}`}
+      accessibilityLabel={`${transaction.note ?? transaction.category}, ${typeLabel}, ${transaction.category}, ${formatRelativeTransactionTime(transaction.date)}, ${formatSignedCurrency(transaction.amount, transaction.type)}`}
       accessibilityRole={onPress ? "button" : undefined}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed, hovered }) => [styles.row, compact && styles.compact, last && styles.last, hovered && styles.hovered, pressed && styles.pressed]}
+      style={({ pressed, hovered }) => [
+        styles.row,
+        compact && styles.compact,
+        last && styles.last,
+        card && styles.card,
+        hovered && styles.hovered,
+        pressed && styles.pressed,
+      ]}
     >
       <CategoryIcon category={transaction.category} tone={tone} size={compact ? 18 : 20} />
       <View style={styles.info}>
         <Text numberOfLines={1} style={styles.title}>{transaction.note ?? transaction.category}</Text>
-        <Text numberOfLines={1} style={styles.meta}>{transaction.category} · {formatTransactionDate(transaction.date)}</Text>
+        <Text numberOfLines={1} style={styles.meta}>{formatRelativeTransactionTime(transaction.date)}</Text>
       </View>
       <Text style={[styles.amount, { color: isIncome ? colors.income : colors.expense }]}>
         {formatSignedCurrency(transaction.amount, transaction.type)}
@@ -51,6 +59,18 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.bodyMedium.lineHeight,
       maxWidth: "40%",
       textAlign: "right",
+    },
+    card: {
+      backgroundColor: colors.surfaceElevated,
+      borderBottomWidth: 0,
+      borderRadius: radii.lg,
+      padding: spacing.group,
+      ...{
+        shadowColor: colors.accent,
+        shadowOffset: { height: 4, width: 0 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+      },
     },
     compact: {
       paddingVertical: spacing.sm,

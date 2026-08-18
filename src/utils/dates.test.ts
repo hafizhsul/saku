@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
-import { formatAmountInput, formatMonthLabel, formatShortMonthLabel, formatTransactionDate, parseAmountInput, shiftMonth, toMonthKey } from "./dates"
+import { formatAmountInput, formatMonthLabel, formatRelativeTransactionTime, formatShortMonthLabel, formatTransactionDate, parseAmountInput, shiftMonth, toMonthKey } from "./dates"
 
 describe("month shifting", () => {
   it("shifts forward and backward within a year", () => {
@@ -26,6 +26,23 @@ describe("month and date labels", () => {
 
   it("formats a transaction date in the id-ID style", () => {
     expect(formatTransactionDate("2026-08-12T12:00:00.000Z")).toBe("12 Agu 2026")
+  })
+})
+
+describe("relative transaction time", () => {
+  it("labels today and yesterday with time", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 18, 9, 0))
+    expect(formatRelativeTransactionTime("2026-08-18T12:30:00.000Z")).toBe("Hari ini, 19:30")
+    expect(formatRelativeTransactionTime("2026-08-17T08:15:00.000Z")).toBe("Kemarin, 15:15")
+    vi.useRealTimers()
+  })
+
+  it("falls back to the full date for older transactions", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 18, 9, 0))
+    expect(formatRelativeTransactionTime("2026-07-01T12:00:00.000Z")).toBe("1 Jul 2026")
+    vi.useRealTimers()
   })
 })
 

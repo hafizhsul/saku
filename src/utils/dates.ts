@@ -49,6 +49,36 @@ export function formatTransactionDate(value: string): string {
   return dateFormatter.format(new Date(value))
 }
 
+const timeFormatter = new Intl.DateTimeFormat("id-ID", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+})
+
+function formatTime(value: Date): string {
+  const parts = timeFormatter.formatToParts(value)
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00"
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00"
+  return `${hour}:${minute}`
+}
+
+export function formatRelativeTransactionTime(value: string): string {
+  const date = new Date(value)
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const diffDays = Math.round((startOfToday - startOfDay) / 86_400_000)
+  const time = formatTime(date)
+
+  if (diffDays === 0) {
+    return `Hari ini, ${time}`
+  }
+  if (diffDays === 1) {
+    return `Kemarin, ${time}`
+  }
+  return formatTransactionDate(value)
+}
+
 export function toTransactionDate(date: Date): string {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12).toISOString()
 }
