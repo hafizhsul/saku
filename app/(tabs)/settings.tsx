@@ -1,27 +1,27 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import Constants from "expo-constants"
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
-import { SegmentedControl } from "../../src/components/SegmentedControl"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
-import { fontFamilies, radii, shadows, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
-
-const themeDescriptions: Record<ThemePreference, string> = {
-  system: "Mengikuti pengaturan perangkatmu.",
-  light: "Selalu memakai palet terang.",
-  dark: "Selalu memakai palet gelap.",
-}
 
 const themeLabels: Record<ThemePreference, string> = {
   system: "Sistem",
   light: "Terang",
   dark: "Gelap",
+}
+
+const THEME_CYCLE: readonly ThemePreference[] = ["system", "light", "dark"]
+
+function nextTheme(current: ThemePreference): ThemePreference {
+  return THEME_CYCLE[(THEME_CYCLE.indexOf(current) + 1) % THEME_CYCLE.length]
 }
 
 // Tombol referensi desain yang belum punya fitur: tetap dirender agar mirip,
@@ -53,28 +53,12 @@ export default function SettingsScreen(): React.ReactElement {
     </View>
   )
 
-  if (isLoading) {
-    return (
-      <ScreenShell>
-        <Header styles={styles} />
-        <EmptyState description="Menyiapkan pengaturan." title="Memuat pengaturan..." />
-      </ScreenShell>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <ScreenShell>
-        <Header styles={styles} />
-        <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
-      </ScreenShell>
-    )
-  }
-
-  return (
-    <ScreenShell>
-      <Header styles={styles} />
-
+  const content = isLoading ? (
+    <EmptyState description="Menyiapkan pengaturan." title="Memuat pengaturan..." />
+  ) : loadError ? (
+    <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
+  ) : (
+    <>
       {/* Ringkasan profil */}
       <View accessibilityLabel="Profil pengguna" style={styles.profileRow}>
         <View style={styles.avatarWrap}>
@@ -125,21 +109,14 @@ export default function SettingsScreen(): React.ReactElement {
             trailing={<ToggleSwitch checked={notificationsOn} label="Notifikasi" onChange={setNotificationsOn} />}
           />
           <View style={styles.divider} />
-          <MenuRow icon="theme-light-dark" iconTone="muted" label="Tema" trailing={valueTrailing(themeLabels[settings.theme])} />
-          <View style={styles.divider} />
-          <View style={styles.themeControl}>
-            <SegmentedControl
-              accessibilityLabel="Preferensi tema"
-              onChange={(value) => {
-                if (isThemePreference(value)) {
-                  void setTheme(value)
-                }
-              }}
-              options={themePreferenceOptions}
-              selectedValue={settings.theme}
-            />
-            <Text style={styles.themeDescription}>{themeDescriptions[settings.theme]}</Text>
-          </View>
+          <MenuRow
+            accessibilityHint="Ketuk untuk mengganti tema"
+            icon="theme-light-dark"
+            iconTone="muted"
+            label="Tema"
+            trailing={valueTrailing(themeLabels[settings.theme])}
+            onPress={() => void setTheme(nextTheme(settings.theme))}
+          />
           <View style={styles.divider} />
           <MenuRow icon="translate" iconTone="muted" label="Bahasa" trailing={valueTrailing("Indonesia")} onPress={noop} />
         </View>
@@ -158,26 +135,42 @@ export default function SettingsScreen(): React.ReactElement {
       </View>
 
       <Text style={styles.version}>Saku App Versi {Constants.expoConfig?.version ?? "1.0.0"}</Text>
-    </ScreenShell>
+    </>
   )
-}
 
-function isThemePreference(value: string): value is ThemePreference {
-  return value === "system" || value === "light" || value === "dark"
+  return (
+    <View style={styles.page}>
+      <TopBar />
+      <ScreenShell>{content}</ScreenShell>
+    </View>
+  )
 }
 
 type SettingsStyles = ReturnType<typeof createStyles>
 
-function Header({ styles }: { readonly styles: SettingsStyles }): React.ReactElement {
+function TopBar(): React.ReactElement {
+  const colors = useThemeColors()
+  const styles = useMemo(() => createStyles(colors), [colors])
+  const insets = useSafeAreaInsets()
+  const { user } = useAuth()
+
   return (
-    <View style={styles.header}>
-      <Text style={styles.overline}>AKUN</Text>
-      <Text style={styles.title}>Profil</Text>
+    <View style={[styles.topBar, { paddingTop: insets.top }]}>
+      <View style={styles.topBarInner}>
+        <View style={styles.topBarBrand}>
+          <Image source={require("../../assets/images/icon.png")} style={styles.topBarLogo} />
+          <Text style={styles.topBarName}>Saku</Text>
+        </View>
+        <View accessibilityLabel="Avatar pengguna" style={styles.topBarAvatar}>
+          <Text style={styles.topBarAvatarText}>{initialsOf(user?.name ?? "")}</Text>
+        </View>
+      </View>
     </View>
   )
 }
 
 type MenuRowProps = {
+  readonly accessibilityHint?: string
   readonly icon: IconName
   readonly iconTone: "accent" | "muted" | "danger"
   readonly label: string
@@ -187,7 +180,7 @@ type MenuRowProps = {
   readonly onPress?: () => void
 }
 
-function MenuRow({ icon, iconTone, label, subtitle, danger, trailing, onPress }: MenuRowProps): React.ReactElement {
+function MenuRow({ accessibilityHint, icon, iconTone, label, subtitle, danger, trailing, onPress }: MenuRowProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const circleBackground =
@@ -196,6 +189,7 @@ function MenuRow({ icon, iconTone, label, subtitle, danger, trailing, onPress }:
 
   return (
     <Pressable
+      accessibilityHint={accessibilityHint}
       accessibilityLabel={label}
       accessibilityRole="button"
       disabled={onPress === undefined}
@@ -284,9 +278,6 @@ function createStyles(colors: ThemeColors) {
       marginLeft: 64,
       marginRight: spacing.lg,
     },
-    header: {
-      gap: spacing.unit,
-    },
     iconCircle: {
       alignItems: "center",
       borderRadius: 20,
@@ -294,13 +285,9 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       width: 40,
     },
-    overline: {
-      color: colors.textSecondary,
-      fontSize: typography.overline.fontSize,
-      fontFamily: typography.overline.fontFamily,
-      fontWeight: typography.overline.fontWeight,
-      letterSpacing: 1,
-      lineHeight: typography.overline.lineHeight,
+    page: {
+      backgroundColor: colors.canvas,
+      flex: 1,
     },
     pressed: {
       opacity: 0.72,
@@ -386,17 +373,6 @@ function createStyles(colors: ThemeColors) {
       marginLeft: spacing.sm,
       textTransform: "uppercase",
     },
-    themeControl: {
-      gap: spacing.compact,
-      padding: spacing.group,
-    },
-    themeDescription: {
-      color: colors.textSecondary,
-      fontFamily: typography.caption.fontFamily,
-      fontSize: typography.caption.fontSize,
-      fontWeight: typography.caption.fontWeight,
-      lineHeight: typography.caption.lineHeight,
-    },
     title: {
       color: colors.textPrimary,
       fontSize: typography.title.fontSize,
@@ -409,7 +385,6 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       borderRadius: 10,
       height: 20,
-      transform: [{ translateX: 0 }],
       width: 20,
     },
     toggleKnobOn: {
@@ -422,6 +397,50 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       paddingHorizontal: 2,
       width: 44,
+    },
+    topBar: {
+      backgroundColor: colors.surface,
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      zIndex: 10,
+    },
+    topBarAvatar: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderRadius: 16,
+      height: 32,
+      justifyContent: "center",
+      width: 32,
+    },
+    topBarAvatarText: {
+      color: colors.surface,
+      fontFamily: fontFamilies.bold,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    topBarBrand: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.compact,
+    },
+    topBarInner: {
+      alignItems: "center",
+      flexDirection: "row",
+      height: 64,
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.xl,
+    },
+    topBarLogo: {
+      height: 32,
+      resizeMode: "contain",
+      width: 32,
+    },
+    topBarName: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: 20,
+      fontWeight: "700",
+      lineHeight: 26,
     },
     version: {
       color: colors.textTertiary,
