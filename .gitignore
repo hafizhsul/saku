@@ -54,3 +54,6 @@ stitch-output/
 
 # Auth server local data
 server/users.json
+
+# Vision toolkit artifacts
+.dsh-vision-toolkit/
