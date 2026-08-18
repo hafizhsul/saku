@@ -1,0 +1,10 @@
+{
+  "name": "saku-auth-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node auth-server.js",
+    "test": "node --test"
+  }
+}

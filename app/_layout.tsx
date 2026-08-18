@@ -13,6 +13,8 @@ import * as SplashScreen from "expo-splash-screen"
 import "react-native-reanimated"
 import OnboardingScreen from "./onboarding"
 
+import { AuthGate } from "../src/components/auth/AuthGate"
+import { AuthProvider, useAuth } from "../src/features/auth/AuthProvider"
 import { BackupProvider } from "../src/features/backup/BackupProvider"
 import { BudgetsProvider } from "../src/features/budgets/BudgetsProvider"
 import { RecurringProvider } from "../src/features/recurring/RecurringProvider"
@@ -26,7 +28,6 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 })
 
 export default function RootLayout(): React.ReactElement | null {
-  const colors = useThemeColors()
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -54,6 +55,27 @@ export default function RootLayout(): React.ReactElement | null {
     }
   }, [fontsLoaded])
 
+  return (
+    <AuthProvider>
+      <RootContent
+        fontsLoaded={fontsLoaded}
+        onboardingDone={onboardingDone}
+        onOnboardingDone={() => setOnboardingDone(true)}
+      />
+    </AuthProvider>
+  )
+}
+
+type RootContentProps = {
+  readonly fontsLoaded: boolean
+  readonly onboardingDone: boolean | null
+  readonly onOnboardingDone: () => void
+}
+
+function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootContentProps): React.ReactElement | null {
+  const colors = useThemeColors()
+  const { state: authState } = useAuth()
+
   if (!fontsLoaded || onboardingDone === null) {
     return null
   }
@@ -63,7 +85,18 @@ export default function RootLayout(): React.ReactElement | null {
     // dinamis ternyata merender layar kosong di navigator ini.
     return (
       <SafeAreaProvider>
-        <OnboardingScreen onDone={() => setOnboardingDone(true)} />
+        <OnboardingScreen onDone={onOnboardingDone} />
+      </SafeAreaProvider>
+    )
+  }
+
+  if (authState !== "authenticated") {
+    // Gerbang auth inline (bukan route — deep link /login & /register
+    // sengaja tidak ada). Provider data di bawah TIDAK dipasang selama sesi
+    // belum terverifikasi, jadi tidak ada layar yang bisa diakses tanpa login.
+    return (
+      <SafeAreaProvider>
+        <AuthGate />
       </SafeAreaProvider>
     )
   }
