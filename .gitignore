@@ -51,3 +51,6 @@ test-results/
 
 # Stitch design references
 stitch-output/
+
+# Auth server local data
+server/users.json

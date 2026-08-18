@@ -118,7 +118,14 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       }
     })()
 
-    void boot()
+    // boot tidak mematikan isLoading sendiri (retryLoad yang membungkusnya);
+    // matikan di sini setelah boot awal selesai, apa pun hasilnya.
+    void (async () => {
+      await boot()
+      if (!cancelled) {
+        setIsLoading(false)
+      }
+    })()
 
     return () => {
       cancelled = true

@@ -1,0 +1,46 @@
+Auth server berjalan di http://localhost:4000
+=== SMOKE TEST: saku auth-server ===
+--- 1. POST /register (valid) -> expect 201 ---
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmOWIwNDhkOS0xY2NjLTQ3OWYtODFiYi1hZTg5ZWM3Y2QwMzEiLCJlbWFpbCI6ImJ1ZGlAdGVzdC5pZCIsImlhdCI6MTc4NzAzNTQ3NjM4NSwiZXhwIjoxNzg5NjI3NDc2Mzg1fQ.w1_rHcgKTB754HViyr7LrB-M95Exw1ezE_LSH9HUoK4","user":{"id":"f9b048d9-1ccc-479f-81bb-ae89ec7cd031","email":"budi@test.id","name":"Budi Santoso"}}
+201
+--- 2. POST /register (duplicate email) -> expect 409 ---
+{"error":"Email sudah terdaftar."}
+409
+--- 3. POST /register (short password) -> expect 400 ---
+{"error":"Kata sandi minimal 8 karakter."}
+400
+--- 4. POST /login (correct) -> expect 200 ---
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmOWIwNDhkOS0xY2NjLTQ3OWYtODFiYi1hZTg5ZWM3Y2QwMzEiLCJlbWFpbCI6ImJ1ZGlAdGVzdC5pZCIsImlhdCI6MTc4NzAzNTQ3Njc1OCwiZXhwIjoxNzg5NjI3NDc2NzU4fQ.xQHol1WocwNnh6Sp1rjCWD4MOl9XFP3rt5u-IP_LdCo","user":{"id":"f9b048d9-1ccc-479f-81bb-ae89ec7cd031","email":"budi@test.id","name":"Budi Santoso"}}
+200
+--- 5. POST /login (wrong password) -> expect 401 ---
+{"error":"Email atau kata sandi salah."}
+401
+--- 6. GET /me (valid token) -> expect 200 ---
+{"user":{"id":"f9b048d9-1ccc-479f-81bb-ae89ec7cd031","email":"budi@test.id","name":"Budi Santoso"}}
+200
+--- 7. GET /me (tampered token) -> expect 401 ---
+{"error":"Sesi berakhir. Silakan masuk kembali."}
+401
+--- 8. GET /me (no token) -> expect 401 ---
+{"error":"Sesi berakhir. Silakan masuk kembali."}
+401
+--- 9. POST /logout -> expect 204 ---
+204
+--- 10. OPTIONS preflight -> expect 204 + CORS ---
+204 Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+--- 11. GET /unknown -> expect 404 ---
+{"error":"Rute tidak ditemukan."}
+404
+--- 12. users.json state (salt/hash present, email normalized) ---
+[
+ {
+  "id": "f9b048d9-1ccc-479f-81bb-ae89ec7cd031",
+  "email": "budi@test.id",
+  "name": "Budi Santoso",
+  "saltLen": 32,
+  "hashLen": 128
+ }
+]
+=== server stopped ===

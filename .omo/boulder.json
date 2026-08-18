@@ -1,0 +1,187 @@
+{
+  "schema_version": 2,
+  "active_work_id": "auth-system-708ad51a",
+  "works": {
+    "auth-system-708ad51a": {
+      "work_id": "auth-system-708ad51a",
+      "active_plan": "/home/ideees/Projects/mobile/oh-my-bendahara/.omo/plans/auth-system.md",
+      "plan_name": "auth-system",
+      "status": "active",
+      "started_at": "2026-08-18T06:32:06.249Z",
+      "updated_at": "2026-08-18T08:17:28.282Z",
+      "session_ids": [
+        "opencode:ses_fef30a9efffexh6ViY7JL4rhk6"
+      ],
+      "session_origins": {
+        "opencode:ses_fef30a9efffexh6ViY7JL4rhk6": "direct"
+      },
+      "agent": "atlas",
+      "task_sessions": {
+        "todo:1": {
+          "task_key": "todo:1",
+          "task_label": "1",
+          "task_title": "Backend Node murni di `server/`",
+          "session_id": "opencode:ses_fec656d86ffePLpSWBrVOPiTNQ",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "started_at": "2026-08-18T06:34:06.235Z",
+          "status": "completed",
+          "updated_at": "2026-08-18T06:48:26.542Z",
+          "ended_at": "2026-08-18T06:48:26.542Z",
+          "elapsed_ms": 860307
+        },
+        "todo:4": {
+          "task_key": "todo:4",
+          "task_label": "4",
+          "task_title": "Auth client",
+          "session_id": "opencode:ses_fec5e3f72ffe2oZxbmgzDcB7dX",
+          "agent": "Sisyphus-Junior",
+          "started_at": "2026-08-18T06:51:56.078Z",
+          "status": "completed",
+          "updated_at": "2026-08-18T06:55:13.944Z",
+          "ended_at": "2026-08-18T06:55:13.944Z",
+          "elapsed_ms": 197866
+        },
+        "todo:5": {
+          "task_key": "todo:5",
+          "task_label": "5",
+          "task_title": "AuthProvider + LoginForm + RegisterForm",
+          "session_id": "opencode:ses_fec58640dffeUwfuV0BWnev8AX",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-08-18T07:05:08.871Z",
+          "started_at": "2026-08-18T07:04:30.264Z",
+          "status": "completed",
+          "ended_at": "2026-08-18T07:05:08.871Z",
+          "elapsed_ms": 38607
+        },
+        "todo:6": {
+          "task_key": "todo:6",
+          "task_label": "6",
+          "task_title": "Gate di `_layout.tsx`",
+          "session_id": "opencode:ses_fec4f5a68ffeqZ3I3twq9TVQXC",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-08-18T07:40:54.039Z",
+          "started_at": "2026-08-18T07:40:16.437Z",
+          "status": "completed",
+          "ended_at": "2026-08-18T07:40:54.039Z",
+          "elapsed_ms": 37602
+        },
+        "todo:7": {
+          "task_key": "todo:7",
+          "task_label": "7",
+          "task_title": "Update tab Profil (nama user + logout)",
+          "session_id": "opencode:ses_fec2e9fa0ffeIzNXoinstLQGeJ",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-08-18T07:54:33.654Z",
+          "started_at": "2026-08-18T07:47:03.940Z",
+          "status": "completed",
+          "ended_at": "2026-08-18T07:54:33.654Z",
+          "elapsed_ms": 449714
+        },
+        "final-wave:f1": {
+          "task_key": "final-wave:f1",
+          "task_label": "F1",
+          "task_title": "Plan compliance audit — setiap todo sudah eksekusi sesuai acceptance criteria? Evidence `.omo/evidence/auth-system/compliance.md`",
+          "session_id": "opencode:ses_fec21d6f4ffeHcu6sdVuMvWQBu",
+          "agent": "Sisyphus-Junior",
+          "category": "unspecified-high",
+          "updated_at": "2026-08-18T08:17:28.282Z",
+          "started_at": "2026-08-18T08:17:28.282Z",
+          "status": "running"
+        }
+      }
+    }
+  },
+  "active_plan": "/home/ideees/Projects/mobile/oh-my-bendahara/.omo/plans/auth-system.md",
+  "started_at": "2026-08-18T06:32:06.249Z",
+  "status": "active",
+  "updated_at": "2026-08-18T08:17:28.282Z",
+  "session_ids": [
+    "opencode:ses_fef30a9efffexh6ViY7JL4rhk6"
+  ],
+  "session_origins": {
+    "opencode:ses_fef30a9efffexh6ViY7JL4rhk6": "direct"
+  },
+  "plan_name": "auth-system",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Backend Node murni di `server/`",
+      "session_id": "opencode:ses_fec656d86ffePLpSWBrVOPiTNQ",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "started_at": "2026-08-18T06:34:06.235Z",
+      "status": "completed",
+      "updated_at": "2026-08-18T06:48:26.542Z",
+      "ended_at": "2026-08-18T06:48:26.542Z",
+      "elapsed_ms": 860307
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Auth client",
+      "session_id": "opencode:ses_fec5e3f72ffe2oZxbmgzDcB7dX",
+      "agent": "Sisyphus-Junior",
+      "started_at": "2026-08-18T06:51:56.078Z",
+      "status": "completed",
+      "updated_at": "2026-08-18T06:55:13.944Z",
+      "ended_at": "2026-08-18T06:55:13.944Z",
+      "elapsed_ms": 197866
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "AuthProvider + LoginForm + RegisterForm",
+      "session_id": "opencode:ses_fec58640dffeUwfuV0BWnev8AX",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-08-18T07:05:08.871Z",
+      "started_at": "2026-08-18T07:04:30.264Z",
+      "status": "completed",
+      "ended_at": "2026-08-18T07:05:08.871Z",
+      "elapsed_ms": 38607
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Gate di `_layout.tsx`",
+      "session_id": "opencode:ses_fec4f5a68ffeqZ3I3twq9TVQXC",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-08-18T07:40:54.039Z",
+      "started_at": "2026-08-18T07:40:16.437Z",
+      "status": "completed",
+      "ended_at": "2026-08-18T07:40:54.039Z",
+      "elapsed_ms": 37602
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Update tab Profil (nama user + logout)",
+      "session_id": "opencode:ses_fec2e9fa0ffeIzNXoinstLQGeJ",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-08-18T07:54:33.654Z",
+      "started_at": "2026-08-18T07:47:03.940Z",
+      "status": "completed",
+      "ended_at": "2026-08-18T07:54:33.654Z",
+      "elapsed_ms": 449714
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "Plan compliance audit — setiap todo sudah eksekusi sesuai acceptance criteria? Evidence `.omo/evidence/auth-system/compliance.md`",
+      "session_id": "opencode:ses_fec21d6f4ffeHcu6sdVuMvWQBu",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-08-18T08:17:28.282Z",
+      "started_at": "2026-08-18T08:17:28.282Z",
+      "status": "running"
+    }
+  },
+  "agent": "atlas"
+}
