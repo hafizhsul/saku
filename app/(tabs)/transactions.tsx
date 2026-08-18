@@ -1,31 +1,28 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
 import { useMemo, useState } from "react"
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native"
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
-import { MonthNavigator } from "../../src/components/MonthNavigator"
-import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
-import { SegmentedControl, type SegmentOption } from "../../src/components/SegmentedControl"
-import { TransactionRow } from "../../src/components/TransactionRow"
+import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import {
   selectRecentTransactions,
   selectTransactionsByQuery,
   selectTransactionsByType,
-  selectTransactionsInMonth,
 } from "../../src/features/transactions/selectors"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
-import type { TransactionType } from "../../src/features/transactions/types"
-import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
-import { shiftMonth, toMonthKey } from "../../src/utils/dates"
+import type { Transaction, TransactionType } from "../../src/features/transactions/types"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { formatCurrency } from "../../src/utils/currency"
+import { formatDayGroupLabel, formatTimeOfDay } from "../../src/utils/dates"
 
 type TransactionFilter = "all" | TransactionType
 
-const filterOptions: readonly SegmentOption[] = [
+const filterOptions: readonly { readonly value: TransactionFilter; readonly label: string }[] = [
   { value: "all", label: "Semua" },
-  { value: "income", label: "Masuk" },
-  { value: "expense", label: "Keluar" },
+  { value: "income", label: "Pemasukan" },
+  { value: "expense", label: "Pengeluaran" },
 ]
 
 export default function TransactionsScreen(): React.ReactElement {
@@ -33,51 +30,30 @@ export default function TransactionsScreen(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [filter, setFilter] = useState<TransactionFilter>("all")
-  const [monthFilter, setMonthFilter] = useState<string | null>(null)
   const [query, setQuery] = useState("")
-  const hasActiveFilters = filter !== "all" || monthFilter !== null || query.trim().length > 0
+  const hasActiveFilters = filter !== "all" || query.trim().length > 0
 
   const filteredTransactions = useMemo(() => {
     let selected = transactions
     if (filter !== "all") {
       selected = selectTransactionsByType(selected, filter)
     }
-    if (monthFilter !== null) {
-      selected = selectTransactionsInMonth(selected, monthFilter)
-    }
     selected = selectTransactionsByQuery(selected, query)
     return selectRecentTransactions(selected, selected.length)
-  }, [filter, monthFilter, query, transactions])
+  }, [filter, query, transactions])
 
-  function stepMonth(delta: number): void {
-    setMonthFilter((current) => shiftMonth(current ?? toMonthKey(new Date()), delta))
-  }
+  const groups = useMemo(() => groupByDay(filteredTransactions), [filteredTransactions])
 
   return (
     <ScreenShell>
-      <View style={styles.header}>
-        <Text style={styles.overline}>RIWAYAT</Text>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Semua transaksi</Text>
-          <Pressable
-            accessibilityLabel="Kelola data transaksi"
-            accessibilityRole="button"
-            hitSlop={10}
-            onPress={() => router.push("/data")}
-            style={({ pressed, hovered }) => [styles.dataButton, hovered && styles.iconHovered, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons color={colors.textSecondary} name="database-export-outline" size={20} />
-          </Pressable>
-        </View>
-        <Text style={styles.subtitle}>Cari, saring, dan telusuri catatan pemasukan maupun pengeluaranmu.</Text>
-      </View>
+      <Header colors={colors} styles={styles} />
       <View style={styles.searchWell}>
-        <MaterialCommunityIcons color={colors.textTertiary} name="magnify" size={20} />
+        <MaterialCommunityIcons color={colors.textTertiary} name="magnify" size={22} />
         <TextInput
           accessibilityLabel="Cari transaksi"
           autoCorrect={false}
           onChangeText={setQuery}
-          placeholder="Cari catatan atau kategori"
+          placeholder="Cari transaksi..."
           placeholderTextColor={colors.textTertiary}
           style={styles.searchInput}
           value={query}
@@ -94,23 +70,22 @@ export default function TransactionsScreen(): React.ReactElement {
           </Pressable>
         ) : null}
       </View>
-      <SegmentedControl
-        accessibilityLabel="Filter daftar transaksi"
-        onChange={(value) => {
-          if (isTransactionFilter(value)) {
-            setFilter(value)
-          }
-        }}
-        options={filterOptions}
-        selectedValue={filter}
-      />
-      <MonthNavigator
-        canGoNext={monthFilter === null || monthFilter !== toMonthKey(new Date())}
-        month={monthFilter}
-        onClear={() => setMonthFilter(null)}
-        onNext={() => stepMonth(1)}
-        onPrev={() => stepMonth(-1)}
-      />
+      <ScrollView contentContainerStyle={styles.chipsRow} horizontal showsHorizontalScrollIndicator={false}>
+        {filterOptions.map((option) => {
+          const active = filter === option.value
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              key={option.value}
+              onPress={() => setFilter(option.value)}
+              style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.pressed]}
+            >
+              <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{option.label}</Text>
+            </Pressable>
+          )
+        })}
+      </ScrollView>
       {isLoading ? (
         <EmptyState description="Menyiapkan daftar transaksi." title="Memuat catatan..." />
       ) : loadError ? (
@@ -128,7 +103,6 @@ export default function TransactionsScreen(): React.ReactElement {
             hasActiveFilters
               ? () => {
                   setFilter("all")
-                  setMonthFilter(null)
                   setQuery("")
                 }
               : undefined
@@ -136,63 +110,253 @@ export default function TransactionsScreen(): React.ReactElement {
           title={hasActiveFilters ? "Tidak ada hasil" : "Belum ada transaksi"}
         />
       ) : (
-        <View style={styles.listCard}>
-          {filteredTransactions.map((transaction, index) => (
-            <TransactionRow
-              key={transaction.id}
-              last={index === filteredTransactions.length - 1}
-              onPress={() => router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } })}
-              transaction={transaction}
-            />
+        <View style={styles.groups}>
+          {groups.map((group) => (
+            <View key={group.day} style={styles.group}>
+              <Text style={styles.groupLabel}>{formatDayGroupLabel(group.day).toUpperCase()}</Text>
+              <View style={styles.groupList}>
+                {group.transactions.map((transaction) => (
+                  <TransactionCard
+                    colors={colors}
+                    key={transaction.id}
+                    onPress={() => router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } })}
+                    styles={styles}
+                    transaction={transaction}
+                  />
+                ))}
+              </View>
+            </View>
           ))}
         </View>
       )}
-      <PrimaryButton icon="plus" label="Tambah transaksi" onPress={() => router.push("/add-transaction")} />
     </ScreenShell>
   )
 }
 
-function isTransactionFilter(value: string): value is TransactionFilter {
-  return value === "all" || value === "income" || value === "expense"
+type DayGroup = {
+  readonly day: string
+  readonly transactions: readonly Transaction[]
+}
+
+function groupByDay(transactions: readonly Transaction[]): readonly DayGroup[] {
+  const groups = new Map<string, Transaction[]>()
+  for (const transaction of transactions) {
+    const day = transaction.date.slice(0, 10)
+    const list = groups.get(day) ?? []
+    list.push(transaction)
+    groups.set(day, list)
+  }
+  return [...groups.entries()]
+    .sort(([left], [right]) => right.localeCompare(left))
+    .map(([day, list]) => ({ day, transactions: list }))
+}
+
+type TransactionScreenStyles = ReturnType<typeof createStyles>
+
+function Header({ colors, styles }: { readonly colors: ThemeColors; readonly styles: TransactionScreenStyles }): React.ReactElement {
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={require("../../assets/images/screen.png")}
+          style={styles.brandIcon}
+        />
+        <Text style={styles.headerTitle}>Riwayat</Text>
+      </View>
+      <Pressable
+        accessibilityLabel="Profil"
+        accessibilityRole="button"
+        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
+      >
+        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
+      </Pressable>
+    </View>
+  )
+}
+
+type TransactionCardProps = {
+  readonly colors: ThemeColors
+  readonly onPress: () => void
+  readonly styles: TransactionScreenStyles
+  readonly transaction: Transaction
+}
+
+function TransactionCard({ colors, onPress, styles, transaction }: TransactionCardProps): React.ReactElement {
+  const isIncome = transaction.type === "income"
+  const amountColor = isIncome ? colors.income : colors.expense
+  const iconBackground = isIncome ? colors.incomeSurface : colors.expenseSurface
+  const iconColor = isIncome ? colors.income : colors.expense
+  const sign = isIncome ? "+" : "-"
+
+  return (
+    <Pressable
+      accessibilityLabel={`${transaction.note ?? transaction.category}, ${isIncome ? "Pemasukan" : "Pengeluaran"}, ${formatCurrency(transaction.amount)}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed, hovered }) => [styles.card, hovered && styles.cardHovered, pressed && styles.cardPressed]}
+    >
+      <View style={[styles.cardIcon, { backgroundColor: iconBackground }]}>
+        <MaterialCommunityIcons color={iconColor} name={getCategoryIconName(transaction.category)} size={20} />
+      </View>
+      <View style={styles.cardInfo}>
+        <Text numberOfLines={1} style={styles.cardTitle}>{transaction.note ?? transaction.category}</Text>
+        <Text style={styles.cardTime}>{formatTimeOfDay(transaction.date)}</Text>
+      </View>
+      <Text style={[styles.cardAmount, { color: amountColor }]}>
+        {sign}{formatCurrency(transaction.amount)}
+      </Text>
+    </Pressable>
+  )
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    brandIcon: {
+      borderRadius: radii.sm,
+      height: 36,
+      width: 36,
+    },
+    card: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: radii.lg,
+      flexDirection: "row",
+      gap: spacing.row,
+      padding: spacing.group,
+      ...{
+        shadowColor: colors.accent,
+        shadowOffset: { height: 4, width: 0 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+      },
+    },
+    cardAmount: {
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.bodyMedium.fontSize,
+      fontVariant: ["tabular-nums"],
+      fontWeight: "600",
+      lineHeight: typography.bodyMedium.lineHeight,
+      maxWidth: "40%",
+      textAlign: "right",
+    },
+    cardHovered: {
+      backgroundColor: colors.surfaceMuted,
+    },
+    cardIcon: {
+      alignItems: "center",
+      borderRadius: radii.pill,
+      height: 40,
+      justifyContent: "center",
+      width: 40,
+    },
+    cardInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    cardPressed: {
+      opacity: 0.72,
+    },
+    cardTime: {
+      color: colors.textTertiary,
+      fontSize: typography.caption.fontSize,
+      fontFamily: typography.caption.fontFamily,
+      fontWeight: typography.caption.fontWeight,
+      lineHeight: typography.caption.lineHeight,
+    },
+    cardTitle: {
+      color: colors.textPrimary,
+      fontSize: typography.body.fontSize,
+      fontFamily: fontFamilies.semibold,
+      fontWeight: "600",
+      lineHeight: typography.body.lineHeight,
+    },
+    chip: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.pill,
+      height: 40,
+      justifyContent: "center",
+      paddingHorizontal: spacing.group,
+    },
+    chipActive: {
+      backgroundColor: colors.accent,
+      ...{
+        shadowColor: colors.accent,
+        shadowOffset: { height: 10, width: 0 },
+        shadowOpacity: 0.08,
+        shadowRadius: 30,
+      },
+    },
+    chipLabel: {
+      color: colors.textSecondary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.bodyMedium.fontSize,
+      fontWeight: "600",
+    },
+    chipLabelActive: {
+      color: colors.surface,
+    },
+    chipsRow: {
+      gap: spacing.sm,
+      paddingRight: spacing.xl,
+    },
     clearButton: {
       alignItems: "center",
       height: 36,
       justifyContent: "center",
       width: 32,
     },
-    dataButton: {
+    group: {
+      gap: spacing.sm,
+    },
+    groupLabel: {
+      color: colors.textTertiary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "600",
+      letterSpacing: 1,
+      lineHeight: typography.caption.lineHeight,
+    },
+    groupList: {
+      gap: spacing.xs,
+    },
+    groups: {
+      gap: spacing.lg,
+    },
+    header: {
       alignItems: "center",
-      borderColor: colors.border,
-      borderRadius: radii.sm,
-      borderWidth: 1,
-      height: 44,
-      justifyContent: "center",
-      width: 44,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingBottom: spacing.compact,
+    },
+    headerLeft: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.row,
+    },
+    headerTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "700",
+      lineHeight: typography.heading.lineHeight,
     },
     iconHovered: {
       backgroundColor: colors.surfaceMuted,
     },
-    header: {
-      gap: spacing.compact,
-      paddingBottom: spacing.sm,
-    },
-    listCard: {
-      gap: 0,
-    },
-    overline: {
-      color: colors.textSecondary,
-      fontSize: typography.overline.fontSize,
-      fontFamily: typography.overline.fontFamily,
-      fontWeight: typography.overline.fontWeight,
-      letterSpacing: 1,
-      lineHeight: typography.overline.lineHeight,
-    },
     pressed: {
       opacity: 0.72,
+    },
+    profileButton: {
+      borderRadius: radii.md,
+      height: 40,
+      justifyContent: "center",
+      width: 40,
+    },
+    profileButtonHovered: {
+      backgroundColor: colors.surfaceMuted,
     },
     searchInput: {
       color: colors.textPrimary,
@@ -200,36 +364,22 @@ function createStyles(colors: ThemeColors) {
       fontSize: typography.body.fontSize,
       fontFamily: typography.body.fontFamily,
       lineHeight: typography.body.lineHeight,
-      minHeight: 44,
+      minHeight: 52,
       paddingHorizontal: spacing.sm,
     },
     searchWell: {
       alignItems: "center",
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.md,
-      borderWidth: 1,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.lg,
       flexDirection: "row",
-      paddingHorizontal: spacing.md,
-    },
-    subtitle: {
-      color: colors.textSecondary,
-      fontSize: typography.body.fontSize,
-      fontFamily: typography.body.fontFamily,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
-    },
-    title: {
-      color: colors.textPrimary,
-      fontSize: typography.title.fontSize,
-      fontFamily: typography.title.fontFamily,
-      fontWeight: typography.title.fontWeight,
-      lineHeight: typography.title.lineHeight,
-    },
-    titleRow: {
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "space-between",
+      minHeight: 52,
+      paddingHorizontal: spacing.group,
+      ...{
+        shadowColor: colors.accent,
+        shadowOffset: { height: 4, width: 0 },
+        shadowOpacity: 0.05,
+        shadowRadius: 20,
+      },
     },
   })
 }

@@ -12,8 +12,7 @@ type TabBarPropsArg = Parameters<TabBarProps>[0]
 type TabIconName =
   | "home-variant"
   | "home-variant-outline"
-  | "receipt-text"
-  | "receipt-text-outline"
+  | "history"
   | "account"
   | "account-outline"
   | "chart-box"
@@ -27,7 +26,7 @@ type TabSlot = {
 
 const tabSlots: readonly TabSlot[] = [
   { route: "index", label: "Beranda", icon: "home-variant-outline" },
-  { route: "transactions", label: "Riwayat", icon: "receipt-text-outline" },
+  { route: "transactions", label: "Riwayat", icon: "history" },
   { route: "analisis", label: "Analisis", icon: "chart-box-outline" },
   { route: "settings", label: "Profil", icon: "account-outline" },
 ]

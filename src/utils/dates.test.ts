@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { formatAmountInput, formatMonthLabel, formatRelativeTransactionTime, formatShortMonthLabel, formatTransactionDate, parseAmountInput, shiftMonth, toMonthKey } from "./dates"
+import { formatAmountInput, formatDayGroupLabel, formatMonthLabel, formatRelativeTransactionTime, formatShortMonthLabel, formatTimeOfDay, formatTransactionDate, parseAmountInput, shiftMonth, toMonthKey } from "./dates"
 
 describe("month shifting", () => {
   it("shifts forward and backward within a year", () => {
@@ -42,6 +42,21 @@ describe("relative transaction time", () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 7, 18, 9, 0))
     expect(formatRelativeTransactionTime("2026-07-01T12:00:00.000Z")).toBe("1 Jul 2026")
+    vi.useRealTimers()
+  })
+})
+
+describe("day groups and time of day", () => {
+  it("formats time with a colon separator", () => {
+    expect(formatTimeOfDay("2026-08-18T12:30:00.000Z")).toBe("19:30")
+  })
+
+  it("labels today and yesterday groups, older dates as full date", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 18, 9, 0))
+    expect(formatDayGroupLabel("2026-08-18")).toBe("Hari ini")
+    expect(formatDayGroupLabel("2026-08-17")).toBe("Kemarin")
+    expect(formatDayGroupLabel("2026-08-12")).toBe("12 Agu 2026")
     vi.useRealTimers()
   })
 })

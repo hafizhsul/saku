@@ -449,9 +449,9 @@ function createStyles(colors: ThemeColors) {
       color: colors.surface,
       fontVariant: ["tabular-nums"],
       fontFamily: fontFamilies.bold,
-      fontSize: 32,
+      fontSize: 24,
       fontWeight: "800",
-      lineHeight: 40,
+      lineHeight: 32,
     },
     totalBudgetCard: {
       backgroundColor: colors.accent,
@@ -502,6 +502,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.xs,
     },
     visibilityButton: {
+      alignItems: "center",
       borderRadius: radii.md,
       height: 36,
       justifyContent: "center",
