@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import Constants from "expo-constants"
-import { useMemo, type ComponentProps } from "react"
+import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
@@ -24,6 +24,10 @@ const themeLabels: Record<ThemePreference, string> = {
   dark: "Gelap",
 }
 
+// Tombol referensi desain yang belum punya fitur: tetap dirender agar mirip,
+// tapi onPress-nya no-op. ponytail: ganti dengan navigasi/aksi saat fiturnya ada.
+function noop(): void {}
+
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) {
@@ -39,6 +43,15 @@ export default function SettingsScreen(): React.ReactElement {
   const { user, logout } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const [notificationsOn, setNotificationsOn] = useState(true)
+
+  const chevron = <MaterialCommunityIcons color={colors.textTertiary} name="chevron-right" size={20} />
+  const valueTrailing = (value: string): ReactNode => (
+    <View style={styles.rowTrailing}>
+      <Text style={styles.rowValue}>{value}</Text>
+      {chevron}
+    </View>
+  )
 
   if (isLoading) {
     return (
@@ -64,8 +77,13 @@ export default function SettingsScreen(): React.ReactElement {
 
       {/* Ringkasan profil */}
       <View accessibilityLabel="Profil pengguna" style={styles.profileRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initialsOf(user?.name ?? "")}</Text>
+        <View style={styles.avatarWrap}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initialsOf(user?.name ?? "")}</Text>
+          </View>
+          <View accessibilityLabel="Ubah foto profil" style={styles.avatarEdit}>
+            <MaterialCommunityIcons color={colors.surface} name="pencil" size={14} />
+          </View>
         </View>
         <View style={styles.profileText}>
           <Text numberOfLines={1} style={styles.profileName}>
@@ -77,20 +95,37 @@ export default function SettingsScreen(): React.ReactElement {
         </View>
       </View>
 
+      {/* Akun */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Akun</Text>
+        <View style={styles.card}>
+          <MenuRow icon="account-outline" iconTone="accent" label="Edit Profil" onPress={noop} />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="shield-lock-outline"
+            iconTone="accent"
+            label="Keamanan & Kata Sandi"
+            subtitle="Autentikasi 2 Langkah aktif"
+            trailing={chevron}
+            onPress={noop}
+          />
+          <View style={styles.divider} />
+          <MenuRow icon="bank-outline" iconTone="accent" label="Hubungkan Bank/E-wallet" trailing={chevron} onPress={noop} />
+        </View>
+      </View>
+
       {/* Aplikasi */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Aplikasi</Text>
         <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={[styles.iconCircle, styles.iconCircleMuted]}>
-              <MaterialCommunityIcons color={colors.textPrimary} name="theme-light-dark" size={20} />
-            </View>
-            <Text style={styles.rowLabel}>Tema</Text>
-            <View style={styles.rowTrailing}>
-              <Text style={styles.rowValue}>{themeLabels[settings.theme]}</Text>
-              <MaterialCommunityIcons color={colors.textTertiary} name="chevron-right" size={20} />
-            </View>
-          </View>
+          <MenuRow
+            icon="bell-outline"
+            iconTone="muted"
+            label="Notifikasi"
+            trailing={<ToggleSwitch checked={notificationsOn} label="Notifikasi" onChange={setNotificationsOn} />}
+          />
+          <View style={styles.divider} />
+          <MenuRow icon="theme-light-dark" iconTone="muted" label="Tema" trailing={valueTrailing(themeLabels[settings.theme])} />
           <View style={styles.divider} />
           <View style={styles.themeControl}>
             <SegmentedControl
@@ -105,6 +140,8 @@ export default function SettingsScreen(): React.ReactElement {
             />
             <Text style={styles.themeDescription}>{themeDescriptions[settings.theme]}</Text>
           </View>
+          <View style={styles.divider} />
+          <MenuRow icon="translate" iconTone="muted" label="Bahasa" trailing={valueTrailing("Indonesia")} onPress={noop} />
         </View>
       </View>
 
@@ -112,17 +149,11 @@ export default function SettingsScreen(): React.ReactElement {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Lainnya</Text>
         <View style={styles.card}>
-          <Pressable
-            accessibilityLabel="Keluar dari aplikasi"
-            accessibilityRole="button"
-            onPress={() => void logout()}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-          >
-            <View style={[styles.iconCircle, styles.iconCircleDanger]}>
-              <MaterialCommunityIcons color={colors.error} name="logout" size={20} />
-            </View>
-            <Text style={styles.rowLabelDanger}>Keluar</Text>
-          </Pressable>
+          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan" trailing={chevron} onPress={noop} />
+          <View style={styles.divider} />
+          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" trailing={chevron} onPress={noop} />
+          <View style={styles.divider} />
+          <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => void logout()} />
         </View>
       </View>
 
@@ -146,6 +177,68 @@ function Header({ styles }: { readonly styles: SettingsStyles }): React.ReactEle
   )
 }
 
+type MenuRowProps = {
+  readonly icon: IconName
+  readonly iconTone: "accent" | "muted" | "danger"
+  readonly label: string
+  readonly subtitle?: string
+  readonly danger?: boolean
+  readonly trailing?: ReactNode
+  readonly onPress?: () => void
+}
+
+function MenuRow({ icon, iconTone, label, subtitle, danger, trailing, onPress }: MenuRowProps): React.ReactElement {
+  const colors = useThemeColors()
+  const styles = useMemo(() => createStyles(colors), [colors])
+  const circleBackground =
+    iconTone === "accent" ? colors.accentSurface : iconTone === "danger" ? colors.expenseSurface : colors.surfaceMuted
+  const iconColor = danger ? colors.error : colors.textPrimary
+
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      disabled={onPress === undefined}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+    >
+      <View style={[styles.iconCircle, { backgroundColor: circleBackground }]}>
+        <MaterialCommunityIcons color={iconColor} name={icon} size={20} />
+      </View>
+      <View style={styles.rowText}>
+        <Text style={[styles.rowLabel, danger && styles.rowLabelDanger]}>{label}</Text>
+        {subtitle !== undefined ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
+      </View>
+      {trailing}
+    </Pressable>
+  )
+}
+
+type ToggleSwitchProps = {
+  readonly checked: boolean
+  readonly label: string
+  readonly onChange: (next: boolean) => void
+}
+
+function ToggleSwitch({ checked, label, onChange }: ToggleSwitchProps): React.ReactElement {
+  const colors = useThemeColors()
+  const styles = useMemo(() => createStyles(colors), [colors])
+
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="switch"
+      accessibilityState={{ checked }}
+      onPress={() => onChange(!checked)}
+      style={({ pressed }) => pressed && styles.pressed}
+    >
+      <View style={[styles.toggleTrack, checked && { backgroundColor: colors.accent }]}>
+        <View style={[styles.toggleKnob, checked && styles.toggleKnobOn]} />
+      </View>
+    </Pressable>
+  )
+}
+
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     avatar: {
@@ -156,12 +249,28 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       width: 80,
     },
+    avatarEdit: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 2,
+      bottom: 0,
+      height: 32,
+      justifyContent: "center",
+      position: "absolute",
+      right: 0,
+      width: 32,
+    },
     avatarText: {
       color: colors.surface,
       fontFamily: fontFamilies.bold,
       fontSize: 26,
       fontWeight: "700",
       letterSpacing: 0.5,
+    },
+    avatarWrap: {
+      position: "relative",
     },
     card: {
       backgroundColor: colors.surface,
@@ -184,12 +293,6 @@ function createStyles(colors: ThemeColors) {
       height: 40,
       justifyContent: "center",
       width: 40,
-    },
-    iconCircleDanger: {
-      backgroundColor: colors.expenseSurface,
-    },
-    iconCircleMuted: {
-      backgroundColor: colors.surfaceMuted,
     },
     overline: {
       color: colors.textSecondary,
@@ -236,7 +339,6 @@ function createStyles(colors: ThemeColors) {
     },
     rowLabel: {
       color: colors.textPrimary,
-      flex: 1,
       fontFamily: typography.body.fontFamily,
       fontSize: typography.body.fontSize,
       fontWeight: typography.body.fontWeight,
@@ -244,11 +346,20 @@ function createStyles(colors: ThemeColors) {
     },
     rowLabelDanger: {
       color: colors.error,
-      flex: 1,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.body.fontSize,
       fontWeight: "600",
-      lineHeight: typography.body.lineHeight,
+    },
+    rowSubtitle: {
+      color: colors.textSecondary,
+      fontFamily: typography.caption.fontFamily,
+      fontSize: 12,
+      fontWeight: typography.caption.fontWeight,
+      lineHeight: 16,
+    },
+    rowText: {
+      flex: 1,
+      gap: spacing.unit,
+      minWidth: 0,
     },
     rowTrailing: {
       alignItems: "center",
@@ -293,6 +404,24 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.title.fontWeight,
       lineHeight: typography.title.lineHeight,
       marginTop: spacing.xs,
+    },
+    toggleKnob: {
+      backgroundColor: colors.surface,
+      borderRadius: 10,
+      height: 20,
+      transform: [{ translateX: 0 }],
+      width: 20,
+    },
+    toggleKnobOn: {
+      transform: [{ translateX: 20 }],
+    },
+    toggleTrack: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: 12,
+      height: 24,
+      justifyContent: "center",
+      paddingHorizontal: 2,
+      width: 44,
     },
     version: {
       color: colors.textTertiary,
