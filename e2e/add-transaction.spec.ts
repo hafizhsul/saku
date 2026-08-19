@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-import { formatPaperDate, openHome } from "./helpers"
+import { formatWebDate, openHome } from "./helpers"
 
 test("form transaksi memvalidasi nominal kosong", async ({ page }) => {
   await openHome(page)
@@ -17,8 +17,8 @@ test("transaksi pengeluaran lengkap tersimpan dan tampil di Beranda", async ({ p
 
   await page.getByRole("button", { name: "Tambah transaksi" }).click()
   await page.getByLabel("Nominal transaksi", { exact: true }).fill("25000")
-  await page.getByRole("button", { name: "Transportasi" }).click()
-  await page.getByLabel("Tanggal transaksi", { exact: true }).fill(formatPaperDate(new Date()))
+  await page.getByRole("button", { name: "Transport" }).click()
+  await page.getByLabel("Tanggal transaksi", { exact: true }).fill(formatWebDate(new Date()))
   await page.getByLabel("Catatan transaksi", { exact: true }).fill("Ojek ke kantor")
   await page.getByRole("button", { name: "Simpan transaksi" }).click()
 

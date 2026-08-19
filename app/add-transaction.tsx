@@ -1,8 +1,8 @@
+import DateTimePicker from "@react-native-community/datetimepicker"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { useMemo, useState } from "react"
+import { createElement, useMemo, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
-import { DatePickerInput, registerTranslation, type TranslationsType, id as idLocale } from "react-native-paper-dates"
 
 import { EmptyState } from "../src/components/EmptyState"
 import { ScreenShell } from "../src/components/ScreenShell"
@@ -11,20 +11,30 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
-import { formatAmountInput, parseAmountInput, toTransactionDate } from "../src/utils/dates"
+import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
-// Aktifkan terjemahan Indonesia untuk kalender/input tanggal paper.
-registerTranslation("id", idLocale as TranslationsType)
-
-// Warna hero mengikuti token primary M3 pada referensi desain (selalu emerald
-// gelap di semua mode). ponytail: pindah ke token tema kalau hero perlu ikut
-// palet dark mode.
+// Warna mengikuti referensi desain Stitch (proyek "Saku Keuangan Digital").
+// Tema gelap memakai surfaceMuted agar tetap kontras; warna lain sama di
+// kedua mode. ponytail: pindah ke token tema kalau palet biru pucat ini
+// diadopsi ke semua layar.
 const HERO = {
   background: "#003527",
   text: "#FFFFFF",
   labelText: "rgba(255, 255, 255, 0.8)",
   placeholder: "rgba(255, 255, 255, 0.3)",
 } as const
+const HERO_INCOME_BG = "#004F34" // shade hero saat jenis Pemasukan terpilih
+const SURFACE_TINT = "#E5EEFF" // field & lingkaran kategori yang tidak terpilih
+const SURFACE_TINT_STRONG = "#D3E4FE" // latar toggle Pengeluaran/Pemasukan
+const WELL_SELECTED_BG = "#004F34" // lingkaran kategori terpilih
+const WELL_SELECTED_ICON = "#31C98F" // ikon pada lingkaran kategori terpilih
+
+function formatNativeDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 // Bagi opsi menjadi baris berukuran `size` (mis. 4 kolom) supaya baris terakhir
 // tetap rata kiri dan kolom sejajar — flex-wrap + lebar % tidak bisa diandalkan.
@@ -36,17 +46,117 @@ function chunkRows<T>(items: readonly T[], size: number): T[][] {
   return rows
 }
 
+function parseNativeDate(value: string): Date | null {
+  const parts = value.split("-").map(Number)
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
+    return null
+  }
+
+  const [year, month, day] = parts
+  if (year === undefined || month === undefined || day === undefined || year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null
+  }
+
+  const date = new Date(year, month - 1, day)
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
+}
+
+function HeroPattern(): React.ReactElement | null {
+  if (Platform.OS !== "web") {
+    return null
+  }
+
+  const svgStyle = {
+    color: "white", // currentColor pada path grid mengikuti warna ini
+    height: "100%",
+    width: "100%",
+  } as const
+  const wrapStyle = {
+    height: "100%",
+    opacity: 0.1, // pola sangat halus, sesuai referensi
+    position: "absolute",
+    pointerEvents: "none",
+    width: "100%",
+  } as const
+
+  // Grid 40px halus di hero (referensi Stitch) — SVG inline hanya di web.
+  // ponytail: pakai react-native-svg kalau pola dibutuhkan di perangkat.
+  return createElement(
+    "div",
+    { style: wrapStyle },
+    createElement(
+      "svg",
+      { height: "100%", style: svgStyle, width: "100%", xmlns: "http://www.w3.org/2000/svg" },
+      createElement(
+        "defs",
+        null,
+        createElement(
+          "pattern",
+          { height: 40, id: "hero-grid", patternUnits: "userSpaceOnUse", width: 40 },
+          createElement("path", { d: "M 40 0 L 0 0 0 40", fill: "none", opacity: 0.3, stroke: "currentColor", strokeWidth: 1 }),
+        ),
+      ),
+      createElement("rect", { fill: "url(#hero-grid)", height: "100%", width: "100%" }),
+    ),
+  ) as React.ReactElement
+}
+
+function WebDateInput({
+  ariaLabel,
+  onChange,
+  value,
+}: {
+  readonly ariaLabel: string
+  readonly onChange: (value: string) => void
+  readonly value: string
+}): React.ReactElement {
+  const colors = useThemeColors()
+  const isDark = colors.canvas === darkColors.canvas
+  const style = useMemo(
+    () => ({
+      // Mengarahkan browser merender kalender versi gelap; input transparan
+      // di dalam kotak permukaan (tanpa latar putih bawaan browser).
+      backgroundColor: "transparent",
+      border: "none",
+      colorScheme: isDark ? ("dark" as const) : ("light" as const),
+      color: colors.textPrimary,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontSize: typography.bodyMedium.fontSize,
+      fontWeight: typography.bodyMedium.fontWeight,
+      minHeight: 24,
+      outline: "none",
+      padding: 0,
+      width: "100%",
+    }),
+    [colors, isDark],
+  )
+
+  return createElement("input", {
+    "aria-label": ariaLabel,
+    max: formatNativeDate(new Date()),
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
+    style,
+    type: "date",
+    value,
+  }) as React.ReactElement
+}
+
 export default function AddTransactionScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string | string[] }>()
   const transactionId = typeof params.id === "string" ? params.id : undefined
   const { addTransaction, isLoading, saveState, transactions, updateTransaction } = useTransactions()
   const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
+  const isDark = colors.canvas === darkColors.canvas
+  const surfaceTint = isDark ? colors.surfaceMuted : SURFACE_TINT
+  const toggleTint = isDark ? colors.surfaceMuted : SURFACE_TINT_STRONG
+  const styles = useMemo(() => createStyles(colors, surfaceTint, toggleTint), [colors, surfaceTint, toggleTint])
   const editing = transactionId === undefined ? undefined : transactions.find((transaction) => transaction.id === transactionId)
   const [type, setType] = useState<TransactionType>(editing?.type ?? "expense")
   const [amountInput, setAmountInput] = useState(() => (editing === undefined ? "" : new Intl.NumberFormat("id-ID").format(editing.amount)))
   const [category, setCategory] = useState(editing?.category ?? "Makan & Minum")
   const [selectedDate, setSelectedDate] = useState(() => (editing === undefined ? new Date() : new Date(editing.date)))
+  const [webDateInput, setWebDateInput] = useState(() => formatNativeDate(editing === undefined ? new Date() : new Date(editing.date)))
+  const [showPicker, setShowPicker] = useState(false)
   const [note, setNote] = useState(editing?.note ?? "")
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSaved, setIsSaved] = useState(false)
@@ -98,9 +208,11 @@ export default function AddTransactionScreen(): React.ReactElement {
     setErrors((current) => ({ ...current, amount: undefined, general: undefined }))
   }
 
-  function handleDateChange(date: Date | undefined): void {
-    if (date !== undefined) {
-      setSelectedDate(date)
+  function handleWebDateChange(value: string): void {
+    setWebDateInput(value)
+    const parsedDate = parseNativeDate(value)
+    if (parsedDate !== null) {
+      setSelectedDate(parsedDate)
       setErrors((current) => ({ ...current, date: undefined, general: undefined }))
     }
   }
@@ -110,9 +222,10 @@ export default function AddTransactionScreen(): React.ReactElement {
     const nextErrors: FormErrors = {
       amount: amount === null ? "Masukkan nominal lebih dari 0." : undefined,
       category: category.length === 0 ? "Pilih kategori transaksi." : undefined,
+      date: Platform.OS === "web" && parseNativeDate(webDateInput) === null ? "Pilih tanggal transaksi." : undefined,
     }
 
-    if (nextErrors.amount || nextErrors.category || amount === null) {
+    if (nextErrors.amount || nextErrors.category || nextErrors.date || amount === null) {
       setErrors(nextErrors)
       return
     }
@@ -162,7 +275,8 @@ export default function AddTransactionScreen(): React.ReactElement {
         </View>
 
         {/* Header nominal */}
-        <View style={styles.amountHero}>
+        <View style={[styles.amountHero, { backgroundColor: type === "expense" ? HERO.background : HERO_INCOME_BG }]}>
+          <HeroPattern />
           <Text style={styles.amountLabel}>{amountLabel}</Text>
           <View style={styles.amountRow}>
             <Text style={styles.amountPrefix}>Rp</Text>
@@ -210,7 +324,6 @@ export default function AddTransactionScreen(): React.ReactElement {
             <View key={`row-${rowIndex}`} style={styles.categoryRow}>
               {row.map((option) => {
                 const selected = category === option.key
-                const tone = type === "income" ? colors.income : colors.expense
 
                 return (
                   <Pressable
@@ -221,9 +334,9 @@ export default function AddTransactionScreen(): React.ReactElement {
                     onPress={() => setCategory(option.key)}
                     style={({ pressed }) => [styles.categoryOption, pressed && styles.pressed]}
                   >
-                    <View style={[styles.categoryWell, selected && { backgroundColor: tone }]}>
+                    <View style={[styles.categoryWell, selected && styles.categoryWellSelected]}>
                       <MaterialCommunityIcons
-                        color={selected ? colors.surface : colors.textSecondary}
+                        color={selected ? WELL_SELECTED_ICON : colors.textSecondary}
                         name={getCategoryIconName(option.key)}
                         size={22}
                       />
@@ -240,20 +353,39 @@ export default function AddTransactionScreen(): React.ReactElement {
 
         {/* Tanggal & Catatan */}
         <View style={styles.section}>
-          <DatePickerInput
-            accessibilityLabel="Tanggal transaksi"
-            calendarIcon="calendar-today"
-            iconColor={colors.textSecondary}
-            inputMode="start"
-            locale="id"
-            mode="flat"
-            onChange={handleDateChange}
-            style={styles.dateField}
-            underlineColor="transparent"
-            validRange={{ endDate: new Date() }}
-            value={selectedDate}
-            withDateFormatInLabel={false}
-          />
+          <View style={styles.inputBox}>
+            <MaterialCommunityIcons color={colors.textSecondary} name="calendar-today" size={20} />
+            {Platform.OS === "web" ? (
+              <WebDateInput
+                ariaLabel="Tanggal transaksi"
+                onChange={handleWebDateChange}
+                value={webDateInput}
+              />
+            ) : (
+              <Pressable
+                accessibilityLabel={`Tanggal transaksi ${formatTransactionDate(selectedDate.toISOString())}`}
+                accessibilityRole="button"
+                onPress={() => setShowPicker(true)}
+                style={({ pressed }) => [styles.dateTrigger, pressed && styles.pressed]}
+              >
+                <Text style={styles.dateText}>{formatTransactionDate(selectedDate.toISOString())}</Text>
+              </Pressable>
+            )}
+            {Platform.OS !== "web" && showPicker ? (
+              <DateTimePicker
+                display="default"
+                maximumDate={new Date()}
+                mode="date"
+                onChange={(_event, date) => {
+                  setShowPicker(false)
+                  if (date !== undefined) {
+                    setSelectedDate(date)
+                  }
+                }}
+                value={selectedDate}
+              />
+            ) : null}
+          </View>
 
           <View style={[styles.inputBox, styles.noteBox]}>
             <MaterialCommunityIcons color={colors.textSecondary} name="note-edit-outline" size={20} />
@@ -295,7 +427,7 @@ export default function AddTransactionScreen(): React.ReactElement {
   )
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: string) {
   return StyleSheet.create({
     amountError: {
       color: "#FF9C94",
@@ -307,7 +439,6 @@ function createStyles(colors: ThemeColors) {
     },
     amountHero: {
       alignItems: "center",
-      backgroundColor: HERO.background,
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,
       marginHorizontal: -spacing.xl,
@@ -357,7 +488,6 @@ function createStyles(colors: ThemeColors) {
     },
     categoryRow: {
       flexDirection: "row",
-      gap: spacing.sm,
     },
     categoryLabel: {
       color: colors.textSecondary,
@@ -374,23 +504,43 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
+    // Kolom tetap 25% (bukan flex:1) supaya baris terakhir yang tak penuh
+    // tetap rata kiri, sejajar dengan kolom di atasnya.
     categoryOption: {
       alignItems: "center",
-      flex: 1,
       justifyContent: "center",
+      paddingHorizontal: spacing.xs, // setengah jarak antar kolom
       paddingVertical: spacing.xs,
+      width: "25%",
     },
     categoryWell: {
       alignItems: "center",
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: surfaceTint,
       borderRadius: 28,
       height: 56,
       justifyContent: "center",
       width: 56,
       ...shadows.card,
     },
+    categoryWellSelected: {
+      backgroundColor: WELL_SELECTED_BG,
+    },
     content: {
       paddingBottom: spacing["3xl"],
+    },
+    dateText: {
+      color: colors.textPrimary,
+      flex: 1,
+      fontSize: typography.bodyMedium.fontSize,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontWeight: typography.bodyMedium.fontWeight,
+      lineHeight: typography.bodyMedium.lineHeight,
+    },
+    dateTrigger: {
+      alignItems: "center",
+      flex: 1,
+      flexDirection: "row",
+      minHeight: 24,
     },
     generalError: {
       backgroundColor: colors.expenseSurface,
@@ -416,17 +566,12 @@ function createStyles(colors: ThemeColors) {
     },
     inputBox: {
       alignItems: "center",
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: surfaceTint,
       borderRadius: radii.lg,
       flexDirection: "row",
       gap: spacing.md,
       minHeight: 52,
       paddingHorizontal: spacing.group,
-      ...shadows.card,
-    },
-    dateField: {
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radii.lg,
       ...shadows.card,
     },
     keyboard: {
@@ -514,7 +659,7 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "700",
     },
     typeToggle: {
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: toggleTint,
       borderRadius: radii.pill,
       flexDirection: "row",
       marginTop: -spacing.sm,

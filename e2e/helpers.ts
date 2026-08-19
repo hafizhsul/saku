@@ -23,23 +23,9 @@ export function formatWebDate(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-// Input tanggal memakai DatePickerInput react-native-paper dengan locale "id",
-// mask DD/MM/YYYY — nilai yang diisi harus persis format itu (10 karakter).
-export function formatPaperDate(date: Date): string {
-  const day = String(date.getDate()).padStart(2, "0")
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  return `${day}/${month}/${date.getFullYear()}`
-}
-
 export function previousMonthDate(): string {
   const now = new Date()
   return formatWebDate(new Date(now.getFullYear(), now.getMonth() - 1, 15))
-}
-
-// Tanggal bulan lalu dalam format paper (DD/MM/YYYY) untuk DatePickerInput.
-export function previousMonthPaperDate(): string {
-  const now = new Date()
-  return formatPaperDate(new Date(now.getFullYear(), now.getMonth() - 1, 15))
 }
 
 export async function addTransaction(
@@ -60,8 +46,6 @@ export async function addTransaction(
 }
 
 export async function openDataScreen(page: Page): Promise<void> {
-  // Entri Data & Cadangan ada di tab Profil (settings); header "Profil" tak
-  // punya onPress, jadi pakai label teks tab bar (pola yang sama dgn theme.spec).
   await page.getByText("Profil", { exact: true }).first().click()
   await page.getByRole("button", { name: "Data & Cadangan" }).click()
   await expect(page.getByText("Kelola data", { exact: true })).toBeVisible()
