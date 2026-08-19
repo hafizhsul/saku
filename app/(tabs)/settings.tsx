@@ -2,7 +2,6 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import Constants from "expo-constants"
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
@@ -139,8 +138,10 @@ export default function SettingsScreen(): React.ReactElement {
 
   return (
     <View style={styles.page}>
-      <TopBar />
-      <ScreenShell>{content}</ScreenShell>
+      <ScreenShell>
+        <Header />
+        {content}
+      </ScreenShell>
 
       {/* Konfirmasi keluar: mengikuti desain referensi (keluar?, tombol vertikal pill) */}
       <Modal
@@ -185,24 +186,29 @@ export default function SettingsScreen(): React.ReactElement {
 
 type SettingsStyles = ReturnType<typeof createStyles>
 
-function TopBar(): React.ReactElement {
+// Header mengikuti pola tab Beranda/Riwayat: ikon brand + judul + tombol profil.
+function Header(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
-  const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.topBar, { paddingTop: insets.top }]}>
-      <View style={styles.topBarInner}>
-        <View style={styles.topBarBrand}>
-          <Image source={require("../../assets/images/icon.png")} style={styles.topBarLogo} />
-          <Text style={styles.topBarName}>Saku</Text>
-        </View>
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
         <Image
-          accessibilityLabel="Foto profil"
-          source={require("../../assets/images/avatar-budi.jpg")}
-          style={styles.topBarAvatar}
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={require("../../assets/images/screen.png")}
+          style={styles.brandIcon}
         />
+        <Text style={styles.headerTitle}>Profil</Text>
       </View>
+      <Pressable
+        accessibilityLabel="Profil"
+        accessibilityRole="button"
+        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
+      >
+        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
+      </Pressable>
     </View>
   )
 }
@@ -520,40 +526,37 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 2,
       width: 44,
     },
-    topBar: {
-      backgroundColor: colors.surface,
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
-      zIndex: 10,
+    brandIcon: {
+      borderRadius: radii.sm,
+      height: 36,
+      width: 36,
     },
-    topBarAvatar: {
-      borderRadius: 16,
-      height: 32,
-      width: 32,
-    },
-    topBarBrand: {
+    header: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.compact,
-    },
-    topBarInner: {
-      alignItems: "center",
-      flexDirection: "row",
-      height: 64,
       justifyContent: "space-between",
-      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.compact,
     },
-    topBarLogo: {
-      height: 32,
-      resizeMode: "contain",
-      width: 32,
+    headerLeft: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.row,
     },
-    topBarName: {
-      color: colors.accent,
-      fontFamily: fontFamilies.bold,
-      fontSize: 20,
+    headerTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
       fontWeight: "700",
-      lineHeight: 26,
+      lineHeight: typography.heading.lineHeight,
+    },
+    profileButton: {
+      borderRadius: radii.md,
+      height: 40,
+      justifyContent: "center",
+      width: 40,
+    },
+    profileButtonHovered: {
+      backgroundColor: colors.surfaceMuted,
     },
     version: {
       color: colors.textTertiary,
