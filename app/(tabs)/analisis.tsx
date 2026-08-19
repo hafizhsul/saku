@@ -13,7 +13,7 @@ import {
   selectCategoryBreakdown,
   selectMonthlySummary,
 } from "../../src/features/transactions/selectors"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, darkColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
 
@@ -29,6 +29,19 @@ const HERO = {
   chipBackground: "#004f34",
   chipText: "#31c98f",
 } as const
+
+// Warna lain mengikuti referensi Stitch; tema gelap memakai surfaceMuted/aksen
+// terang agar tetap terbaca. ponytail: pindah ke token tema kalau palet biru
+// pucat ini diadopsi ke semua layar.
+const SURFACE_TINT = "#E5EEFF" // chip "7 Hari" & kartu Saku Insight
+const INSIGHT_ICON_BG = "#003623" // lingkaran bohlam Saku Insight
+const CHART_BAR = "#D5E6DF" // bar biasa (secondary-fixed)
+const CHART_SATURDAY = "#FFDAD6" // bar Sabtu (error-container)
+const CHART_TODAY = "#064E3B" // bar hari ini (primary-container)
+
+function isDarkTheme(colors: ThemeColors): boolean {
+  return colors.canvas === darkColors.canvas
+}
 
 // Abreviasi hari Indonesia, berindeks sama seperti Date.getDay() (0 = Minggu).
 const DAY_LABELS = ["Mg", "Sn", "Sl", "Rb", "Km", "Jm", "Sb"] as const
@@ -67,7 +80,10 @@ export default function AnalisisScreen(): React.ReactElement {
   const { isLoading, loadError, retryLoad, transactions } = useTransactions()
   const { budgets } = useBudgets()
   const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
+  const isDark = isDarkTheme(colors)
+  const surfaceTint = isDark ? colors.surfaceMuted : SURFACE_TINT
+  const titleColor = isDark ? "#95D3BA" : HERO.background
+  const styles = useMemo(() => createStyles(colors, surfaceTint, titleColor), [colors, surfaceTint, titleColor])
   const currentMonth = toMonthKey(new Date())
 
   const balance = selectBalance(transactions)
@@ -161,11 +177,7 @@ export default function AnalisisScreen(): React.ReactElement {
                     {weekDays.map((day) => {
                       const maxAmount = Math.max(...weekDays.map((item) => item.amount), 1)
                       const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / maxAmount) * 96))
-                      const barColor = day.isToday
-                        ? colors.income
-                        : day.isSaturday
-                          ? colors.expense
-                          : colors.surfaceMuted
+                      const barColor = day.isToday ? CHART_TODAY : day.isSaturday ? CHART_SATURDAY : CHART_BAR
                       return (
                         <View key={day.key} style={styles.chartBarColumn}>
                           <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
@@ -197,7 +209,7 @@ export default function AnalisisScreen(): React.ReactElement {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
               {breakdown.map((item, index) => (
-                <CategoryRow colors={colors} index={index} item={item} key={item.category} styles={styles} />
+                <CategoryRow index={index} item={item} key={item.category} styles={styles} />
               ))}
             </View>
           ) : null}
@@ -229,7 +241,8 @@ type AnalisisStyles = ReturnType<typeof createStyles>
 // judul + tombol profil (Pressable dengan hover), bukan ikon telanjang.
 function Header(): React.ReactElement {
   const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
+  const isDark = isDarkTheme(colors)
+  const styles = useMemo(() => createStyles(colors, colors.surfaceMuted, isDark ? "#95D3BA" : HERO.background), [colors, isDark])
 
   return (
     <View style={styles.header}>
@@ -254,17 +267,16 @@ function Header(): React.ReactElement {
 }
 
 type CategoryRowProps = {
-  readonly colors: ThemeColors
   readonly index: number
   readonly item: { readonly category: string; readonly percentage: number }
   readonly styles: AnalisisStyles
 }
 
-function CategoryRow({ colors, index, item, styles }: CategoryRowProps): React.ReactElement {
+function CategoryRow({ index, item, styles }: CategoryRowProps): React.ReactElement {
   const palette = [
-    { well: colors.accentSurface, icon: colors.income, fill: colors.income },
-    { well: colors.income, icon: colors.surface, fill: colors.income },
-    { well: colors.expenseSurface, icon: colors.expense, fill: colors.expense },
+    { well: "#D3E3DC", icon: "#566660", fill: "#003527" }, // secondary-container → primary
+    { well: "#004F34", icon: "#31C98F", fill: "#003623" }, // tertiary-container → tertiary
+    { well: "#FFDAD6", icon: "#93000A", fill: "#BA1A1A" }, // error-container → error
   ][index % 3]
 
   return (
@@ -287,7 +299,7 @@ function CategoryRow({ colors, index, item, styles }: CategoryRowProps): React.R
   )
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: string) {
   return StyleSheet.create({
     balanceAmount: {
       color: HERO.text,
@@ -402,7 +414,7 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: spacing.xs,
     },
     chip: {
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: surfaceTint,
       borderRadius: radii.pill,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
@@ -454,7 +466,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.row,
     },
     headerTitle: {
-      color: colors.textPrimary,
+      color: titleColor,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.heading.fontSize,
       fontWeight: "700",
@@ -467,7 +479,7 @@ function createStyles(colors: ThemeColors) {
     },
     insightCard: {
       alignItems: "flex-start",
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: surfaceTint,
       borderRadius: radii.lg,
       flexDirection: "row",
       gap: spacing.md,
@@ -475,7 +487,7 @@ function createStyles(colors: ThemeColors) {
     },
     insightIcon: {
       alignItems: "center",
-      backgroundColor: colors.warning,
+      backgroundColor: INSIGHT_ICON_BG,
       borderRadius: 16,
       height: 32,
       justifyContent: "center",

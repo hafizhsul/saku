@@ -9,7 +9,7 @@ test("analisis menampilkan total saldo dan tren mingguan", async ({ page }) => {
 
   await page.getByText("Analisis", { exact: true }).first().click()
   await expect(page.getByText("Total Saldo Tergabung", { exact: true })).toBeVisible()
-  await expect(page.getByText("Rp 2.000.000", { exact: true })).toBeVisible()
+  await expect(page.getByText("Rp 2.000.000", { exact: true }).first()).toBeVisible()
 
   await expect(page.getByText("Tren Pengeluaran", { exact: true })).toBeVisible()
   await expect(page.getByText("Total Minggu Ini", { exact: true })).toBeVisible()
