@@ -5,8 +5,10 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { EmptyState } from "../../src/components/EmptyState"
+import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { TransactionRow } from "../../src/components/TransactionRow"
+import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
 import {
@@ -136,6 +138,9 @@ export default function HomeScreen(): React.ReactElement {
 type HomeStyles = ReturnType<typeof createStyles>
 
 function Header({ colors, styles }: { readonly colors: ThemeColors; readonly styles: HomeStyles }): React.ReactElement {
+  const { user } = useAuth()
+  const greeting = user?.name !== undefined && user.name.length > 0 ? `Halo, ${user.name}` : "Halo"
+
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -145,15 +150,11 @@ function Header({ colors, styles }: { readonly colors: ThemeColors; readonly sty
           source={require("../../assets/images/screen.png")}
           style={styles.brandIcon}
         />
-        <Text style={styles.headerTitle}>Halo!</Text>
+        <Text numberOfLines={1} style={styles.headerTitle}>
+          {greeting}
+        </Text>
       </View>
-      <Pressable
-        accessibilityLabel="Profil"
-        accessibilityRole="button"
-        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
-      >
-        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
-      </Pressable>
+      <ProfileHeaderButton />
     </View>
   )
 }
