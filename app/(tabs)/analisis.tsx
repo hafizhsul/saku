@@ -4,6 +4,7 @@ import { useMemo, type ComponentProps } from "react"
 import { Image, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
+import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
@@ -255,13 +256,7 @@ function Header(): React.ReactElement {
         />
         <Text style={styles.headerTitle}>Analisis</Text>
       </View>
-      <Pressable
-        accessibilityLabel="Profil"
-        accessibilityRole="button"
-        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
-      >
-        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
-      </Pressable>
+      <ProfileHeaderButton />
     </View>
   )
 }

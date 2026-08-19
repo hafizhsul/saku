@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
+import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import {
@@ -165,13 +166,7 @@ function Header({ colors, styles }: { readonly colors: ThemeColors; readonly sty
         />
         <Text style={styles.headerTitle}>Riwayat</Text>
       </View>
-      <Pressable
-        accessibilityLabel="Profil"
-        accessibilityRole="button"
-        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
-      >
-        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
-      </Pressable>
+      <ProfileHeaderButton />
     </View>
   )
 }

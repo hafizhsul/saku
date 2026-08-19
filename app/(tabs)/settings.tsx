@@ -5,6 +5,7 @@ import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
+import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
@@ -231,13 +232,7 @@ function Header(): React.ReactElement {
         />
         <Text style={styles.headerTitle}>Profil</Text>
       </View>
-      <Pressable
-        accessibilityLabel="Profil"
-        accessibilityRole="button"
-        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
-      >
-        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
-      </Pressable>
+      <ProfileHeaderButton />
     </View>
   )
 }
