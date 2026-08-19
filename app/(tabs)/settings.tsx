@@ -5,7 +5,6 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { EmptyState } from "../../src/components/EmptyState"
-import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
@@ -145,7 +144,7 @@ export default function SettingsScreen(): React.ReactElement {
       <TopBar />
       <ScreenShell>{content}</ScreenShell>
 
-      {/* Konfirmasi keluar: elevation Level 2 + rounded-lg (DESIGN.md) */}
+      {/* Konfirmasi keluar: mengikuti desain referensi (keluar?, tombol vertikal pill) */}
       <Modal
         animationType="fade"
         onRequestClose={() => setConfirmLogout(false)}
@@ -154,27 +153,30 @@ export default function SettingsScreen(): React.ReactElement {
       >
         <View accessibilityViewIsModal style={styles.modalOverlay}>
           <View accessibilityLabel="Konfirmasi keluar" accessibilityRole="alert" style={styles.modalCard}>
-            <View style={styles.modalIcon}>
-              <MaterialCommunityIcons color={colors.error} name="logout" size={24} />
+            <View style={styles.modalBody}>
+              <Text style={styles.modalTitle}>Keluar?</Text>
+              <Text style={styles.modalMessage}>Apakah Anda yakin ingin keluar dari aplikasi Saku?</Text>
             </View>
-            <Text style={styles.modalTitle}>Keluar dari Saku?</Text>
-            <Text style={styles.modalMessage}>Sesi akunmu di perangkat ini akan diakhiri.</Text>
             <View style={styles.modalActions}>
-              <PrimaryButton
-                accessibilityLabel="Batal keluar"
-                label="Batal"
-                onPress={() => setConfirmLogout(false)}
-                variant="secondary"
-              />
-              <PrimaryButton
+              <Pressable
                 accessibilityLabel="Konfirmasi keluar"
-                label="Keluar"
+                accessibilityRole="button"
                 onPress={() => {
                   setConfirmLogout(false)
                   void logout()
                 }}
-                variant="danger"
-              />
+                style={({ pressed }) => [styles.modalActionPrimary, pressed && styles.pressed]}
+              >
+                <Text style={styles.modalActionPrimaryText}>Keluar</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Batal keluar"
+                accessibilityRole="button"
+                onPress={() => setConfirmLogout(false)}
+                style={({ pressed }) => [styles.modalActionSecondary, pressed && styles.pressed]}
+              >
+                <Text style={styles.modalActionSecondaryText}>Batal</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -322,51 +324,72 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       width: 40,
     },
+    modalActionPrimary: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderRadius: radii.pill,
+      justifyContent: "center",
+      paddingVertical: spacing.md,
+      width: "100%",
+    },
+    modalActionPrimaryText: {
+      color: colors.surface,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.body.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.body.lineHeight,
+    },
+    modalActionSecondary: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.pill,
+      justifyContent: "center",
+      paddingVertical: spacing.md,
+      width: "100%",
+    },
+    modalActionSecondaryText: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.body.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.body.lineHeight,
+    },
     modalActions: {
-      flexDirection: "row",
-      gap: spacing.compact,
-      marginTop: spacing.lg,
+      flexDirection: "column",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    modalBody: {
+      gap: spacing.xs,
     },
     modalCard: {
       backgroundColor: colors.surface,
       borderRadius: radii.lg,
-      maxWidth: 340,
-      padding: spacing.xl,
+      maxWidth: 384,
+      padding: spacing["2xl"],
       width: "100%",
       ...shadows.elevated,
     },
-    modalIcon: {
-      alignItems: "center",
-      backgroundColor: colors.expenseSurface,
-      borderRadius: 24,
-      height: 48,
-      justifyContent: "center",
-      marginBottom: spacing.group,
-      width: 48,
-    },
     modalMessage: {
       color: colors.textSecondary,
-      fontFamily: typography.body.fontFamily,
-      fontSize: typography.body.fontSize,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
-      marginTop: spacing.sm,
-      textAlign: "center",
+      fontFamily: fontFamilies.regular,
+      fontSize: 14,
+      fontWeight: "400",
+      lineHeight: 20,
     },
     modalOverlay: {
       alignItems: "center",
-      backgroundColor: "rgba(16, 20, 25, 0.5)",
+      backgroundColor: "rgba(16, 20, 25, 0.4)",
       flex: 1,
       justifyContent: "center",
       padding: spacing.xl,
     },
     modalTitle: {
       color: colors.textPrimary,
-      fontFamily: fontFamilies.bold,
-      fontSize: typography.heading.fontSize,
-      fontWeight: "700",
-      lineHeight: typography.heading.lineHeight,
-      textAlign: "center",
+      fontFamily: fontFamilies.semibold,
+      fontSize: 20,
+      fontWeight: "600",
+      lineHeight: 28,
     },
     page: {
       backgroundColor: colors.canvas,
