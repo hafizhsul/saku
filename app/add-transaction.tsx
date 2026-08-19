@@ -30,6 +30,16 @@ function formatNativeDate(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+// Bagi opsi menjadi baris berukuran `size` (mis. 4 kolom) supaya baris terakhir
+// tetap rata kiri dan kolom sejajar — flex-wrap + lebar % tidak bisa diandalkan.
+function chunkRows<T>(items: readonly T[], size: number): T[][] {
+  const rows: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size))
+  }
+  return rows
+}
+
 function parseNativeDate(value: string): Date | null {
   const parts = value.split("-").map(Number)
   if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
@@ -59,12 +69,16 @@ function WebDateInput({
   const style = useMemo(
     () => ({
       // Mengarahkan browser merender kalender versi gelap; input transparan
-      // di dalam kotak permukaan.
+      // di dalam kotak permukaan (tanpa latar putih bawaan browser).
+      backgroundColor: "transparent",
       colorScheme: isDark ? ("dark" as const) : ("light" as const),
       color: colors.textPrimary,
       fontFamily: typography.bodyMedium.fontFamily,
       fontSize: typography.bodyMedium.fontSize,
+      fontWeight: typography.bodyMedium.fontWeight,
       minHeight: 24,
+      outline: "none",
+      padding: 0,
       width: "100%",
     }),
     [colors, isDark],
@@ -255,34 +269,36 @@ export default function AddTransactionScreen(): React.ReactElement {
         {/* Kategori */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Kategori</Text>
-          <View style={styles.categoryGrid}>
-            {categoryOptionsForType(type).map((option) => {
-              const selected = category === option.key
-              const tone = type === "income" ? colors.income : colors.expense
+          {chunkRows(categoryOptionsForType(type), 4).map((row, rowIndex) => (
+            <View key={`row-${rowIndex}`} style={styles.categoryRow}>
+              {row.map((option) => {
+                const selected = category === option.key
+                const tone = type === "income" ? colors.income : colors.expense
 
-              return (
-                <Pressable
-                  accessibilityLabel={`${option.label}${selected ? ", dipilih" : ""}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  key={option.key}
-                  onPress={() => setCategory(option.key)}
-                  style={({ pressed }) => [styles.categoryOption, pressed && styles.pressed]}
-                >
-                  <View style={[styles.categoryWell, selected && { backgroundColor: tone }]}>
-                    <MaterialCommunityIcons
-                      color={selected ? colors.surface : colors.textSecondary}
-                      name={getCategoryIconName(option.key)}
-                      size={22}
-                    />
-                  </View>
-                  <Text numberOfLines={2} style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
+                return (
+                  <Pressable
+                    accessibilityLabel={`${option.label}${selected ? ", dipilih" : ""}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    key={option.key}
+                    onPress={() => setCategory(option.key)}
+                    style={({ pressed }) => [styles.categoryOption, pressed && styles.pressed]}
+                  >
+                    <View style={[styles.categoryWell, selected && { backgroundColor: tone }]}>
+                      <MaterialCommunityIcons
+                        color={selected ? colors.surface : colors.textSecondary}
+                        name={getCategoryIconName(option.key)}
+                        size={22}
+                      />
+                    </View>
+                    <Text numberOfLines={2} style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          ))}
         </View>
 
         {/* Tanggal & Catatan */}
@@ -374,7 +390,9 @@ function createStyles(colors: ThemeColors) {
     amountHero: {
       alignItems: "center",
       backgroundColor: HERO.background,
-      borderRadius: 24,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      marginHorizontal: -spacing.xl,
       paddingBottom: spacing["2xl"],
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
@@ -419,9 +437,8 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       width: 40,
     },
-    categoryGrid: {
+    categoryRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
       gap: spacing.sm,
     },
     categoryLabel: {
@@ -431,6 +448,7 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.caption.fontWeight,
       lineHeight: typography.caption.lineHeight,
       marginTop: spacing.xs,
+      minHeight: 32, // 2 baris label tersedia supaya semua lingkaran ikon sejajar
       textAlign: "center",
     },
     categoryLabelSelected: {
@@ -440,9 +458,9 @@ function createStyles(colors: ThemeColors) {
     },
     categoryOption: {
       alignItems: "center",
+      flex: 1,
       justifyContent: "center",
       paddingVertical: spacing.xs,
-      width: "25%",
     },
     categoryWell: {
       alignItems: "center",

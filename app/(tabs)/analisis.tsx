@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
 import { useMemo, type ComponentProps } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
@@ -225,6 +225,8 @@ export default function AnalisisScreen(): React.ReactElement {
 type AnalisisStyles = ReturnType<typeof createStyles>
 
 // Header mengikuti pola tab Beranda/Riwayat: ikon brand + judul + tombol profil.
+// Header harus identik dengan tab Beranda/Riwayat/Profil: ikon brand +
+// judul + tombol profil (Pressable dengan hover), bukan ikon telanjang.
 function Header(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -240,7 +242,13 @@ function Header(): React.ReactElement {
         />
         <Text style={styles.headerTitle}>Analisis</Text>
       </View>
-      <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
+      <Pressable
+        accessibilityLabel="Profil"
+        accessibilityRole="button"
+        style={({ pressed, hovered }) => [styles.profileButton, hovered && styles.profileButtonHovered, pressed && styles.pressed]}
+      >
+        <MaterialCommunityIcons color={colors.textSecondary} name="account-circle-outline" size={32} />
+      </Pressable>
     </View>
   )
 }
@@ -320,6 +328,18 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radii.sm,
       height: 36,
       width: 36,
+    },
+    pressed: {
+      opacity: 0.72,
+    },
+    profileButton: {
+      borderRadius: radii.md,
+      height: 40,
+      justifyContent: "center",
+      width: 40,
+    },
+    profileButtonHovered: {
+      backgroundColor: colors.surfaceMuted,
     },
     changeChip: {
       alignItems: "center",
