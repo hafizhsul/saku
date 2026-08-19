@@ -1,17 +1,18 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ComponentProps } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { CategoryIcon } from "../../src/components/CategoryIcon"
 import { EmptyState } from "../../src/components/EmptyState"
-import { HeroCard } from "../../src/components/HeroCard"
+import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
-import { radii, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatSignedCurrency } from "../../src/utils/currency"
-import { formatTransactionDate } from "../../src/utils/dates"
+import { formatTimeOfDay, formatTransactionDate } from "../../src/utils/dates"
+
+type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
 export default function TransactionDetailScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string | string[] }>()
@@ -39,7 +40,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
   if (isLoading) {
     return (
       <ScreenShell withTabBar={false}>
-        <DetailHeader colors={colors} onBack={() => router.back()} styles={styles} />
+        <DetailHeader onBack={() => router.back()} />
         <EmptyState description="Menyiapkan detail transaksi." title="Memuat catatan..." />
       </ScreenShell>
     )
@@ -48,7 +49,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
   if (transaction === undefined) {
     return (
       <ScreenShell withTabBar={false}>
-        <DetailHeader colors={colors} onBack={() => router.back()} styles={styles} />
+        <DetailHeader onBack={() => router.back()} />
         <EmptyState
           actionLabel="Kembali ke Beranda"
           description="Transaksi ini sudah tidak tersedia atau alamatnya salah."
@@ -61,51 +62,72 @@ export default function TransactionDetailScreen(): React.ReactElement {
 
   const isIncome = transaction.type === "income"
   const typeLabel = isIncome ? "Pemasukan" : "Pengeluaran"
-  const tone = isIncome ? "income" : "expense"
+  const amountColor = isIncome ? colors.income : colors.error
+  const iconColor = isIncome ? colors.income : colors.error
+  const iconBackground = isIncome ? colors.incomeSurface : colors.expenseSurface
   const busy = saveState === "saving"
 
   return (
     <ScreenShell withTabBar={false}>
-      <DetailHeader colors={colors} onBack={() => router.back()} styles={styles} />
+      <DetailHeader onBack={() => router.back()} />
 
-      <HeroCard
-        accessibilityLabel={`${typeLabel}, ${formatSignedCurrency(transaction.amount, transaction.type)}, ${formatTransactionDate(transaction.date)}`}
-        amount={formatSignedCurrency(transaction.amount, transaction.type)}
-        eyebrow={typeLabel.toUpperCase()}
-        footer={<Text style={styles.amountDate}>{formatTransactionDate(transaction.date)}</Text>}
-        tone={isIncome ? "income" : "expense"}
-        trailing={
-          <View style={[styles.typePill, { backgroundColor: tone }]}>
-            <MaterialCommunityIcons name={isIncome ? "arrow-down-left" : "arrow-up-right"} size={14} color={colors.surfaceElevated} />
+      {/* Ringkasan transaksi */}
+      <View style={styles.hero}>
+        <View style={[styles.heroIcon, { backgroundColor: iconBackground }]}>
+          <MaterialCommunityIcons color={iconColor} name={getCategoryIconName(transaction.category)} size={28} />
+        </View>
+        <Text numberOfLines={2} style={styles.heroTitle}>
+          {transaction.note ?? transaction.category}
+        </Text>
+        <Text
+          accessibilityLabel={`${typeLabel}, ${formatSignedCurrency(transaction.amount, transaction.type)}, ${formatTransactionDate(transaction.date)}`}
+          style={[styles.heroAmount, { color: amountColor }]}
+        >
+          {formatSignedCurrency(transaction.amount, transaction.type)}
+        </Text>
+      </View>
+
+      {/* Kartu status */}
+      <View style={styles.statusCard}>
+        <View style={styles.statusRow}>
+          <Text style={styles.fieldLabel}>Status</Text>
+          <View style={styles.badge}>
+            <MaterialCommunityIcons color={colors.accent} name="check-circle" size={16} />
+            <Text style={styles.badgeText}>Berhasil</Text>
           </View>
-        }
-      />
-
-      <View style={styles.infoCard}>
-        <DetailRow
-          icon={<CategoryIcon category={transaction.category} tone={tone} size={18} />}
-          label="Kategori"
-          styles={styles}
-          value={transaction.category}
-        />
+        </View>
         <View style={styles.divider} />
-        <DetailRow
-          icon={<MaterialCommunityIcons color={colors.textSecondary} name="calendar-month-outline" size={18} />}
-          label="Tanggal"
-          styles={styles}
-          value={formatTransactionDate(transaction.date)}
-        />
-        {transaction.note ? (
-          <>
-            <View style={styles.divider} />
-            <DetailRow
-              icon={<MaterialCommunityIcons color={colors.textSecondary} name="note-text-outline" size={18} />}
-              label="Catatan"
-              styles={styles}
-              value={transaction.note}
-            />
-          </>
-        ) : null}
+        <View style={styles.grid}>
+          <View style={styles.gridRow}>
+            <View style={styles.gridCell}>
+              <Text style={styles.fieldLabel}>Tanggal</Text>
+              <Text style={styles.fieldValue}>{formatTransactionDate(transaction.date)}</Text>
+            </View>
+            <View style={styles.gridCell}>
+              <Text style={styles.fieldLabel}>Waktu</Text>
+              <Text style={styles.fieldValue}>{formatTimeOfDay(transaction.date)} WIB</Text>
+            </View>
+          </View>
+          <View style={styles.gridRow}>
+            <View style={styles.gridCell}>
+              <Text style={styles.fieldLabel}>Saku</Text>
+              <View style={styles.sakuValue}>
+                <View style={[styles.sakuWell, { backgroundColor: iconBackground }]}>
+                  <MaterialCommunityIcons color={iconColor} name={getCategoryIconName(transaction.category)} size={14} />
+                </View>
+                <Text style={styles.fieldValue}>{transaction.category}</Text>
+              </View>
+            </View>
+          </View>
+          {transaction.note ? (
+            <View style={styles.gridRow}>
+              <View style={styles.gridCellFull}>
+                <Text style={styles.fieldLabel}>Catatan</Text>
+                <Text style={styles.noteBox}>{transaction.note}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
       </View>
 
       {confirmingDelete ? (
@@ -125,19 +147,33 @@ export default function TransactionDetailScreen(): React.ReactElement {
           />
         </View>
       ) : (
-        <>
-          <PrimaryButton
-            icon="pencil-outline"
-            label="Edit transaksi"
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
             onPress={() => router.push({ pathname: "/add-transaction", params: { id: transaction.id } })}
-          />
-          <PrimaryButton
-            icon="delete-outline"
-            label="Hapus transaksi"
+            style={({ pressed, hovered }) => [
+              styles.actionPrimary,
+              hovered && styles.actionHovered,
+              pressed && styles.pressed,
+            ]}
+          >
+            <MaterialCommunityIcons color={colors.surfaceElevated} name="pencil-outline" size={20} />
+            <Text style={styles.actionPrimaryText}>Edit Transaksi</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Hapus transaksi"
+            accessibilityRole="button"
             onPress={() => setConfirmingDelete(true)}
-            variant="danger"
-          />
-        </>
+            style={({ pressed, hovered }) => [
+              styles.actionDelete,
+              hovered && styles.actionHovered,
+              pressed && styles.pressed,
+            ]}
+          >
+            <MaterialCommunityIcons color={colors.error} name="delete-outline" size={20} />
+            <Text style={styles.actionDeleteText}>Hapus</Text>
+          </Pressable>
+        </View>
       )}
     </ScreenShell>
   )
@@ -145,7 +181,11 @@ export default function TransactionDetailScreen(): React.ReactElement {
 
 type DetailStyles = ReturnType<typeof createStyles>
 
-function DetailHeader({ onBack, colors, styles }: { readonly onBack: () => void; readonly colors: ThemeColors; readonly styles: DetailStyles }): React.ReactElement {
+// Header mengikuti pola detail: tombol kembali + judul "Detail Saku".
+function DetailHeader({ onBack }: { readonly onBack: () => void }): React.ReactElement {
+  const colors = useThemeColors()
+  const styles = useMemo(() => createStyles(colors), [colors])
+
   return (
     <View style={styles.header}>
       <Pressable
@@ -157,41 +197,74 @@ function DetailHeader({ onBack, colors, styles }: { readonly onBack: () => void;
       >
         <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
       </Pressable>
-      <View style={styles.headerText}>
-        <Text style={styles.overline}>DETAIL TRANSAKSI</Text>
-        <Text style={styles.title}>Detail transaksi</Text>
-      </View>
-    </View>
-  )
-}
-
-function DetailRow({ icon, label, value, styles }: { readonly icon: React.ReactNode; readonly label: string; readonly value: string; readonly styles: DetailStyles }): React.ReactElement {
-  return (
-    <View style={styles.detailRow}>
-      <View style={styles.detailIcon}>{icon}</View>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={styles.headerTitle}>Detail Saku</Text>
     </View>
   )
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    amountDate: {
-      color: colors.textTertiary,
-      fontSize: typography.caption.fontSize,
-      fontFamily: typography.caption.fontFamily,
-      fontWeight: typography.caption.fontWeight,
-      lineHeight: typography.caption.lineHeight,
+    actionDelete: {
+      alignItems: "center",
+      backgroundColor: colors.expenseSurface,
+      borderRadius: radii.lg,
+      flexDirection: "row",
+      gap: spacing.compact,
+      height: 52,
+      justifyContent: "center",
+    },
+    actionDeleteText: {
+      color: colors.error,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.heading.lineHeight,
+    },
+    actionHovered: {
+      opacity: 0.85,
+    },
+    actionPrimary: {
+      alignItems: "center",
+      backgroundColor: colors.action,
+      borderRadius: radii.lg,
+      flexDirection: "row",
+      gap: spacing.compact,
+      height: 52,
+      justifyContent: "center",
+      ...shadows.card,
+    },
+    actionPrimaryText: {
+      color: colors.surfaceElevated,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.heading.lineHeight,
+    },
+    actions: {
+      gap: spacing.sm,
     },
     backButton: {
       alignItems: "center",
-      borderColor: colors.border,
       borderRadius: radii.sm,
-      borderWidth: 1,
-      height: 44,
+      height: 40,
       justifyContent: "center",
-      width: 44,
+      width: 40,
+    },
+    badge: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      gap: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    badgeText: {
+      color: colors.accent,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.caption.lineHeight,
     },
     confirmCard: {
       backgroundColor: colors.surface,
@@ -215,39 +288,10 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.heading.fontWeight,
       lineHeight: typography.heading.lineHeight,
     },
-    detailIcon: {
-      alignItems: "center",
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radii.md,
-      height: 32,
-      justifyContent: "center",
-      width: 32,
-    },
-    detailLabel: {
-      color: colors.textSecondary,
-      fontSize: typography.bodyMedium.fontSize,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
-    },
-    detailRow: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing.row,
-      minHeight: 56,
-    },
-    detailValue: {
-      color: colors.textPrimary,
-      flex: 1,
-      fontSize: typography.body.fontSize,
-      fontFamily: typography.body.fontFamily,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
-      textAlign: "right",
-    },
     divider: {
       backgroundColor: colors.border,
       height: 1,
+      marginVertical: spacing.group,
     },
     error: {
       backgroundColor: colors.expenseSurface,
@@ -259,42 +303,108 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.bodyMedium.lineHeight,
       padding: spacing.md,
     },
+    fieldLabel: {
+      color: colors.textSecondary,
+      fontFamily: typography.caption.fontFamily,
+      fontSize: typography.caption.fontSize,
+      fontWeight: typography.caption.fontWeight,
+      lineHeight: typography.caption.lineHeight,
+      marginBottom: spacing.xs,
+    },
+    fieldValue: {
+      color: colors.textPrimary,
+      fontSize: typography.bodyMedium.fontSize,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontWeight: typography.bodyMedium.fontWeight,
+      lineHeight: typography.bodyMedium.lineHeight,
+    },
+    grid: {
+      gap: spacing.lg,
+    },
+    gridCell: {
+      flex: 1,
+    },
+    gridCellFull: {
+      flex: 1,
+    },
+    gridRow: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
     header: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.group,
+      gap: spacing.sm,
     },
-    headerText: {
-      flex: 1,
-      gap: spacing.unit,
+    headerTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.heading.lineHeight,
     },
-    infoCard: {
-      gap: 0,
+    hero: {
+      alignItems: "center",
+      paddingVertical: spacing.lg,
     },
-    overline: {
-      color: colors.textSecondary,
-      fontSize: typography.overline.fontSize,
-      fontFamily: typography.overline.fontFamily,
-      fontWeight: typography.overline.fontWeight,
-      letterSpacing: 1,
-      lineHeight: typography.overline.lineHeight,
+    heroAmount: {
+      fontFamily: fontFamilies.bold,
+      fontSize: 32,
+      fontWeight: "700",
+      lineHeight: 40,
+      marginTop: spacing.sm,
+    },
+    heroIcon: {
+      alignItems: "center",
+      borderRadius: 32,
+      height: 64,
+      justifyContent: "center",
+      marginBottom: spacing.md,
+      width: 64,
+    },
+    heroTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.heading.lineHeight,
+      textAlign: "center",
+    },
+    noteBox: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: radii.sm,
+      color: colors.textPrimary,
+      fontSize: typography.bodyMedium.fontSize,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontWeight: typography.bodyMedium.fontWeight,
+      lineHeight: typography.bodyMedium.lineHeight,
+      padding: spacing.sm,
     },
     pressed: {
       opacity: 0.72,
     },
-    title: {
-      color: colors.textPrimary,
-      fontSize: typography.title.fontSize,
-      fontFamily: typography.title.fontFamily,
-      fontWeight: typography.title.fontWeight,
-      lineHeight: typography.title.lineHeight,
-    },
-    typePill: {
+    sakuValue: {
       alignItems: "center",
-      borderRadius: radii.pill,
-      height: 28,
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    sakuWell: {
+      alignItems: "center",
+      borderRadius: 12,
+      height: 24,
       justifyContent: "center",
-      width: 28,
+      width: 24,
+    },
+    statusCard: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.lg,
+      padding: spacing.group,
+      ...shadows.card,
+    },
+    statusRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
     },
   })
 }

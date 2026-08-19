@@ -8,7 +8,7 @@ test("detail transaksi menampilkan informasi dan bisa diedit", async ({ page }) 
 
   // Buka detail dari baris transaksi terbaru di Beranda.
   await page.getByText("Ojek ke kantor", { exact: true }).click()
-  await expect(page.getByText("Detail transaksi", { exact: true })).toBeVisible()
+  await expect(page.getByText("Detail Saku", { exact: true })).toBeVisible()
   await expect(page.getByLabel(/Pengeluaran, - Rp 25\.000/)).toBeVisible()
   // Kategori default "Makan & Minum" (home tersembunyi juga punya baris kategori, jadi .last()).
   await expect(page.getByText("Makan & Minum", { exact: true }).last()).toBeVisible()
@@ -34,7 +34,7 @@ test("transaksi bisa dihapus dari layar detail", async ({ page }) => {
   await addTransaction(page, { type: "expense", amount: "15000", note: "Jajan di kantin" })
 
   await page.getByText("Jajan di kantin", { exact: true }).click()
-  await expect(page.getByText("Detail transaksi", { exact: true })).toBeVisible()
+  await expect(page.getByText("Detail Saku", { exact: true })).toBeVisible()
 
   // Konfirmasi lalu hapus.
   await page.getByRole("button", { name: "Hapus transaksi" }).click()
