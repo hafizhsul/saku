@@ -6,6 +6,7 @@ import {
   type AuthResponse,
   type LoginRequest,
   type RegisterRequest,
+  type UpdateProfileRequest,
   type User,
 } from "./types"
 
@@ -78,6 +79,36 @@ export async function fetchMe(token: string | null): Promise<User> {
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}/me`, { headers, credentials: "include" })
+  } catch {
+    throw new Error(CONNECTION_ERROR)
+  }
+
+  if (!response.ok) {
+    throw await errorFrom(response)
+  }
+
+  const parsed = parseMeResponse(await readJson(response))
+  if (parsed === null) {
+    throw new Error(CONNECTION_ERROR)
+  }
+
+  return parsed.user
+}
+
+export async function updateProfile(token: string | null, input: UpdateProfileRequest): Promise<User> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (token !== null) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}/me`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(input),
+      credentials: "include",
+    })
   } catch {
     throw new Error(CONNECTION_ERROR)
   }

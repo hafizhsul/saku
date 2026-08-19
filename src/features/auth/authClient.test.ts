@@ -9,7 +9,7 @@ vi.hoisted(() => {
 vi.mock("expo-constants", () => ({ default: { expoConfig: null } }))
 
 import { API_BASE_URL } from "./api"
-import { fetchMe, login, logout, register } from "./authClient"
+import { fetchMe, login, logout, register, updateProfile } from "./authClient"
 
 const mockFetch = vi.fn()
 
@@ -94,10 +94,34 @@ describe("logout", () => {
       expect.objectContaining({ method: "POST", headers: { Authorization: "Bearer token-123" } }),
     )
   })
-
   it("still resolves when the network request fails", async () => {
     mockFetch.mockRejectedValueOnce(new Error("network down"))
 
     await expect(logout("token-123")).resolves.toBeUndefined()
+  })
+})
+
+describe("updateProfile", () => {
+  it("sends PATCH /me with the new name and returns the updated user", async () => {
+    const updated = { id: "user-1", email: "user@example.com", name: "Nama Baru" }
+    mockFetch.mockResolvedValueOnce(jsonResponse({ user: updated }))
+
+    await expect(updateProfile("token-123", { name: "Nama Baru" })).resolves.toEqual(updated)
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/me`,
+      expect.objectContaining({
+        method: "PATCH",
+        headers: expect.objectContaining({ Authorization: "Bearer token-123" }),
+        body: JSON.stringify({ name: "Nama Baru" }),
+      }),
+    )
+  })
+
+  it("throws the server error message on 400", async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ error: "Nama wajib diisi dan maksimal 60 karakter." }, false))
+
+    await expect(updateProfile("token-123", { name: "" })).rejects.toThrow(
+      "Nama wajib diisi dan maksimal 60 karakter.",
+    )
   })
 })

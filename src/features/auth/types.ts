@@ -27,6 +27,14 @@ export const RegisterRequestSchema = CredentialsBaseSchema.extend({
 
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>
 
+export const UpdateProfileRequestSchema = z
+  .object({
+    name: z.string().trim().min(1).max(60),
+  })
+  .readonly()
+
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequestSchema>
+
 export const AuthResponseSchema = z
   .object({
     token: z.string(),
