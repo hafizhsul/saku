@@ -244,11 +244,21 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       debounceId = setTimeout(() => {
         debounceId = null
         const latest = latestAuthRef.current
-        if (latest.state !== "locked" || !latest.hasBiometric) {
+        if (!latest.hasBiometric) {
           return
         }
 
-        void biometricUnlock()
+        // Sesi aktif + biometrik tersedia → kunci ulang layar (data disembunyikan
+        // karena provider data tak dipasang saat "locked") lalu minta verifikasi.
+        if (latest.state === "authenticated") {
+          setState("locked")
+          setUser(null)
+          setAuthError(null)
+        }
+
+        if (latest.state === "locked" || latest.state === "authenticated") {
+          void biometricUnlock()
+        }
       }, 2000)
     }
 
