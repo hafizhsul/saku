@@ -14,7 +14,7 @@ test("anggaran kategori dibuat, diedit, dan dihapus", async ({ page }) => {
   // Buat anggaran baru.
   await page.getByRole("button", { name: "Tambah anggaran" }).click()
   await expect(page.getByText("Pilih kategori", { exact: true })).toBeVisible()
-  await page.getByRole("button", { name: "Transportasi" }).click()
+  await page.getByRole("button", { name: "Transport" }).click()
   await page.getByLabel("Nominal anggaran", { exact: true }).fill("500000")
   await page.getByRole("button", { name: "Tambah", exact: true }).click()
   await expect(page.getByLabel("Nominal anggaran", { exact: true })).toBeHidden()

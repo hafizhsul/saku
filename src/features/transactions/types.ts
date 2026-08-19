@@ -16,11 +16,15 @@ export const INCOME_CATEGORY_OPTIONS = [
   { key: "Lainnya", label: "Lainnya", icon: "dots-horizontal" },
 ] as const
 
+// Label mengikuti referensi desain Stitch; key (identitas tersimpan di data)
+// sengaja TIDAK ikut diganti agar transaksi/budget lama tetap terpetakan.
+// ponytail: "Tempat Tinggal" berlabel "Tagihan" — konsep beda (sewa vs tagihan);
+// tambahkan key baru + migrasi data kalau pemisahan kategori ini diperlukan.
 export const EXPENSE_CATEGORY_OPTIONS = [
-  { key: "Makan & Minum", label: "Makan & Minum", icon: "silverware-fork-knife" },
-  { key: "Transportasi", label: "Transportasi", icon: "bus" },
-  { key: "Kebutuhan", label: "Kebutuhan", icon: "shopping-outline" },
-  { key: "Tempat Tinggal", label: "Tempat Tinggal", icon: "home-outline" },
+  { key: "Makan & Minum", label: "Makanan", icon: "silverware-fork-knife" },
+  { key: "Transportasi", label: "Transport", icon: "bus" },
+  { key: "Kebutuhan", label: "Belanja", icon: "shopping-outline" },
+  { key: "Tempat Tinggal", label: "Tagihan", icon: "home-outline" },
   { key: "Hiburan", label: "Hiburan", icon: "movie-open-outline" },
   { key: "Kesehatan", label: "Kesehatan", icon: "heart-pulse" },
   { key: "Lainnya", label: "Lainnya", icon: "dots-horizontal" },
