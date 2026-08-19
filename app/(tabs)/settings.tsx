@@ -1,10 +1,11 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import Constants from "expo-constants"
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
-import { Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { EmptyState } from "../../src/components/EmptyState"
+import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
@@ -44,6 +45,7 @@ export default function SettingsScreen(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [notificationsOn, setNotificationsOn] = useState(true)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   const chevron = <MaterialCommunityIcons color={colors.textTertiary} name="chevron-right" size={20} />
   const valueTrailing = (value: string): ReactNode => (
@@ -130,7 +132,7 @@ export default function SettingsScreen(): React.ReactElement {
           <View style={styles.divider} />
           <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" trailing={chevron} onPress={noop} />
           <View style={styles.divider} />
-          <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => void logout()} />
+          <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => setConfirmLogout(true)} />
         </View>
       </View>
 
@@ -142,6 +144,41 @@ export default function SettingsScreen(): React.ReactElement {
     <View style={styles.page}>
       <TopBar />
       <ScreenShell>{content}</ScreenShell>
+
+      {/* Konfirmasi keluar: elevation Level 2 + rounded-lg (DESIGN.md) */}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setConfirmLogout(false)}
+        transparent
+        visible={confirmLogout}
+      >
+        <View accessibilityViewIsModal style={styles.modalOverlay}>
+          <View accessibilityLabel="Konfirmasi keluar" accessibilityRole="alert" style={styles.modalCard}>
+            <View style={styles.modalIcon}>
+              <MaterialCommunityIcons color={colors.error} name="logout" size={24} />
+            </View>
+            <Text style={styles.modalTitle}>Keluar dari Saku?</Text>
+            <Text style={styles.modalMessage}>Sesi akunmu di perangkat ini akan diakhiri.</Text>
+            <View style={styles.modalActions}>
+              <PrimaryButton
+                accessibilityLabel="Batal keluar"
+                label="Batal"
+                onPress={() => setConfirmLogout(false)}
+                variant="secondary"
+              />
+              <PrimaryButton
+                accessibilityLabel="Konfirmasi keluar"
+                label="Keluar"
+                onPress={() => {
+                  setConfirmLogout(false)
+                  void logout()
+                }}
+                variant="danger"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -284,6 +321,52 @@ function createStyles(colors: ThemeColors) {
       height: 40,
       justifyContent: "center",
       width: 40,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: spacing.compact,
+      marginTop: spacing.lg,
+    },
+    modalCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radii.lg,
+      maxWidth: 340,
+      padding: spacing.xl,
+      width: "100%",
+      ...shadows.elevated,
+    },
+    modalIcon: {
+      alignItems: "center",
+      backgroundColor: colors.expenseSurface,
+      borderRadius: 24,
+      height: 48,
+      justifyContent: "center",
+      marginBottom: spacing.group,
+      width: 48,
+    },
+    modalMessage: {
+      color: colors.textSecondary,
+      fontFamily: typography.body.fontFamily,
+      fontSize: typography.body.fontSize,
+      fontWeight: typography.body.fontWeight,
+      lineHeight: typography.body.lineHeight,
+      marginTop: spacing.sm,
+      textAlign: "center",
+    },
+    modalOverlay: {
+      alignItems: "center",
+      backgroundColor: "rgba(16, 20, 25, 0.5)",
+      flex: 1,
+      justifyContent: "center",
+      padding: spacing.xl,
+    },
+    modalTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.heading.fontSize,
+      fontWeight: "700",
+      lineHeight: typography.heading.lineHeight,
+      textAlign: "center",
     },
     page: {
       backgroundColor: colors.canvas,
