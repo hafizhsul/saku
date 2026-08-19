@@ -17,7 +17,7 @@ test("detail transaksi menampilkan informasi dan bisa diedit", async ({ page }) 
 
   // Edit: form terisi nilai lama, lalu ubah nominal dan catatan.
   await page.getByRole("button", { name: "Edit transaksi" }).click()
-  await expect(page.getByText("EDIT CATATAN", { exact: true })).toBeVisible()
+  await expect(page.getByText("Edit transaksi", { exact: true })).toBeVisible()
   await expect(page.getByLabel("Nominal transaksi", { exact: true })).toHaveValue("25.000")
   await page.getByLabel("Nominal transaksi", { exact: true }).fill("30000")
   await page.getByLabel("Catatan transaksi", { exact: true }).fill("Ojek ke kantor (revisi)")

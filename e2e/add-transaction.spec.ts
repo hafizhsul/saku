@@ -6,7 +6,7 @@ test("form transaksi memvalidasi nominal kosong", async ({ page }) => {
   await openHome(page)
 
   await page.getByRole("button", { name: "Tambah transaksi" }).click()
-  await expect(page.getByText("CATATAN BARU", { exact: true })).toBeVisible()
+  await expect(page.getByText("Tambah Transaksi", { exact: true })).toBeVisible()
 
   await page.getByRole("button", { name: "Simpan transaksi" }).click()
   await expect(page.getByText("Masukkan nominal lebih dari 0.", { exact: true })).toBeVisible()
@@ -31,10 +31,11 @@ test("transaksi pengeluaran lengkap tersimpan dan tampil di Beranda", async ({ p
 test("tombol tambah transaksi tersedia di layar Transaksi", async ({ page }) => {
   await openHome(page)
 
-  await page.getByText("Transaksi", { exact: true }).first().click()
-  await expect(page.getByText("Semua transaksi", { exact: true })).toBeVisible()
+  // Tab Riwayat menampilkan daftar semua transaksi + FAB tambah tetap tersedia.
+  await page.getByRole("button", { name: "Riwayat" }).click()
+  await expect(page.getByLabel("Cari transaksi", { exact: true })).toBeVisible()
   await expect(page.getByRole("button", { name: "Tambah transaksi" })).toBeVisible()
 
   await page.getByRole("button", { name: "Tambah transaksi" }).click()
-  await expect(page.getByText("CATATAN BARU", { exact: true })).toBeVisible()
+  await expect(page.getByText("Tambah Transaksi", { exact: true })).toBeVisible()
 })
