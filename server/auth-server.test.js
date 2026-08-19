@@ -171,6 +171,39 @@ test("GET /me with tampered token returns 401", async () => {
   assert.equal(res.status, 401);
 });
 
+test("PATCH /me updates the display name", async () => {
+  const registered = await register();
+  const res = await request("PATCH", "/me", {
+    token: registered.body.token,
+    body: { name: "Nama Baru" },
+  });
+
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.user, {
+    id: registered.body.user.id,
+    email: "test@example.com",
+    name: "Nama Baru",
+  });
+  const me = await request("GET", "/me", { token: registered.body.token });
+  assert.equal(me.body.user.name, "Nama Baru");
+});
+
+test("PATCH /me without token returns 401", async () => {
+  const res = await request("PATCH", "/me", { body: { name: "Nama Baru" } });
+  assert.equal(res.status, 401);
+});
+
+test("PATCH /me with empty name returns 400", async () => {
+  const registered = await register();
+  const res = await request("PATCH", "/me", {
+    token: registered.body.token,
+    body: { name: "   " },
+  });
+
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body, { error: "Nama wajib diisi dan maksimal 60 karakter." });
+});
+
 test("logout revokes the token (all sessions) and re-login works", async () => {
   const registered = await register();
   const token = registered.body.token;

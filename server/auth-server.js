@@ -152,7 +152,7 @@ function applyCors(res, req, allowedOrigins) {
   res.setHeader("Access-Control-Allow-Origin", allowOrigin);
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
 }
 
 function setAuthCookie(res, token) {
@@ -314,6 +314,24 @@ const server = http.createServer(async (req, res) => {
       if (!user) {
         return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
       }
+      return sendJson(res, 200, { user: publicUser(user) });
+    }
+
+    if (route === "PATCH /me") {
+      const payload = requireAuth(req);
+      const user = userFromPayload(payload);
+      if (!user) {
+        return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
+      }
+
+      const body = await readBody(req);
+      const name = typeof body.name === "string" ? body.name.trim() : "";
+      if (!name || name.length > 60) {
+        return sendJson(res, 400, { error: "Nama wajib diisi dan maksimal 60 karakter." });
+      }
+
+      user.name = name;
+      saveUsers(users);
       return sendJson(res, 200, { user: publicUser(user) });
     }
 
