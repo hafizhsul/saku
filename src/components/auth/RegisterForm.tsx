@@ -77,7 +77,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
         <Image
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          source={require("../../../assets/images/icon.png")}
+          source={require("../../../assets/images/wallet-watermark.jpg")}
           style={styles.watermarkImage}
         />
       </View>

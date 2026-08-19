@@ -191,6 +191,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     root: {
       backgroundColor: colors.canvas,
       flex: 1,
+      overflow: "hidden", // watermark lebih lebar dari layar; jangan buat scroll horizontal
     },
     subtitle: {
       color: textSecondaryColor,
@@ -212,15 +213,15 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       bottom: 0,
       justifyContent: "center",
       left: 0,
-      opacity: 0.06,
+      opacity: 0.1, // watermark sangat halus, sesuai referensi (opacity-10)
       position: "absolute",
       right: 0,
       top: 0,
     },
     watermarkImage: {
-      height: 360,
+      aspectRatio: 512 / 279, // proporsi ilustrasi wallet 3D asli
       transform: [{ rotate: "12deg" }],
-      width: 360,
+      width: 600, // lebih lebar dari layar agar gambar merembes ke tepi
     },
   })
 }

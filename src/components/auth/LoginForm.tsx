@@ -26,7 +26,7 @@ type LoginFormProps = {
 type FieldErrors = { readonly email?: string; readonly password?: string }
 
 export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactElement {
-  const { authError, biometricUnlock, hasBiometric, login } = useAuth()
+  const { authError, biometricUnlock, login } = useAuth()
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const isDark = isDarkTheme(colors)
@@ -70,11 +70,21 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
   }
 
   function handleForgotPassword(): void {
-    const message = "Pemulihan kata sandi belum tersedia. Hubungi dukungan atau gunakan biometrik untuk masuk."
+    showNotice("Pemulihan kata sandi belum tersedia. Hubungi dukungan atau gunakan biometrik untuk masuk.")
+  }
+
+  async function handleBiometricPress(): Promise<void> {
+    const result = await biometricUnlock()
+    if (!result.ok) {
+      showNotice(result.message)
+    }
+  }
+
+  function showNotice(message: string): void {
     if (Platform.OS === "web") {
       window.alert(message)
     } else {
-      Alert.alert("Lupa sandi?", message)
+      Alert.alert("Perhatian", message)
     }
   }
 
@@ -86,7 +96,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
         <Image
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          source={require("../../../assets/images/icon.png")}
+          source={require("../../../assets/images/wallet-watermark.jpg")}
           style={styles.watermarkImage}
         />
       </View>
@@ -205,17 +215,16 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Biometrik */}
-          {hasBiometric ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void biometricUnlock()}
-              style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
-            >
-              <MaterialCommunityIcons color={colors.textPrimary} name="fingerprint" size={20} />
-              <Text style={styles.biometricText}>Masuk dengan Biometrik</Text>
-            </Pressable>
-          ) : null}
+          {/* Biometrik — selalu tampil seperti referensi; pesan kesalahan muncul
+              saat perangkat tak mendukung atau autentikasi gagal. */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void handleBiometricPress()}
+            style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color={colors.textPrimary} name="fingerprint" size={20} />
+            <Text style={styles.biometricText}>Masuk dengan Biometrik</Text>
+          </Pressable>
 
           {/* Footer */}
           <View style={styles.footer}>
