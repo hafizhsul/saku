@@ -28,16 +28,6 @@ function nextTheme(current: ThemePreference): ThemePreference {
 // tapi onPress-nya no-op. ponytail: ganti dengan navigasi/aksi saat fiturnya ada.
 function noop(): void {}
 
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) {
-    return "?"
-  }
-  const first = parts[0]?.[0] ?? ""
-  const second = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : ""
-  return `${first}${second}`.toUpperCase()
-}
-
 export default function SettingsScreen(): React.ReactElement {
   const { settings, isLoading, loadError, retryLoad, setTheme } = useSettings()
   const { user, logout } = useAuth()
@@ -64,7 +54,11 @@ export default function SettingsScreen(): React.ReactElement {
       <View accessibilityLabel="Profil pengguna" style={styles.profileRow}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initialsOf(user?.name ?? "")}</Text>
+            <Image
+              accessibilityLabel="Foto profil"
+              source={require("../../assets/images/avatar-budi.jpg")}
+              style={styles.avatarPhoto}
+            />
           </View>
           <View accessibilityLabel="Ubah foto profil" style={styles.avatarEdit}>
             <MaterialCommunityIcons color={colors.surface} name="pencil" size={14} />
@@ -77,6 +71,10 @@ export default function SettingsScreen(): React.ReactElement {
           <Text numberOfLines={1} style={styles.profileEmail}>
             {user?.email ?? "—"}
           </Text>
+          <View accessibilityLabel="Akun terverifikasi" style={styles.verifiedBadge}>
+            <MaterialCommunityIcons color={colors.accent} name="check-decagram" size={14} />
+            <Text style={styles.verifiedBadgeText}>Akun Terverifikasi</Text>
+          </View>
         </View>
       </View>
 
@@ -191,7 +189,6 @@ function TopBar(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const insets = useSafeAreaInsets()
-  const { user } = useAuth()
 
   return (
     <View style={[styles.topBar, { paddingTop: insets.top }]}>
@@ -200,9 +197,11 @@ function TopBar(): React.ReactElement {
           <Image source={require("../../assets/images/icon.png")} style={styles.topBarLogo} />
           <Text style={styles.topBarName}>Saku</Text>
         </View>
-        <View accessibilityLabel="Avatar pengguna" style={styles.topBarAvatar}>
-          <Text style={styles.topBarAvatarText}>{initialsOf(user?.name ?? "")}</Text>
-        </View>
+        <Image
+          accessibilityLabel="Foto profil"
+          source={require("../../assets/images/avatar-budi.jpg")}
+          style={styles.topBarAvatar}
+        />
       </View>
     </View>
   )
@@ -275,12 +274,10 @@ function ToggleSwitch({ checked, label, onChange }: ToggleSwitchProps): React.Re
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     avatar: {
-      alignItems: "center",
-      backgroundColor: colors.accent,
       borderRadius: 40,
       height: 80,
-      justifyContent: "center",
       width: 80,
+      ...shadows.card,
     },
     avatarEdit: {
       alignItems: "center",
@@ -294,13 +291,14 @@ function createStyles(colors: ThemeColors) {
       position: "absolute",
       right: 0,
       width: 32,
+      ...shadows.card,
     },
-    avatarText: {
-      color: colors.surface,
-      fontFamily: fontFamilies.bold,
-      fontSize: 26,
-      fontWeight: "700",
-      letterSpacing: 0.5,
+    avatarPhoto: {
+      borderRadius: 40,
+      borderColor: colors.surfaceMuted,
+      borderWidth: 4,
+      height: "100%",
+      width: "100%",
     },
     avatarWrap: {
       position: "relative",
@@ -407,10 +405,10 @@ function createStyles(colors: ThemeColors) {
     },
     profileName: {
       color: colors.textPrimary,
-      fontFamily: fontFamilies.bold,
-      fontSize: 22,
-      fontWeight: "700",
-      lineHeight: 28,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 24,
+      fontWeight: "600",
+      lineHeight: 32,
     },
     profileRow: {
       alignItems: "center",
@@ -421,6 +419,24 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       gap: spacing.unit,
       minWidth: 0,
+    },
+    verifiedBadge: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs + 1,
+    },
+    verifiedBadgeText: {
+      color: colors.accent,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.overline.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.overline.lineHeight,
     },
     row: {
       alignItems: "center",
@@ -511,18 +527,9 @@ function createStyles(colors: ThemeColors) {
       zIndex: 10,
     },
     topBarAvatar: {
-      alignItems: "center",
-      backgroundColor: colors.accent,
       borderRadius: 16,
       height: 32,
-      justifyContent: "center",
       width: 32,
-    },
-    topBarAvatarText: {
-      color: colors.surface,
-      fontFamily: fontFamilies.bold,
-      fontSize: 13,
-      fontWeight: "700",
     },
     topBarBrand: {
       alignItems: "center",
@@ -542,7 +549,7 @@ function createStyles(colors: ThemeColors) {
       width: 32,
     },
     topBarName: {
-      color: colors.textPrimary,
+      color: colors.accent,
       fontFamily: fontFamilies.bold,
       fontSize: 20,
       fontWeight: "700",
