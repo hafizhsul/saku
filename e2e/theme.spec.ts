@@ -9,8 +9,8 @@ test("tema gelap diterapkan dari pengaturan dan bertahan setelah buka ulang", as
   const temaRow = page.getByText("Tema", { exact: true })
   await expect(temaRow).toBeVisible()
 
-  // Baris Tema memutar preferensi: Sistem → Terang → Gelap.
-  await temaRow.click()
+  // Baris Tema memutar preferensi: Sistem → Terang → Gelap. Default instalasi
+  // baru adalah Terang, jadi satu klik langsung menuju Gelap.
   await temaRow.click()
   await expect.poll(() => hasBackgroundColor(page, "rgb(22, 24, 26)")).toBe(true)
 

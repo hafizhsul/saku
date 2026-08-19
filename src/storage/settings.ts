@@ -11,7 +11,7 @@ const SettingsSchema = z
 
 export type Settings = z.infer<typeof SettingsSchema>
 
-export const defaultSettings: Settings = { theme: "system" }
+export const defaultSettings: Settings = { theme: "light" }
 
 export class SettingsStorageError extends Error {
   readonly name = "SettingsStorageError"
