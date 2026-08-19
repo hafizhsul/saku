@@ -1,11 +1,22 @@
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
+import { StatusBar } from "expo-status-bar"
 import { useMemo, useState } from "react"
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { Field } from "../Field"
-import { PrimaryButton } from "../PrimaryButton"
-import { ScreenShell } from "../ScreenShell"
 import { useAuth } from "../../features/auth/AuthProvider"
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../../theme"
+import { useThemeColors } from "../../theme"
+import { createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
 
 type RegisterFormProps = {
   readonly onSwitchToLogin: () => void
@@ -16,12 +27,18 @@ type FieldErrors = { readonly name?: string; readonly email?: string; readonly p
 export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.ReactElement {
   const { authError, register } = useAuth()
   const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
+  const insets = useSafeAreaInsets()
+  const isDark = isDarkTheme(colors)
+  const styles: AuthStyles = useMemo(() => createAuthStyles(colors, isDark), [colors, isDark])
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [focusedField, setFocusedField] = useState<"name" | "email" | "password" | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Error dari server (email sudah terdaftar, dsb.) — border ikut merah.
+  const hasServerError = authError !== null && Object.keys(errors).length === 0
 
   async function handleSubmit(): Promise<void> {
     if (isSubmitting) {
@@ -49,169 +66,156 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
     const result = await register({ name: trimmedName, email: trimmedEmail, password })
     setIsSubmitting(false)
 
-    if (!result.ok) {
-      // Pesan kegagalan sudah disandingkan ke authError oleh AuthProvider.
-      return
-    }
+    // Pesan kegagalan sudah disandingkan ke authError oleh AuthProvider.
+    void result
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
-      <ScreenShell contentStyle={styles.content} withTabBar={false}>
-        <View style={styles.header}>
-          <Text style={styles.overline}>AKUN BARU</Text>
-          <Text style={styles.title}>Daftar Saku</Text>
-        </View>
-
-        <Field error={errors.name} label="Nama">
-          <TextInput
-            accessibilityLabel="Nama"
-            autoCapitalize="words"
-            editable={!isSubmitting}
-            onChangeText={(value) => {
-              setName(value)
-              setErrors((current) => ({ ...current, name: undefined }))
-            }}
-            placeholder="Nama lengkap"
-            placeholderTextColor={colors.textTertiary}
-            style={[styles.input, errors.name !== undefined && styles.inputError]}
-            value={name}
-          />
-        </Field>
-
-        <Field error={errors.email} label="Email">
-          <TextInput
-            accessibilityLabel="Email"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!isSubmitting}
-            keyboardType="email-address"
-            onChangeText={(value) => {
-              setEmail(value)
-              setErrors((current) => ({ ...current, email: undefined }))
-            }}
-            placeholder="nama@contoh.com"
-            placeholderTextColor={colors.textTertiary}
-            style={[styles.input, errors.email !== undefined && styles.inputError]}
-            value={email}
-          />
-        </Field>
-
-        <Field error={errors.password} hint="Minimal 8 karakter" label="Kata sandi">
-          <TextInput
-            accessibilityLabel="Kata sandi"
-            editable={!isSubmitting}
-            onChangeText={(value) => {
-              setPassword(value)
-              setErrors((current) => ({ ...current, password: undefined }))
-            }}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textTertiary}
-            secureTextEntry
-            style={[styles.input, errors.password !== undefined && styles.inputError]}
-            value={password}
-          />
-        </Field>
-
-        {authError !== null ? (
-          <Text accessibilityRole="alert" style={styles.generalError}>
-            {authError}
-          </Text>
-        ) : null}
-
-        <PrimaryButton
-          accessibilityLabel="Daftar"
-          disabled={isSubmitting}
-          icon="account-plus-outline"
-          label={isSubmitting ? "Mendaftar..." : "Daftar"}
-          onPress={() => void handleSubmit()}
+    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <View pointerEvents="none" style={styles.watermark}>
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={require("../../../assets/images/icon.png")}
+          style={styles.watermarkImage}
         />
+      </View>
 
-        <Pressable
-          accessibilityLabel="Sudah punya akun? Masuk"
-          accessibilityRole="link"
-          onPress={onSwitchToLogin}
-          style={({ pressed }) => [styles.switchButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.switchText}>
-            Sudah punya akun? <Text style={styles.switchTextAccent}>Masuk</Text>
-          </Text>
-        </Pressable>
-      </ScreenShell>
-    </KeyboardAvoidingView>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Buat Akun</Text>
+            <Text style={styles.subtitle}>Mulai kelola keuanganmu.</Text>
+          </View>
+
+          {/* Banner error server */}
+          {hasServerError ? (
+            <View accessibilityRole="alert" style={styles.errorBanner}>
+              <MaterialCommunityIcons color={colors.error} name="alert-circle" size={20} />
+              <Text style={styles.errorBannerText}>{authError}</Text>
+            </View>
+          ) : null}
+
+          {/* Nama */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Nama</Text>
+            <View style={[styles.inputShell, focusedField === "name" && styles.inputShellFocused, (errors.name !== undefined || hasServerError) && styles.inputShellError]}>
+              <MaterialCommunityIcons color={colors.textTertiary} name="account-outline" size={20} />
+              <TextInput
+                accessibilityLabel="Nama"
+                autoCapitalize="words"
+                editable={!isSubmitting}
+                onBlur={() => setFocusedField(null)}
+                onFocus={() => setFocusedField("name")}
+                onChangeText={(value) => {
+                  setName(value)
+                  setErrors((current) => ({ ...current, name: undefined }))
+                }}
+                placeholder="Nama lengkap"
+                placeholderTextColor={colors.textTertiary}
+                style={styles.input}
+                value={name}
+              />
+            </View>
+            {errors.name !== undefined ? (
+              <Text accessibilityRole="alert" style={styles.fieldError}>
+                {errors.name}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Email */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Email</Text>
+            <View style={[styles.inputShell, focusedField === "email" && styles.inputShellFocused, (errors.email !== undefined || hasServerError) && styles.inputShellError]}>
+              <MaterialCommunityIcons color={colors.textTertiary} name="at" size={20} />
+              <TextInput
+                accessibilityLabel="Email"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSubmitting}
+                keyboardType="email-address"
+                onBlur={() => setFocusedField(null)}
+                onFocus={() => setFocusedField("email")}
+                onChangeText={(value) => {
+                  setEmail(value)
+                  setErrors((current) => ({ ...current, email: undefined }))
+                }}
+                placeholder="nama@email.com"
+                placeholderTextColor={colors.textTertiary}
+                style={styles.input}
+                value={email}
+              />
+            </View>
+            {errors.email !== undefined ? (
+              <Text accessibilityRole="alert" style={styles.fieldError}>
+                {errors.email}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Kata sandi */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Kata Sandi</Text>
+            <View style={[styles.inputShell, focusedField === "password" && styles.inputShellFocused, (errors.password !== undefined || hasServerError) && styles.inputShellError]}>
+              <MaterialCommunityIcons color={colors.textTertiary} name="lock" size={20} />
+              <TextInput
+                accessibilityLabel="Kata sandi"
+                editable={!isSubmitting}
+                onBlur={() => setFocusedField(null)}
+                onFocus={() => setFocusedField("password")}
+                onChangeText={(value) => {
+                  setPassword(value)
+                  setErrors((current) => ({ ...current, password: undefined }))
+                }}
+                placeholder="Minimal 8 karakter"
+                placeholderTextColor={colors.textTertiary}
+                secureTextEntry={!showPassword}
+                style={styles.input}
+                value={password}
+              />
+              <Pressable
+                accessibilityLabel={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => setShowPassword((current) => !current)}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <MaterialCommunityIcons color={colors.textSecondary} name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} />
+              </Pressable>
+            </View>
+            {errors.password !== undefined ? (
+              <Text accessibilityRole="alert" style={styles.fieldError}>
+                {errors.password}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Tombol utama */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+            disabled={isSubmitting}
+            onPress={() => void handleSubmit()}
+            style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed]}
+          >
+            {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
+            <Text style={styles.primaryButtonText}>{isSubmitting ? "Mendaftar..." : "Daftar Sekarang"}</Text>
+          </Pressable>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Sudah punya akun?{" "}
+              <Text accessibilityRole="link" onPress={onSwitchToLogin} style={styles.footerLink}>
+                Masuk
+              </Text>
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   )
-}
-
-function createStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    content: {
-      paddingBottom: spacing["3xl"],
-    },
-    generalError: {
-      backgroundColor: colors.expenseSurface,
-      borderRadius: radii.sm,
-      color: colors.error,
-      fontSize: typography.bodyMedium.fontSize,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
-      padding: spacing.md,
-    },
-    header: {
-      alignItems: "flex-start",
-    },
-    input: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: radii.md,
-      borderWidth: 1,
-      color: colors.textPrimary,
-      fontSize: typography.bodyLarge.fontSize,
-      fontFamily: typography.bodyLarge.fontFamily,
-      minHeight: 52,
-      paddingHorizontal: spacing.md,
-    },
-    inputError: {
-      borderColor: colors.error,
-    },
-    keyboard: {
-      flex: 1,
-    },
-    overline: {
-      color: colors.textSecondary,
-      fontSize: typography.overline.fontSize,
-      fontFamily: typography.overline.fontFamily,
-      fontWeight: typography.overline.fontWeight,
-      letterSpacing: 1,
-      lineHeight: typography.overline.lineHeight,
-    },
-    pressed: {
-      opacity: 0.72,
-    },
-    switchButton: {
-      alignItems: "center",
-      paddingVertical: spacing.sm,
-    },
-    switchText: {
-      color: colors.textSecondary,
-      fontSize: typography.body.fontSize,
-      fontFamily: typography.body.fontFamily,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
-      textAlign: "center",
-    },
-    switchTextAccent: {
-      color: colors.action,
-      fontFamily: fontFamilies.bold,
-      fontWeight: "700",
-    },
-    title: {
-      color: colors.textPrimary,
-      fontSize: typography.title.fontSize,
-      fontFamily: typography.title.fontFamily,
-      fontWeight: typography.title.fontWeight,
-      lineHeight: typography.title.lineHeight,
-      marginTop: spacing.xs,
-    },
-  })
 }
