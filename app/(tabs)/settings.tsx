@@ -30,7 +30,7 @@ function noop(): void {}
 
 export default function SettingsScreen(): React.ReactElement {
   const { settings, isLoading, loadError, retryLoad, setTheme } = useSettings()
-  const { user, logout } = useAuth()
+  const { user, logout, profilePhoto } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [notificationsOn, setNotificationsOn] = useState(true)
@@ -51,14 +51,19 @@ export default function SettingsScreen(): React.ReactElement {
   ) : (
     <>
       {/* Ringkasan profil */}
-      <View accessibilityLabel="Profil pengguna" style={styles.profileRow}>
+      <Pressable
+        accessibilityLabel="Profil pengguna"
+        accessibilityRole="button"
+        onPress={() => router.push("/edit-profile")}
+        style={({ pressed }) => [styles.profileRow, pressed && styles.pressed]}
+      >
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
-            <Image
-              accessibilityLabel="Foto profil"
-              source={require("../../assets/images/avatar-budi.jpg")}
-              style={styles.avatarPhoto}
-            />
+            {profilePhoto !== null ? (
+              <Image accessibilityLabel="Foto profil" source={{ uri: profilePhoto }} style={styles.avatarPhoto} />
+            ) : (
+              <Image accessibilityLabel="Foto profil" source={require("../../assets/images/avatar-budi.jpg")} style={styles.avatarPhoto} />
+            )}
           </View>
           <View accessibilityLabel="Ubah foto profil" style={styles.avatarEdit}>
             <MaterialCommunityIcons color={colors.surface} name="pencil" size={14} />
@@ -76,13 +81,13 @@ export default function SettingsScreen(): React.ReactElement {
             <Text style={styles.verifiedBadgeText}>Akun Terverifikasi</Text>
           </View>
         </View>
-      </View>
+      </Pressable>
 
       {/* Akun */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Akun</Text>
         <View style={styles.card}>
-          <MenuRow icon="account-outline" iconTone="accent" label="Edit Profil" onPress={noop} />
+          <MenuRow icon="account-outline" iconTone="accent" label="Edit Profil" trailing={chevron} onPress={() => router.push("/edit-profile")} />
           <View style={styles.divider} />
           <MenuRow
             icon="shield-lock-outline"
