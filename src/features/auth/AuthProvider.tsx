@@ -3,7 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState, Platform } from "react-native"
 
 import { clearToken, getToken, setToken } from "../../storage/auth"
-import { fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister } from "./authClient"
+import { loadProfilePhoto, saveProfilePhoto } from "../../storage/profile"
+import { fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, updateProfile as apiUpdateProfile } from "./authClient"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./types"
 
 // Rangkaian state sesi: "locked" berarti token tersimpan tapi belum terverifikasi
@@ -25,11 +26,14 @@ type AuthContextValue = {
   readonly isLoading: boolean
   readonly authError: string | null
   readonly hasBiometric: boolean
+  readonly profilePhoto: string | null
   readonly login: (input: LoginRequest) => Promise<LoginResult>
   readonly register: (input: RegisterRequest) => Promise<RegisterResult>
   readonly logout: () => Promise<void>
   readonly biometricUnlock: () => Promise<BiometricResult>
   readonly retryLoad: () => Promise<void>
+  readonly updateProfile: (name: string) => Promise<LoginResult>
+  readonly updatePhoto: (dataUri: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
   const [isLoading, setIsLoading] = useState(true)
   const [authError, setAuthError] = useState<string | null>(null)
   const [hasBiometric, setHasBiometric] = useState(false)
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null)
   // Nilai terkini state/biometrik untuk handler AppState (tanpa re-subscribe
   // dan tanpa stale closure pada timeout debounce 2 detik).
   const latestAuthRef = useRef<{ readonly state: AuthState; readonly hasBiometric: boolean }>({ state, hasBiometric })
@@ -134,6 +139,14 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       await boot()
       if (!cancelled) {
         setIsLoading(false)
+      }
+    })()
+
+    // Foto profil lokal dimuat non-blokir: tidak menghalangi boot sesi.
+    void (async () => {
+      const photo = await loadProfilePhoto()
+      if (!cancelled) {
+        setProfilePhoto(photo)
       }
     })()
 
@@ -289,6 +302,25 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
     }
   }, [biometricUnlock])
 
+  const updateProfile = useCallback(async (name: string): Promise<LoginResult> => {
+    setAuthError(null)
+    try {
+      const token = await getToken()
+      const updated = await apiUpdateProfile(token, { name })
+      setUser(updated)
+      return { ok: true }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : CONNECTION_ERROR
+      setAuthError(message)
+      return { ok: false, message }
+    }
+  }, [])
+
+  const updatePhoto = useCallback(async (dataUri: string): Promise<void> => {
+    setProfilePhoto(dataUri)
+    await saveProfilePhoto(dataUri)
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -296,13 +328,30 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       isLoading,
       authError,
       hasBiometric,
+      profilePhoto,
       login,
       register,
       logout,
       biometricUnlock,
       retryLoad,
+      updateProfile,
+      updatePhoto,
     }),
-    [authError, biometricUnlock, hasBiometric, isLoading, login, logout, register, retryLoad, state, user],
+    [
+      authError,
+      biometricUnlock,
+      hasBiometric,
+      isLoading,
+      login,
+      logout,
+      profilePhoto,
+      register,
+      retryLoad,
+      state,
+      updatePhoto,
+      updateProfile,
+      user,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
