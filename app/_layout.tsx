@@ -21,7 +21,7 @@ import { RecurringProvider } from "../src/features/recurring/RecurringProvider"
 import { SettingsProvider } from "../src/features/settings/SettingsProvider"
 import { TransactionsProvider } from "../src/features/transactions/TransactionsProvider"
 import { getOnboardingDone } from "../src/storage/onboarding"
-import { useThemeColors } from "../src/theme"
+import { ThemePreferenceProvider, useThemeColors } from "../src/theme"
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash tetap bisa ditutup otomatis jika panggilan ini gagal.
@@ -85,7 +85,9 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
     // dinamis ternyata merender layar kosong di navigator ini.
     return (
       <SafeAreaProvider>
-        <OnboardingScreen onDone={onOnboardingDone} />
+        <ThemePreferenceProvider preference="light">
+          <OnboardingScreen onDone={onOnboardingDone} />
+        </ThemePreferenceProvider>
       </SafeAreaProvider>
     )
   }
@@ -94,9 +96,13 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
     // Gerbang auth inline (bukan route — deep link /login & /register
     // sengaja tidak ada). Provider data di bawah TIDAK dipasang selama sesi
     // belum terverifikasi, jadi tidak ada layar yang bisa diakses tanpa login.
+    // Tema di-pin ke terang: layar pra-login berpola desain terang, tidak
+    // bergantung pada preferensi tersimpan milik pengguna yang belum masuk.
     return (
       <SafeAreaProvider>
-        <AuthGate />
+        <ThemePreferenceProvider preference="light">
+          <AuthGate />
+        </ThemePreferenceProvider>
       </SafeAreaProvider>
     )
   }
