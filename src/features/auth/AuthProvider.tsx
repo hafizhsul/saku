@@ -68,6 +68,16 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
   })
 
   const boot = useCallback(async (): Promise<void> => {
+    // E2E web (Playwright): flag localStorage menghindari verifikasi ke server
+    // auth — suite e2e fokus ke fitur data, bukan alur login (unit test urus itu).
+    // ponytail: flag khusus pengujian; hapus kalau e2e dipindah ke auth sungguhan.
+    if (Platform.OS === "web" && localStorage.getItem("bendahara.e2e.authenticated") === "1") {
+      setUser({ id: "e2e", email: "e2e@localhost", name: "E2E" })
+      setState("authenticated")
+      setAuthError(null)
+      return
+    }
+
     const token = await getToken()
     // Web: token tersimpan di cookie httpOnly (getToken mengembalikan null) —
     // verifikasi tetap dijalankan via cookie. Native: null berarti belum login.

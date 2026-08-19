@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test"
 
-import { openHome } from "./helpers"
+import { openHome, openRecurring } from "./helpers"
 
 test("form transaksi berulang memvalidasi nominal dan tanggal jatuh tempo", async ({ page }) => {
   await openHome(page)
 
-  await page.getByRole("button", { name: "Transaksi berulang" }).click()
+  await openRecurring(page)
   await page.getByRole("button", { name: "Tambah transaksi berulang" }).click()
 
   await page.getByRole("button", { name: "Simpan", exact: true }).click()
@@ -21,7 +21,7 @@ test("transaksi berulang bisa diedit dari daftar", async ({ page }) => {
   await openHome(page)
 
   // Buat satu transaksi berulang pengeluaran.
-  await page.getByRole("button", { name: "Transaksi berulang" }).click()
+  await openRecurring(page)
   await page.getByRole("button", { name: "Tambah transaksi berulang" }).click()
   await page.getByLabel("Nominal transaksi berulang", { exact: true }).fill("150000")
   await page.getByLabel("Tanggal jatuh tempo", { exact: true }).fill("5")

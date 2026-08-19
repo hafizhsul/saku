@@ -7,7 +7,8 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans"
 import { useFonts } from "expo-font"
 import { Stack } from "expo-router"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from "react-native-paper"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
 import "react-native-reanimated"
@@ -21,7 +22,7 @@ import { RecurringProvider } from "../src/features/recurring/RecurringProvider"
 import { SettingsProvider } from "../src/features/settings/SettingsProvider"
 import { TransactionsProvider } from "../src/features/transactions/TransactionsProvider"
 import { getOnboardingDone } from "../src/storage/onboarding"
-import { useThemeColors } from "../src/theme"
+import { darkColors, useThemeColors } from "../src/theme"
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Splash tetap bisa ditutup otomatis jika panggilan ini gagal.
@@ -75,6 +76,25 @@ type RootContentProps = {
 function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootContentProps): React.ReactElement | null {
   const colors = useThemeColors()
   const { state: authState } = useAuth()
+  const isDark = colors.canvas === darkColors.canvas
+  // Tema untuk komponen react-native-paper (DatePickerInput & kalendernya)
+  // mengikuti palet aplikasi, bukan tema bawaan paper.
+  const paperTheme = useMemo(
+    () => ({
+      ...(isDark ? MD3DarkTheme : MD3LightTheme),
+      colors: {
+        ...(isDark ? MD3DarkTheme.colors : MD3LightTheme.colors),
+        background: colors.canvas,
+        error: colors.error,
+        onSurface: colors.textPrimary,
+        outline: colors.border,
+        primary: colors.action,
+        surface: colors.canvas,
+        surfaceVariant: colors.surfaceMuted,
+      },
+    }),
+    [colors, isDark],
+  )
 
   if (!fontsLoaded || onboardingDone === null) {
     return null
@@ -102,29 +122,31 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
   }
 
   return (
-    <SafeAreaProvider>
-      <BackupProvider>
-        <SettingsProvider>
-          <TransactionsProvider>
-            <BudgetsProvider>
-              <RecurringProvider>
-                <Stack screenOptions={{ animation: "fade" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="add-transaction" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="budget-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="budgets" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="data" options={{ animation: "slide_from_right" as const }} />
-                  <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
-                  <Stack.Screen name="recurring" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="recurring-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="transaction/[id]" />
-                  <Stack.Screen name="showcase" />
-                </Stack>
-              </RecurringProvider>
-            </BudgetsProvider>
-          </TransactionsProvider>
-        </SettingsProvider>
-      </BackupProvider>
-    </SafeAreaProvider>
+    <PaperProvider theme={paperTheme}>
+      <SafeAreaProvider>
+        <BackupProvider>
+          <SettingsProvider>
+            <TransactionsProvider>
+              <BudgetsProvider>
+                <RecurringProvider>
+                  <Stack screenOptions={{ animation: "fade" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="add-transaction" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
+                    <Stack.Screen name="budget-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
+                    <Stack.Screen name="budgets" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
+                    <Stack.Screen name="data" options={{ animation: "slide_from_right" as const }} />
+                    <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
+                    <Stack.Screen name="recurring" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
+                    <Stack.Screen name="recurring-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
+                    <Stack.Screen name="transaction/[id]" />
+                    <Stack.Screen name="showcase" />
+                  </Stack>
+                </RecurringProvider>
+              </BudgetsProvider>
+            </TransactionsProvider>
+          </SettingsProvider>
+        </BackupProvider>
+      </SafeAreaProvider>
+    </PaperProvider>
   )
 }

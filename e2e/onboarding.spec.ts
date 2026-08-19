@@ -1,7 +1,16 @@
 import { expect, test } from "@playwright/test"
 
 // Konteks e2e segar: tanpa inisialisasi localStorage, onboarding tampil pertama kali.
+// Flag autentikasi web tetap diset supaya Beranda bisa tampil setelah onboarding
+// selesai (AuthProvider mengecek flag ini di boot).
 async function openOnboarding(page: import("@playwright/test").Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("bendahara.e2e.authenticated", "1")
+    } catch {
+      // Storage tidak tersedia; onboarding tetap bisa dilewati manual.
+    }
+  })
   await page.goto("/")
   await expect(page.getByText("Catat tanpa ribet", { exact: true })).toBeVisible({ timeout: 120_000 })
 }

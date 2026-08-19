@@ -5,7 +5,7 @@ import { openHome } from "./helpers"
 test("anggaran kategori dibuat, diedit, dan dihapus", async ({ page }) => {
   await openHome(page)
 
-  await page.getByRole("button", { name: "Atur anggaran bulanan" }).click()
+  await page.getByRole("button", { name: "Alokasi anggaran" }).click()
   await expect(page.getByText("Atur anggaran", { exact: true })).toBeVisible()
 
   // Chip "Sisa bulan ini" di kartu hero: bukti nilai anggaran yang unik dan terlihat.
@@ -18,7 +18,8 @@ test("anggaran kategori dibuat, diedit, dan dihapus", async ({ page }) => {
   await page.getByLabel("Nominal anggaran", { exact: true }).fill("500000")
   await page.getByRole("button", { name: "Tambah", exact: true }).click()
   await expect(page.getByLabel("Nominal anggaran", { exact: true })).toBeHidden()
-  await expect(page.getByText("Transportasi", { exact: true })).toBeVisible()
+  // Baris anggaran punya tombol aksi unik di layar Atur anggaran.
+  await expect(page.getByRole("button", { name: "Edit anggaran Transportasi" })).toBeVisible()
   await expect(remainingChip.getByText("Rp 500.000", { exact: true })).toBeVisible()
 
   // Ubah batasnya.

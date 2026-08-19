@@ -1,8 +1,8 @@
-import DateTimePicker from "@react-native-community/datetimepicker"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { createElement, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
+import { DatePickerInput, registerTranslation, type TranslationsType, id as idLocale } from "react-native-paper-dates"
 
 import { EmptyState } from "../src/components/EmptyState"
 import { ScreenShell } from "../src/components/ScreenShell"
@@ -11,7 +11,10 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
-import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
+import { formatAmountInput, parseAmountInput, toTransactionDate } from "../src/utils/dates"
+
+// Aktifkan terjemahan Indonesia untuk kalender/input tanggal paper.
+registerTranslation("id", idLocale as TranslationsType)
 
 // Warna hero mengikuti token primary M3 pada referensi desain (selalu emerald
 // gelap di semua mode). ponytail: pindah ke token tema kalau hero perlu ikut
@@ -23,13 +26,6 @@ const HERO = {
   placeholder: "rgba(255, 255, 255, 0.3)",
 } as const
 
-function formatNativeDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
-
 // Bagi opsi menjadi baris berukuran `size` (mis. 4 kolom) supaya baris terakhir
 // tetap rata kiri dan kolom sejajar — flex-wrap + lebar % tidak bisa diandalkan.
 function chunkRows<T>(items: readonly T[], size: number): T[][] {
@@ -38,60 +34,6 @@ function chunkRows<T>(items: readonly T[], size: number): T[][] {
     rows.push(items.slice(i, i + size))
   }
   return rows
-}
-
-function parseNativeDate(value: string): Date | null {
-  const parts = value.split("-").map(Number)
-  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
-    return null
-  }
-
-  const [year, month, day] = parts
-  if (year === undefined || month === undefined || day === undefined || year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
-    return null
-  }
-
-  const date = new Date(year, month - 1, day)
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
-}
-
-function WebDateInput({
-  ariaLabel,
-  onChange,
-  value,
-}: {
-  readonly ariaLabel: string
-  readonly onChange: (value: string) => void
-  readonly value: string
-}): React.ReactElement {
-  const colors = useThemeColors()
-  const isDark = colors.canvas === darkColors.canvas
-  const style = useMemo(
-    () => ({
-      // Mengarahkan browser merender kalender versi gelap; input transparan
-      // di dalam kotak permukaan (tanpa latar putih bawaan browser).
-      backgroundColor: "transparent",
-      colorScheme: isDark ? ("dark" as const) : ("light" as const),
-      color: colors.textPrimary,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontSize: typography.bodyMedium.fontSize,
-      fontWeight: typography.bodyMedium.fontWeight,
-      minHeight: 24,
-      outline: "none",
-      padding: 0,
-      width: "100%",
-    }),
-    [colors, isDark],
-  )
-
-  return createElement("input", {
-    "aria-label": ariaLabel,
-    max: formatNativeDate(new Date()),
-    onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
-    style,
-    type: "date",
-    value,
-  }) as React.ReactElement
 }
 
 export default function AddTransactionScreen(): React.ReactElement {
@@ -105,8 +47,6 @@ export default function AddTransactionScreen(): React.ReactElement {
   const [amountInput, setAmountInput] = useState(() => (editing === undefined ? "" : new Intl.NumberFormat("id-ID").format(editing.amount)))
   const [category, setCategory] = useState(editing?.category ?? "Makan & Minum")
   const [selectedDate, setSelectedDate] = useState(() => (editing === undefined ? new Date() : new Date(editing.date)))
-  const [webDateInput, setWebDateInput] = useState(() => formatNativeDate(editing === undefined ? new Date() : new Date(editing.date)))
-  const [showPicker, setShowPicker] = useState(false)
   const [note, setNote] = useState(editing?.note ?? "")
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSaved, setIsSaved] = useState(false)
@@ -158,11 +98,9 @@ export default function AddTransactionScreen(): React.ReactElement {
     setErrors((current) => ({ ...current, amount: undefined, general: undefined }))
   }
 
-  function handleWebDateChange(value: string): void {
-    setWebDateInput(value)
-    const parsedDate = parseNativeDate(value)
-    if (parsedDate !== null) {
-      setSelectedDate(parsedDate)
+  function handleDateChange(date: Date | undefined): void {
+    if (date !== undefined) {
+      setSelectedDate(date)
       setErrors((current) => ({ ...current, date: undefined, general: undefined }))
     }
   }
@@ -172,10 +110,9 @@ export default function AddTransactionScreen(): React.ReactElement {
     const nextErrors: FormErrors = {
       amount: amount === null ? "Masukkan nominal lebih dari 0." : undefined,
       category: category.length === 0 ? "Pilih kategori transaksi." : undefined,
-      date: Platform.OS === "web" && parseNativeDate(webDateInput) === null ? "Pilih tanggal transaksi." : undefined,
     }
 
-    if (nextErrors.amount || nextErrors.category || nextErrors.date || amount === null) {
+    if (nextErrors.amount || nextErrors.category || amount === null) {
       setErrors(nextErrors)
       return
     }
@@ -303,39 +240,20 @@ export default function AddTransactionScreen(): React.ReactElement {
 
         {/* Tanggal & Catatan */}
         <View style={styles.section}>
-          <View style={styles.inputBox}>
-            <MaterialCommunityIcons color={colors.textSecondary} name="calendar-today" size={20} />
-            {Platform.OS === "web" ? (
-              <WebDateInput
-                ariaLabel="Tanggal transaksi"
-                onChange={handleWebDateChange}
-                value={webDateInput}
-              />
-            ) : (
-              <Pressable
-                accessibilityLabel={`Tanggal transaksi ${formatTransactionDate(selectedDate.toISOString())}`}
-                accessibilityRole="button"
-                onPress={() => setShowPicker(true)}
-                style={({ pressed }) => [styles.dateTrigger, pressed && styles.pressed]}
-              >
-                <Text style={styles.dateText}>{formatTransactionDate(selectedDate.toISOString())}</Text>
-              </Pressable>
-            )}
-            {Platform.OS !== "web" && showPicker ? (
-              <DateTimePicker
-                display="default"
-                maximumDate={new Date()}
-                mode="date"
-                onChange={(_event, date) => {
-                  setShowPicker(false)
-                  if (date !== undefined) {
-                    setSelectedDate(date)
-                  }
-                }}
-                value={selectedDate}
-              />
-            ) : null}
-          </View>
+          <DatePickerInput
+            accessibilityLabel="Tanggal transaksi"
+            calendarIcon="calendar-today"
+            iconColor={colors.textSecondary}
+            inputMode="start"
+            locale="id"
+            mode="flat"
+            onChange={handleDateChange}
+            style={styles.dateField}
+            underlineColor="transparent"
+            validRange={{ endDate: new Date() }}
+            value={selectedDate}
+            withDateFormatInLabel={false}
+          />
 
           <View style={[styles.inputBox, styles.noteBox]}>
             <MaterialCommunityIcons color={colors.textSecondary} name="note-edit-outline" size={20} />
@@ -474,20 +392,6 @@ function createStyles(colors: ThemeColors) {
     content: {
       paddingBottom: spacing["3xl"],
     },
-    dateText: {
-      color: colors.textPrimary,
-      flex: 1,
-      fontSize: typography.bodyMedium.fontSize,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
-    },
-    dateTrigger: {
-      alignItems: "center",
-      flex: 1,
-      flexDirection: "row",
-      minHeight: 24,
-    },
     generalError: {
       backgroundColor: colors.expenseSurface,
       borderRadius: radii.sm,
@@ -518,6 +422,11 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.md,
       minHeight: 52,
       paddingHorizontal: spacing.group,
+      ...shadows.card,
+    },
+    dateField: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.lg,
       ...shadows.card,
     },
     keyboard: {

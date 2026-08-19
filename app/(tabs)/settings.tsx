@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import Constants from "expo-constants"
+import { router } from "expo-router"
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 
@@ -117,6 +118,29 @@ export default function SettingsScreen(): React.ReactElement {
           />
           <View style={styles.divider} />
           <MenuRow icon="translate" iconTone="muted" label="Bahasa" trailing={valueTrailing("Indonesia")} onPress={noop} />
+        </View>
+      </View>
+
+      {/* Data */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Data</Text>
+        <View style={styles.card}>
+          <MenuRow
+            icon="database-cog-outline"
+            iconTone="accent"
+            label="Data & Cadangan"
+            subtitle="Backup, pulihkan, impor CSV"
+            trailing={chevron}
+            onPress={() => router.push("/data")}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="repeat"
+            iconTone="accent"
+            label="Transaksi berulang"
+            trailing={chevron}
+            onPress={() => router.push("/recurring")}
+          />
         </View>
       </View>
 

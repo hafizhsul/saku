@@ -1,12 +1,11 @@
 import { expect, test } from "@playwright/test"
 
-import { openHome } from "./helpers"
+import { openHome, openRecurring } from "./helpers"
 
 test("transaksi berulang tersimpan, tidak membuat transaksi bulan ini, dan bertahan", async ({ page }) => {
   await openHome(page)
 
-  await page.getByRole("button", { name: "Transaksi berulang" }).click()
-  await expect(page.getByRole("button", { name: "Tambah transaksi berulang" })).toBeVisible()
+  await openRecurring(page)
   await page.getByRole("button", { name: "Tambah transaksi berulang" }).click()
 
   await page.getByRole("tab", { name: "Pemasukan" }).click()
@@ -19,15 +18,15 @@ test("transaksi berulang tersimpan, tidak membuat transaksi bulan ini, dan berta
   await expect(page.getByText("Gaji bulanan", { exact: true })).toBeVisible()
   await expect(page.getByText("Gaji · tiap tanggal 1", { exact: true })).toBeVisible()
 
-  // Kembali ke Beranda: belum ada transaksi yang dibuat otomatis bulan ini.
+  // Tutup layar berulang: kembali ke Profil, bukan membuat transaksi bulan ini.
   await page.getByRole("button", { name: "Tutup transaksi berulang" }).click()
-  await expect(page.getByText("Belum ada transaksi", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Data & Cadangan" })).toBeVisible()
 
   // Buka ulang: definisi bertahan dan tetap tidak menambah transaksi.
   await page.goto("/")
   await expect(page.getByRole("button", { name: "Tambah transaksi" }).first()).toBeVisible({ timeout: 120_000 })
   await expect(page.getByText("Belum ada transaksi", { exact: true })).toBeVisible()
 
-  await page.getByRole("button", { name: "Transaksi berulang" }).click()
+  await openRecurring(page)
   await expect(page.getByText("Gaji bulanan", { exact: true })).toBeVisible()
 })
