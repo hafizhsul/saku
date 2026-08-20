@@ -10,6 +10,10 @@ jobs:
     name: Typecheck, unit, dan e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Aplikasi memakai waktu Indonesia (WIB); runner GitHub default UTC.
+      # Tanpa ini unit/e2e yang mengasumsikan UTC+7 gagal di CI.
+      TZ: Asia/Jakarta
 
     steps:
       - name: Checkout
