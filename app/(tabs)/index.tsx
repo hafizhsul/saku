@@ -139,7 +139,8 @@ type HomeStyles = ReturnType<typeof createStyles>
 
 function Header({ colors, styles }: { readonly colors: ThemeColors; readonly styles: HomeStyles }): React.ReactElement {
   const { user } = useAuth()
-  const greeting = user?.name !== undefined && user.name.length > 0 ? `Halo, ${user.name}` : "Halo"
+  const firstName = user?.name?.trim().split(/\s+/)[0] ?? ""
+  const greeting = firstName.length > 0 ? `Halo, ${firstName}` : "Halo"
 
   return (
     <View style={styles.header}>
