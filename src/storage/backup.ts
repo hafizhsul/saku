@@ -5,6 +5,7 @@ import { Platform } from "react-native"
 import type { BackupPayload } from "../utils/backup"
 import { BUDGETS_STORAGE_KEY, saveBudgets } from "./budgets"
 import { RECURRING_STORAGE_KEY, saveRecurringDefinitions } from "./recurring"
+import { saveProfilePhoto } from "./profile"
 import { SETTINGS_STORAGE_KEY, saveSettings } from "./settings"
 import { TRANSACTIONS_STORAGE_KEY, saveTransactions } from "./transactions"
 
@@ -96,6 +97,9 @@ export async function writeRestoredData(payload: BackupPayload): Promise<void> {
   await saveBudgets(payload.budgets)
   await saveRecurringDefinitions(payload.recurring)
   await saveSettings(payload.settings)
+  if (payload.profilePhoto !== undefined) {
+    await saveProfilePhoto(payload.profilePhoto)
+  }
 }
 
 export async function hasAutoRestoreMarker(): Promise<boolean> {

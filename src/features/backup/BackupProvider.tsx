@@ -11,6 +11,7 @@ import {
   writeRestoredData,
 } from "../../storage/backup"
 import { parseBackup, serializeBackup, type BackupPayload } from "../../utils/backup"
+import { useAuth } from "../auth/AuthProvider"
 
 export type RestoreResult = { readonly ok: true } | { readonly ok: false; readonly message: string }
 
@@ -35,6 +36,15 @@ export function BackupProvider({ children }: PropsWithChildren): React.ReactElem
   const [autoRestored, setAutoRestored] = useState(false)
   const [autoRestore, setAutoRestoreState] = useState(true)
   const [epoch, setEpoch] = useState(0)
+  const { updatePhoto } = useAuth()
+
+  // Foto profil ikut dipulihkan: storage ditulis lalu state auth diperbarui
+  // agar avatar langsung tampil tanpa perlu restart.
+  const applyRestoredProfilePhoto = useCallback(async (payload: BackupPayload): Promise<void> => {
+    if (payload.profilePhoto !== undefined) {
+      await updatePhoto(payload.profilePhoto)
+    }
+  }, [updatePhoto])
 
   useEffect(() => {
     let cancelled = false
@@ -56,6 +66,7 @@ export function BackupProvider({ children }: PropsWithChildren): React.ReactElem
           if (mirror !== null && !marker && !hasData) {
             const payload = parseBackup(mirror)
             await writeRestoredData(payload)
+            await applyRestoredProfilePhoto(payload)
             await writeAutoRestoreMirror(serializeBackup(payload))
             await markAutoRestored()
             if (!cancelled) {
@@ -89,6 +100,7 @@ export function BackupProvider({ children }: PropsWithChildren): React.ReactElem
   const restoreBackup = useCallback(async (payload: BackupPayload): Promise<RestoreResult> => {
     try {
       await writeRestoredData(payload)
+      await applyRestoredProfilePhoto(payload)
       await writeAutoRestoreMirror(serializeBackup(payload))
       setEpoch((current) => current + 1)
       return { ok: true }

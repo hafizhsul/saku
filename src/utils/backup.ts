@@ -14,7 +14,9 @@ const BackupPayloadSchema = z
     transactions: z.unknown(),
     budgets: z.unknown(),
     recurring: z.unknown(),
-    settings: z.object({ theme: z.enum(["system", "light", "dark"]) }),
+    settings: z.object({ theme: z.enum(["system", "light", "dark"]), biometricLock: z.boolean().optional() }),
+    // Cadangan lama tanpa foto tetap valid (opsional, backward compatible).
+    profilePhoto: z.string().optional(),
   })
   .readonly()
 
@@ -25,6 +27,7 @@ export type BackupPayload = {
   readonly budgets: BudgetsMap
   readonly recurring: readonly RecurringDefinition[]
   readonly settings: Settings
+  readonly profilePhoto?: string
 }
 
 export class BackupFormatError extends Error {
@@ -36,6 +39,7 @@ export function buildBackupPayload(input: {
   readonly budgets: BudgetsMap
   readonly recurring: readonly RecurringDefinition[]
   readonly settings: Settings
+  readonly profilePhoto?: string
 }): BackupPayload {
   return {
     schemaVersion: BACKUP_SCHEMA_VERSION,
@@ -44,6 +48,7 @@ export function buildBackupPayload(input: {
     budgets: input.budgets,
     recurring: input.recurring,
     settings: input.settings,
+    ...(input.profilePhoto !== undefined ? { profilePhoto: input.profilePhoto } : {}),
   }
 }
 
@@ -79,7 +84,8 @@ export function parseBackup(json: string): BackupPayload {
     transactions: parseTransactionsLenient(parsed.data.transactions),
     budgets: parseStoredBudgets(parsed.data.budgets),
     recurring: parseRecurringLenient(parsed.data.recurring),
-    settings: parsed.data.settings,
+    settings: { theme: parsed.data.settings.theme, biometricLock: parsed.data.settings.biometricLock ?? true },
+    ...(parsed.data.profilePhoto !== undefined ? { profilePhoto: parsed.data.profilePhoto } : {}),
   }
 }
 

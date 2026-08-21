@@ -88,7 +88,7 @@ const payload = {
   ],
   budgets: { "Makan & Minum": 100_000 },
   recurring: [],
-  settings: { theme: "dark" as const },
+  settings: { theme: "dark" as const, biometricLock: true },
 }
 
 beforeEach(() => {

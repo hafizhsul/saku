@@ -8,6 +8,7 @@ import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-nativ
 
 import { PrimaryButton } from "../src/components/PrimaryButton"
 import { ScreenShell } from "../src/components/ScreenShell"
+import { useAuth } from "../src/features/auth/AuthProvider"
 import { useBackup } from "../src/features/backup/BackupProvider"
 import { useBudgets } from "../src/features/budgets/BudgetsProvider"
 import { useRecurring } from "../src/features/recurring/RecurringProvider"
@@ -27,6 +28,7 @@ export default function DataScreen(): React.ReactElement {
   const { definitions: recurring } = useRecurring()
   const { settings } = useSettings()
   const { autoRestore, autoRestored, restoreBackup, setAutoRestore } = useBackup()
+  const { profilePhoto } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [busy, setBusy] = useState<"csv-export" | "csv-import" | "json-export" | "json-import" | null>(null)
@@ -104,7 +106,7 @@ export default function DataScreen(): React.ReactElement {
     setBusy("json-export")
     setNotice(null)
     try {
-      const payload = buildBackupPayload({ transactions, budgets, recurring, settings })
+      const payload = buildBackupPayload({ transactions, budgets, recurring, settings, profilePhoto: profilePhoto ?? undefined })
       const json = serializeBackup(payload)
       await writeAutoRestoreMirror(json)
       const filename = `saku-cadangan-${toMonthKey(new Date())}.json`

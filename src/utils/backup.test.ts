@@ -28,7 +28,7 @@ function samplePayload(): BackupPayload {
         "2026-07",
       ),
     ],
-    settings: { theme: "dark" },
+    settings: { theme: "dark", biometricLock: true },
   })
 }
 
