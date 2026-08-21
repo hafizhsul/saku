@@ -335,6 +335,38 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { user: publicUser(user) });
     }
 
+    if (route === "PATCH /me/password") {
+      const payload = requireAuth(req);
+      const user = userFromPayload(payload);
+      if (!user) {
+        return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
+      }
+
+      const body = await readBody(req);
+      const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+      const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+
+      // Verifikasi kata sandi lama dengan pola yang sama seperti /login
+      // (timing-safe, dan tetap menghitung hash walau email tak ditemukan).
+      const a = Buffer.from(user.hash, "hex");
+      const b = Buffer.from(hashPassword(currentPassword, user.salt), "hex");
+      const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+      if (!ok) {
+        return sendJson(res, 401, { error: "Kata sandi saat ini salah." });
+      }
+      if (newPassword.length < 8) {
+        return sendJson(res, 400, { error: "Kata sandi baru minimal 8 karakter." });
+      }
+
+      const salt = crypto.randomBytes(16).toString("hex");
+      user.salt = salt;
+      user.hash = hashPassword(newPassword, salt);
+      saveUsers(users);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     if (route === "POST /logout") {
       // Selalu 204 + hapus cookie (web). Bila token valid, naikkan
       // tokenVersion → semua token user (semua perangkat) dicabut.

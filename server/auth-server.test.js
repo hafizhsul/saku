@@ -13,6 +13,8 @@ const usersFile = path.join(tmpDir, "users.json");
 fs.writeFileSync(usersFile, "[]");
 process.env.USERS_FILE = usersFile;
 process.env.AUTH_SECRET = "test-secret-jangan-pakai-di-produksi";
+// Suite kini melebihi 20 permintaan auth; longgarkan agar tak kena 429.
+process.env.RATE_LIMIT_MAX = "1000";
 
 const { server, signToken, users, saveUsers, applyCors, rateBuckets } = require("./auth-server.js");
 
@@ -204,6 +206,46 @@ test("PATCH /me with empty name returns 400", async () => {
   assert.deepEqual(res.body, { error: "Nama wajib diisi dan maksimal 60 karakter." });
 });
 
+test("PATCH /me/password changes the password and old one stops working", async () => {
+  const registered = await register();
+  const token = registered.body.token;
+
+  const res = await request("PATCH", "/me/password", {
+    token,
+    body: { currentPassword: "password123", newPassword: "sandi-baru-456" },
+  });
+  assert.equal(res.status, 204);
+
+  const oldLogin = await request("POST", "/login", {
+    body: { email: "test@example.com", password: "password123" },
+  });
+  assert.equal(oldLogin.status, 401);
+
+  const newLogin = await request("POST", "/login", {
+    body: { email: "test@example.com", password: "sandi-baru-456" },
+  });
+  assert.equal(newLogin.status, 200);
+});
+
+test("PATCH /me/password with wrong current password returns 401", async () => {
+  const registered = await register();
+  const res = await request("PATCH", "/me/password", {
+    token: registered.body.token,
+    body: { currentPassword: "salah-banget", newPassword: "sandi-baru-456" },
+  });
+  assert.equal(res.status, 401);
+  assert.deepEqual(res.body, { error: "Kata sandi saat ini salah." });
+});
+
+test("PATCH /me/password with short new password returns 400", async () => {
+  const registered = await register();
+  const res = await request("PATCH", "/me/password", {
+    token: registered.body.token,
+    body: { currentPassword: "password123", newPassword: "pendek" },
+  });
+  assert.equal(res.status, 400);
+});
+
 test("logout revokes the token (all sessions) and re-login works", async () => {
   const registered = await register();
   const token = registered.body.token;
@@ -265,8 +307,12 @@ test("OPTIONS preflight returns 204 with CORS headers", async () => {
 
 test("rate limits /login setelah RATE_LIMIT_MAX percobaan per IP", async () => {
   rateBuckets.clear();
+  // Prefill bucket IP test mendekati batas (env test menaikkan RATE_LIMIT_MAX)
+  // supaya kasus 429 tetap bisa diuji tanpa ratusan permintaan sungguhan.
+  // Node melaporkan remoteAddress sebagai IPv4-mapped (::ffff:).
+  rateBuckets.set("::ffff:127.0.0.1", { count: 999, resetAt: Date.now() + 15 * 60 * 1000 });
   let got429 = false;
-  for (let i = 0; i < 30 && !got429; i++) {
+  for (let i = 0; i < 5 && !got429; i++) {
     const res = await request("POST", "/login", {
       body: { email: "x@example.com", password: "password-salah" },
     });

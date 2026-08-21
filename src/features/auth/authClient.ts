@@ -4,6 +4,7 @@ import {
   parseAuthResponse,
   parseMeResponse,
   type AuthResponse,
+  type ChangePasswordRequest,
   type LoginRequest,
   type RegisterRequest,
   type UpdateProfileRequest,
@@ -123,6 +124,29 @@ export async function updateProfile(token: string | null, input: UpdateProfileRe
   }
 
   return parsed.user
+}
+
+export async function changePassword(token: string | null, input: ChangePasswordRequest): Promise<void> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (token !== null) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}/me/password`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(input),
+      credentials: "include",
+    })
+  } catch {
+    throw new Error(CONNECTION_ERROR)
+  }
+
+  if (!response.ok) {
+    throw await errorFrom(response)
+  }
 }
 
 export async function logout(token: string | null): Promise<void> {

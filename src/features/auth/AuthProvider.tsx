@@ -4,7 +4,8 @@ import { AppState, Platform } from "react-native"
 
 import { clearToken, getToken, setToken } from "../../storage/auth"
 import { loadProfilePhoto, saveProfilePhoto } from "../../storage/profile"
-import { fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, updateProfile as apiUpdateProfile } from "./authClient"
+import { loadSettings } from "../../storage/settings"
+import { changePassword as apiChangePassword, fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, updateProfile as apiUpdateProfile } from "./authClient"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./types"
 
 // Rangkaian state sesi: "locked" berarti token tersimpan tapi belum terverifikasi
@@ -34,6 +35,7 @@ type AuthContextValue = {
   readonly retryLoad: () => Promise<void>
   readonly updateProfile: (name: string) => Promise<LoginResult>
   readonly updatePhoto: (dataUri: string) => Promise<void>
+  readonly changePassword: (currentPassword: string, newPassword: string) => Promise<LoginResult>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -261,17 +263,25 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
           return
         }
 
-        // Sesi aktif + biometrik tersedia → kunci ulang layar (data disembunyikan
-        // karena provider data tak dipasang saat "locked") lalu minta verifikasi.
-        if (latest.state === "authenticated") {
-          setState("locked")
-          setUser(null)
-          setAuthError(null)
-        }
+        void (async () => {
+          // Preferensi pengguna menonaktifkan kunci biometrik sepenuhnya.
+          const stored = await loadSettings()
+          if (!stored.biometricLock) {
+            return
+          }
 
-        if (latest.state === "locked" || latest.state === "authenticated") {
-          void biometricUnlock()
-        }
+          // Sesi aktif + biometrik tersedia → kunci ulang layar (data disembunyikan
+          // karena provider data tak dipasang saat "locked") lalu minta verifikasi.
+          if (latest.state === "authenticated") {
+            setState("locked")
+            setUser(null)
+            setAuthError(null)
+          }
+
+          if (latest.state === "locked" || latest.state === "authenticated") {
+            void biometricUnlock()
+          }
+        })()
       }, 2000)
     }
 
@@ -321,6 +331,19 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
     await saveProfilePhoto(dataUri)
   }, [])
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<LoginResult> => {
+    setAuthError(null)
+    try {
+      const token = await getToken()
+      await apiChangePassword(token, { currentPassword, newPassword })
+      return { ok: true }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : CONNECTION_ERROR
+      setAuthError(message)
+      return { ok: false, message }
+    }
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -336,10 +359,12 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       retryLoad,
       updateProfile,
       updatePhoto,
+      changePassword,
     }),
     [
       authError,
       biometricUnlock,
+      changePassword,
       hasBiometric,
       isLoading,
       login,

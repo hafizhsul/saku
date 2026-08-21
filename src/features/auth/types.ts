@@ -35,6 +35,15 @@ export const UpdateProfileRequestSchema = z
 
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequestSchema>
 
+export const ChangePasswordRequestSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8),
+  })
+  .readonly()
+
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>
+
 export const AuthResponseSchema = z
   .object({
     token: z.string(),

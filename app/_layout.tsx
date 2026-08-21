@@ -121,6 +121,7 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
                   <Stack.Screen name="budgets" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="data" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="edit-profile" options={{ animation: "slide_from_right" as const }} />
+                  <Stack.Screen name="change-password" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
                   <Stack.Screen name="recurring" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="recurring-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />

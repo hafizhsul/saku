@@ -9,7 +9,7 @@ vi.hoisted(() => {
 vi.mock("expo-constants", () => ({ default: { expoConfig: null } }))
 
 import { API_BASE_URL } from "./api"
-import { fetchMe, login, logout, register, updateProfile } from "./authClient"
+import { changePassword, fetchMe, login, logout, register, updateProfile } from "./authClient"
 
 const mockFetch = vi.fn()
 
@@ -122,6 +122,29 @@ describe("updateProfile", () => {
 
     await expect(updateProfile("token-123", { name: "" })).rejects.toThrow(
       "Nama wajib diisi dan maksimal 60 karakter.",
+    )
+  })
+})
+
+describe("changePassword", () => {
+  it("sends PATCH /me/password and resolves on success", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 })
+
+    await expect(changePassword("token-123", { currentPassword: "lama-12345", newPassword: "baru-12345" })).resolves.toBeUndefined()
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/me/password`,
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ currentPassword: "lama-12345", newPassword: "baru-12345" }),
+      }),
+    )
+  })
+
+  it("throws the server error message on failure", async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ error: "Kata sandi saat ini salah." }, false))
+
+    await expect(changePassword("token-123", { currentPassword: "salah", newPassword: "baru-12345" })).rejects.toThrow(
+      "Kata sandi saat ini salah.",
     )
   })
 })
