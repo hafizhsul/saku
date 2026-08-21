@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import * as DocumentPicker from "expo-document-picker"
-import { File } from "expo-file-system"
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
 import { router } from "expo-router"
 import { useMemo, useState } from "react"
 import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
@@ -12,25 +12,53 @@ import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type
 
 type PickedAsset = { readonly uri: string; readonly mimeType?: string | null }
 
-// Data URI dari gambar terpilih agar bisa disimpan di AsyncStorage (web: blob
-// URL dibaca via fetch; native: File.base64()). ponytail: kompres di sisi
-// klien bila ukuran foto membengkak.
+const PHOTO_MAX_DIMENSION = 512
+
+// Data URI dari gambar terpilih, dikompres ke sisi terpanjang 512px JPEG q80
+// agar AsyncStorage tidak membengkak (web: canvas; native: image-manipulator).
 async function assetToDataUri(asset: PickedAsset): Promise<string> {
-  const mime = asset.mimeType ?? "image/jpeg"
   if (Platform.OS === "web") {
-    const blob = await fetch(asset.uri).then((response) => response.blob())
-    const buffer = await blob.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    let binary = ""
-    for (const byte of bytes) {
-      binary += String.fromCharCode(byte)
-    }
-    return `data:${mime};base64,${btoa(binary)}`
+    return await compressOnWeb(await readWebBlobAsDataUri(asset.uri))
   }
 
-  const file = new File(asset.uri)
-  const base64 = await file.base64()
-  return `data:${mime};base64,${base64}`
+  const rendered = await ImageManipulator.manipulate(asset.uri)
+    .resize({ width: PHOTO_MAX_DIMENSION })
+    .renderAsync()
+  const saved = await rendered.saveAsync({ base64: true, compress: 0.8, format: SaveFormat.JPEG })
+  return `data:image/jpeg;base64,${saved.base64 ?? ""}`
+}
+
+function readWebBlobAsDataUri(url: string): Promise<string> {
+  return fetch(url)
+    .then((response) => response.blob())
+    .then(async (blob) => {
+      const bytes = new Uint8Array(await blob.arrayBuffer())
+      let binary = ""
+      for (const byte of bytes) {
+        binary += String.fromCharCode(byte)
+      }
+      return `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`
+    })
+}
+
+function compressOnWeb(dataUri: string): Promise<string> {
+  return new Promise((resolve) => {
+    const image = new window.Image()
+    image.onload = () => {
+      try {
+        const scale = Math.min(1, PHOTO_MAX_DIMENSION / Math.max(image.width, image.height))
+        const canvas = document.createElement("canvas")
+        canvas.width = Math.max(1, Math.round(image.width * scale))
+        canvas.height = Math.max(1, Math.round(image.height * scale))
+        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL("image/jpeg", 0.8))
+      } catch {
+        resolve(dataUri)
+      }
+    }
+    image.onerror = () => resolve(dataUri)
+    image.src = dataUri
+  })
 }
 
 export default function EditProfileScreen(): React.ReactElement {
