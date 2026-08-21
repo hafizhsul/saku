@@ -57,3 +57,6 @@ server/users.json
 
 # Vision toolkit artifacts
 .dsh-vision-toolkit/
+
+# Screenshot artifacts at repo root (verification captures)
+/*.png
