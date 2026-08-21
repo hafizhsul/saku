@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react"
@@ -23,6 +24,7 @@ type SettingsContextValue = {
   readonly isLoading: boolean
   readonly loadError: string | null
   readonly setTheme: (theme: ThemePreference) => Promise<void>
+  readonly setBiometricLock: (enabled: boolean) => Promise<void>
   readonly retryLoad: () => Promise<void>
 }
 
@@ -33,6 +35,20 @@ export function SettingsProvider({ children }: PropsWithChildren): React.ReactEl
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const restoreEpoch = useRestoreEpoch()
+  // Nilai terkini untuk callback agar tidak stale saat beberapa perubahan
+  // beruntun (mis. toggle cepat) terjadi sebelum state baru ter-render.
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+
+  const applyAndPersist = useCallback(async (next: Settings): Promise<void> => {
+    setSettings(next)
+
+    try {
+      await persistSettings(next)
+    } catch {
+      // Keep the in-memory choice applied; persistence retries on next change.
+    }
+  }, [])
 
   const retryLoad = useCallback(async (): Promise<void> => {
     setIsLoading(true)
@@ -54,19 +70,18 @@ export function SettingsProvider({ children }: PropsWithChildren): React.ReactEl
   }, [retryLoad, restoreEpoch])
 
   const setTheme = useCallback(async (theme: ThemePreference): Promise<void> => {
-    const next: Settings = { theme }
-    setSettings(next)
+    const next: Settings = { ...settingsRef.current, theme }
+    applyAndPersist(next)
+  }, [])
 
-    try {
-      await persistSettings(next)
-    } catch {
-      // Keep the in-memory choice applied; persistence retries on next change.
-    }
+  const setBiometricLock = useCallback(async (enabled: boolean): Promise<void> => {
+    const next: Settings = { ...settingsRef.current, biometricLock: enabled }
+    applyAndPersist(next)
   }, [])
 
   const value = useMemo<SettingsContextValue>(
-    () => ({ settings, isLoading, loadError, setTheme, retryLoad }),
-    [isLoading, loadError, retryLoad, setTheme, settings],
+    () => ({ settings, isLoading, loadError, setTheme, setBiometricLock, retryLoad }),
+    [isLoading, loadError, retryLoad, setBiometricLock, setTheme, settings],
   )
 
   return (

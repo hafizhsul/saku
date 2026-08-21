@@ -6,12 +6,15 @@ export const SETTINGS_STORAGE_KEY = "bendahara.settings.v1"
 const SettingsSchema = z
   .object({
     theme: z.enum(["system", "light", "dark"]),
+    // Default aktif: kunci ulang biometrik menyala bila perangkat mendukung.
+    // .default menjaga file pengaturan lama (tanpa field ini) tetap valid.
+    biometricLock: z.boolean().default(true),
   })
   .readonly()
 
 export type Settings = z.infer<typeof SettingsSchema>
 
-export const defaultSettings: Settings = { theme: "light" }
+export const defaultSettings: Settings = { theme: "light", biometricLock: true }
 
 export class SettingsStorageError extends Error {
   readonly name = "SettingsStorageError"

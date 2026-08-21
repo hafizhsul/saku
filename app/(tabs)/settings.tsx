@@ -30,8 +30,8 @@ function nextTheme(current: ThemePreference): ThemePreference {
 function noop(): void {}
 
 export default function SettingsScreen(): React.ReactElement {
-  const { settings, isLoading, loadError, retryLoad, setTheme } = useSettings()
-  const { user, logout, profilePhoto } = useAuth()
+  const { settings, isLoading, loadError, retryLoad, setBiometricLock, setTheme } = useSettings()
+  const { hasBiometric, user, logout, profilePhoto } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [notificationsOn, setNotificationsOn] = useState(true)
@@ -96,7 +96,7 @@ export default function SettingsScreen(): React.ReactElement {
             label="Keamanan & Kata Sandi"
             subtitle="Autentikasi 2 Langkah aktif"
             trailing={chevron}
-            onPress={noop}
+            onPress={() => router.push("/change-password")}
           />
           <View style={styles.divider} />
           <MenuRow icon="bank-outline" iconTone="accent" label="Hubungkan Bank/E-wallet" trailing={chevron} onPress={noop} />
@@ -113,6 +113,20 @@ export default function SettingsScreen(): React.ReactElement {
             label="Notifikasi"
             trailing={<ToggleSwitch checked={notificationsOn} label="Notifikasi" onChange={setNotificationsOn} />}
           />
+          {hasBiometric ? (
+            <>
+              <View style={styles.divider} />
+              <MenuRow
+                accessibilityHint="Ketuk untuk mengaktifkan atau menonaktifkan kunci biometrik"
+                icon="fingerprint"
+                iconTone="muted"
+                label="Kunci dengan biometrik"
+                trailing={
+                  <ToggleSwitch checked={settings.biometricLock} label="Kunci dengan biometrik" onChange={(next) => void setBiometricLock(next)} />
+                }
+              />
+            </>
+          ) : null}
           <View style={styles.divider} />
           <MenuRow
             accessibilityHint="Ketuk untuk mengganti tema"
