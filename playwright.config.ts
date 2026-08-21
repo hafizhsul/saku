@@ -20,10 +20,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: `npx expo start --port ${PORT} --web`,
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: `npx expo start --port ${PORT} --web`,
+      url: BASE_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      // File pengguna dipisahkan dari data lokal agar suite tak menumpuk akun.
+      command: `USERS_FILE=${process.env.E2E_USERS_FILE ?? "/tmp/saku-e2e-users.json"} node server/auth-server.js`,
+      port: 4000,
+      reuseExistingServer: true,
+      timeout: 30_000,
+    },
+  ],
 })
