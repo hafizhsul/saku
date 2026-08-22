@@ -42,6 +42,9 @@ jobs:
       - name: Unit test
         run: pnpm test
 
+      - name: Server test
+        run: node --test server/auth-server.test.js
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Meniru CI (.github/workflows/ci.yml) sebelum push diizinkan.
+# Lewati dalam keadaan darurat dengan: git push --no-verify
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+echo "▸ Typecheck"
+pnpm typecheck
+
+echo "▸ Lint"
+pnpm lint
+
+echo "▸ Unit test"
+pnpm test
+
+echo "▸ Server test"
+node --test server/auth-server.test.js
+
+echo "▸ End-to-end"
+CI=true pnpm test:e2e
+
+echo "✓ Semua checks lulus — melanjutkan push."
