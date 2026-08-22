@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { Image, Pressable, StyleSheet } from "react-native"
 
 import { useAuth } from "../features/auth/AuthProvider"
-import { radii, spacing, useThemeColors, type ThemeColors } from "../theme"
+import { radii, useThemeColors, type ThemeColors } from "../theme"
 
 // Tombol profil di header semua tab: menampilkan foto profil jika sudah diatur,
 // fallback ikon akun. Menuju layar Edit Profil saat ditekan.

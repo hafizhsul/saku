@@ -20,7 +20,7 @@ type AuthMode = "login" | "register"
  * sesi belum terverifikasi. Saat "authenticated" komponen mengembalikan null
  * dan anak AuthProvider (provider data + Stack) mengambil alih layar.
  */
-export function AuthGate({}: AuthGateProps): React.ReactElement | null {
+export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
   const { authError, biometricUnlock, hasBiometric, isLoading, logout, retryLoad, state } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])

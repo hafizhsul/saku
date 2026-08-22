@@ -228,8 +228,6 @@ export default function SettingsScreen(): React.ReactElement {
   )
 }
 
-type SettingsStyles = ReturnType<typeof createStyles>
-
 // Header mengikuti pola tab Beranda/Riwayat: ikon brand + judul + tombol profil.
 function Header(): React.ReactElement {
   const colors = useThemeColors()

@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type PropsWithChildren,
 } from "react"
@@ -35,10 +34,6 @@ export function SettingsProvider({ children }: PropsWithChildren): React.ReactEl
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const restoreEpoch = useRestoreEpoch()
-  // Nilai terkini untuk callback agar tidak stale saat beberapa perubahan
-  // beruntun (mis. toggle cepat) terjadi sebelum state baru ter-render.
-  const settingsRef = useRef(settings)
-  settingsRef.current = settings
 
   const applyAndPersist = useCallback(async (next: Settings): Promise<void> => {
     setSettings(next)
@@ -69,15 +64,19 @@ export function SettingsProvider({ children }: PropsWithChildren): React.ReactEl
     void retryLoad()
   }, [retryLoad, restoreEpoch])
 
-  const setTheme = useCallback(async (theme: ThemePreference): Promise<void> => {
-    const next: Settings = { ...settingsRef.current, theme }
-    applyAndPersist(next)
-  }, [])
+  const setTheme = useCallback(
+    async (theme: ThemePreference): Promise<void> => {
+      applyAndPersist({ ...settings, theme })
+    },
+    [applyAndPersist, settings],
+  )
 
-  const setBiometricLock = useCallback(async (enabled: boolean): Promise<void> => {
-    const next: Settings = { ...settingsRef.current, biometricLock: enabled }
-    applyAndPersist(next)
-  }, [])
+  const setBiometricLock = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      applyAndPersist({ ...settings, biometricLock: enabled })
+    },
+    [applyAndPersist, settings],
+  )
 
   const value = useMemo<SettingsContextValue>(
     () => ({ settings, isLoading, loadError, setTheme, setBiometricLock, retryLoad }),

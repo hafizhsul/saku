@@ -86,7 +86,7 @@ export function BackupProvider({ children }: PropsWithChildren): React.ReactElem
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [applyRestoredProfilePhoto])
 
   const setAutoRestore = useCallback(async (enabled: boolean): Promise<void> => {
     setAutoRestoreState(enabled)
@@ -107,7 +107,7 @@ export function BackupProvider({ children }: PropsWithChildren): React.ReactElem
     } catch {
       return { ok: false, message: "Cadangan belum bisa dipulihkan. Coba lagi." }
     }
-  }, [])
+  }, [applyRestoredProfilePhoto])
 
   const value = useMemo<BackupContextValue>(
     () => ({ ready, autoRestored, autoRestore, setAutoRestore, restoreBackup }),

@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { API_BASE_URL } from "./api"
+import { changePassword, fetchMe, login, logout, register, updateProfile } from "./authClient"
+
 vi.hoisted(() => {
   process.env.EXPO_PUBLIC_API_URL = "http://test.local"
 })
 
 // api.ts mengimpor expo-constants; di lingkungan test Node modul native itu
-// tidak bisa dimuat, jadi mock default-nya.
+// tidak bisa dimuat, jadi mock default-nya. vitest otomatis meng-hoist
+// pemanggilan ini ke atas file.
 vi.mock("expo-constants", () => ({ default: { expoConfig: null } }))
-
-import { API_BASE_URL } from "./api"
-import { changePassword, fetchMe, login, logout, register, updateProfile } from "./authClient"
 
 const mockFetch = vi.fn()
 

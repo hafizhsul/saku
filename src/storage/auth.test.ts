@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { Platform } from "react-native"
-import * as SecureStore from "expo-secure-store"
 
 import { clearToken, getToken, setToken } from "./auth"
 

@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
-import { useMemo, type ComponentProps } from "react"
-import { Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { useMemo } from "react"
+import { Image, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
 import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
@@ -17,8 +17,6 @@ import {
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, darkColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
-
-type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
 // Warna hero memakai token M3 dari referensi desain (primary/tertiary-container)
 // yang memang selalu gelap emerald di semua mode. ponytail: pindah ke token

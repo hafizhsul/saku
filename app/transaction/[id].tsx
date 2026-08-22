@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { useMemo, useState, type ComponentProps } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
@@ -11,8 +11,6 @@ import { useTransactions } from "../../src/features/transactions/TransactionsPro
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatSignedCurrency } from "../../src/utils/currency"
 import { formatTimeOfDay, formatTransactionDate } from "../../src/utils/dates"
-
-type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
 export default function TransactionDetailScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string | string[] }>()
@@ -178,8 +176,6 @@ export default function TransactionDetailScreen(): React.ReactElement {
     </ScreenShell>
   )
 }
-
-type DetailStyles = ReturnType<typeof createStyles>
 
 // Header mengikuti pola detail: tombol kembali + judul "Detail Saku".
 function DetailHeader({ onBack }: { readonly onBack: () => void }): React.ReactElement {
