@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "commonjs",
+  "dependencies": {
+    "firebase-admin": "^14.3.0"
+  },
   "scripts": {
     "start": "node auth-server.js",
     "test": "node --test"

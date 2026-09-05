@@ -1,5 +1,12 @@
 import { API_BASE_URL } from "./api"
 import {
+  FIREBASE_UNAVAILABLE,
+  firebaseLogin,
+  firebaseLogout,
+  firebaseRegister,
+  isFirebaseConfigured,
+} from "./firebaseClient"
+import {
   AuthErrorSchema,
   parseAuthResponse,
   parseMeResponse,
@@ -63,10 +70,36 @@ async function postAuth(path: "/register" | "/login", input: RegisterRequest | L
 }
 
 export async function register(input: RegisterRequest): Promise<AuthResponse> {
+  if (isFirebaseConfigured()) {
+    try {
+      const session = await firebaseRegister(input.email, input.password, input.name)
+      // Server menerima Firebase ID token sebagai Bearer dan mengembalikan
+      // profil kanonis (Firestore) — samakan bentuk AuthResponse.
+      const user = await fetchMe(session.idToken)
+      return { token: session.idToken, user }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
+        return postAuth("/register", input)
+      }
+      throw error
+    }
+  }
   return postAuth("/register", input)
 }
 
 export async function login(input: LoginRequest): Promise<AuthResponse> {
+  if (isFirebaseConfigured()) {
+    try {
+      const session = await firebaseLogin(input.email, input.password)
+      const user = await fetchMe(session.idToken)
+      return { token: session.idToken, user }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
+        return postAuth("/login", input)
+      }
+      throw error
+    }
+  }
   return postAuth("/login", input)
 }
 
@@ -150,6 +183,9 @@ export async function changePassword(token: string | null, input: ChangePassword
 }
 
 export async function logout(token: string | null): Promise<void> {
+  if (isFirebaseConfigured()) {
+    await firebaseLogout()
+  }
   const headers: Record<string, string> = {}
   if (token !== null) {
     headers.Authorization = `Bearer ${token}`

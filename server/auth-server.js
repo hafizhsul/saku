@@ -5,6 +5,8 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
+const firebase = require("./firebase");
+
 const PORT = process.env.PORT ?? 4000;
 const TOKEN_SECRET = process.env.AUTH_SECRET ?? "dev-secret-ganti-di-produksi";
 
@@ -220,6 +222,48 @@ function userFromPayload(payload) {
   return user;
 }
 
+function extractToken(req) {
+  const header = req.headers.authorization || "";
+  const match = /^Bearer\s+(.+)$/i.exec(header);
+  if (match) return match[1];
+  return cookieToken(req);
+}
+
+// Resolusi user Firebase: verifikasi ID token via Admin SDK, lalu cari
+// profil di memori (cache) atau Firestore, auto-provision bila belum ada.
+// Nonaktif (tanpa FIREBASE_PROJECT_ID) → selalu null.
+async function userFromFirebaseToken(token) {
+  if (!token || !firebase.isFirebaseEnabled()) return null;
+  const decoded = await firebase.verifyFirebaseToken(token);
+  if (!decoded) return null;
+  let user = users.find((u) => u.id === decoded.uid);
+  const email = (decoded.email ?? "").toLowerCase();
+  if (!user && email) {
+    user = users.find((u) => u.email === email);
+  }
+  if (!user) {
+    if (!email) return null;
+    const profile = await firebase.getProfile(decoded.uid);
+    user = {
+      id: decoded.uid,
+      email,
+      name: profile?.name ?? email.split("@")[0],
+      tokenVersion: profile?.tokenVersion ?? 0,
+    };
+    users.push(user);
+    saveUsers(users);
+    firebase.mirrorProfile(user);
+  }
+  return user;
+}
+
+// Resolusi gabungan: JWT lokal dulu, lalu Firebase ID token.
+async function resolveAuthUser(req) {
+  const user = userFromPayload(requireAuth(req));
+  if (user) return user;
+  return userFromFirebaseToken(extractToken(req));
+}
+
 const users = loadUsers();
 
 const server = http.createServer(async (req, res) => {
@@ -263,6 +307,7 @@ const server = http.createServer(async (req, res) => {
       const user = { id: crypto.randomUUID(), email, name, salt, hash, tokenVersion: 0 };
       users.push(user);
       saveUsers(users);
+      firebase.mirrorProfile(user);
 
       const token = signToken({
         sub: user.id,
@@ -285,16 +330,18 @@ const server = http.createServer(async (req, res) => {
       const password = typeof body.password === "string" ? body.password : "";
 
       const user = users.find((u) => u.email === email);
+      // Akun khusus Firebase (tanpa salt/hash lokal) tidak bisa login pakai kata sandi lokal.
+      const hasLocalPassword = Boolean(user && typeof user.salt === "string" && typeof user.hash === "string");
 
       const dummySalt = crypto.randomBytes(16).toString("hex");
       const dummyHash = hashPassword("dummy-password-placeholder", dummySalt);
-      const realHash = user ? user.hash : dummyHash;
+      const realHash = hasLocalPassword ? user.hash : dummyHash;
 
       const a = Buffer.from(realHash, "hex");
-      const b = Buffer.from(hashPassword(password, user ? user.salt : dummySalt), "hex");
+      const b = Buffer.from(hashPassword(password, hasLocalPassword ? user.salt : dummySalt), "hex");
       const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
 
-      if (!user || !ok) {
+      if (!hasLocalPassword || !ok) {
         return sendJson(res, 401, { error: "Email atau kata sandi salah." });
       }
 
@@ -310,7 +357,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (route === "GET /me") {
-      const user = userFromPayload(requireAuth(req));
+      const user = await resolveAuthUser(req);
       if (!user) {
         return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
       }
@@ -318,8 +365,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (route === "PATCH /me") {
-      const payload = requireAuth(req);
-      const user = userFromPayload(payload);
+      const user = await resolveAuthUser(req);
       if (!user) {
         return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
       }
@@ -332,14 +378,17 @@ const server = http.createServer(async (req, res) => {
 
       user.name = name;
       saveUsers(users);
+      firebase.mirrorProfile(user);
       return sendJson(res, 200, { user: publicUser(user) });
     }
 
     if (route === "PATCH /me/password") {
-      const payload = requireAuth(req);
-      const user = userFromPayload(payload);
+      const user = await resolveAuthUser(req);
       if (!user) {
         return sendJson(res, 401, { error: "Sesi berakhir. Silakan masuk kembali." });
+      }
+      if (typeof user.salt !== "string" || typeof user.hash !== "string") {
+        return sendJson(res, 400, { error: "Akun ini memakai login Firebase. Ubah kata sandi lewat aplikasi." });
       }
 
       const body = await readBody(req);
@@ -371,10 +420,11 @@ const server = http.createServer(async (req, res) => {
       // Selalu 204 + hapus cookie (web). Bila token valid, naikkan
       // tokenVersion → semua token user (semua perangkat) dicabut.
       clearAuthCookie(res);
-      const user = userFromPayload(requireAuth(req));
+      const user = await resolveAuthUser(req);
       if (user) {
         user.tokenVersion = (user.tokenVersion ?? 0) + 1;
         saveUsers(users);
+        firebase.mirrorProfile(user);
       }
       res.writeHead(204);
       res.end();
