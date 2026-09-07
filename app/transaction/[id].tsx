@@ -319,6 +319,7 @@ function createStyles(colors: ThemeColors) {
     },
     gridCell: {
       flex: 1,
+      minWidth: 0,
     },
     gridCellFull: {
       flex: 1,

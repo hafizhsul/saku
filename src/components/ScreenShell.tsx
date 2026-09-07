@@ -24,8 +24,9 @@ export function ScreenShell({ children, withTabBar = true, contentStyle, ...scro
   const colors = useThemeColors()
   const scheme = useColorScheme()
   const styles = useMemo(() => createStyles(colors), [colors])
-  // 112 = jarak bawah tab bar (20) + tinggi tab bar (60) + tonjolan FAB (24) + napas 8px.
-  const bottomReserve = withTabBar ? 112 + insets.bottom : spacing.xl + insets.bottom
+  // 132 = jarak bawah tab bar (20) + tinggi tab bar (60) + tonjolan FAB (24)
+  // + napas 20px agar baris terakhir tidak tertutup nav melayang (R-03).
+  const bottomReserve = withTabBar ? 132 + insets.bottom : spacing.xl + insets.bottom
 
   return (
     <View style={styles.root}>

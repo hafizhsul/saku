@@ -14,33 +14,13 @@ import {
   selectCategoryBreakdown,
   selectMonthlySummary,
 } from "../../src/features/transactions/selectors"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, darkColors, type ThemeColors } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
 
-// Warna hero memakai token M3 dari referensi desain (primary/tertiary-container)
-// yang memang selalu gelap emerald di semua mode. ponytail: pindah ke token
-// tema kalau palet hero perlu ikut dark mode.
-const HERO = {
-  background: "#003527",
-  text: "#FFFFFF",
-  label: "#95d3ba",
-  chipBackground: "#004f34",
-  chipText: "#31c98f",
-} as const
-
-// Warna lain mengikuti referensi Stitch; tema gelap memakai surfaceMuted/aksen
-// terang agar tetap terbaca. ponytail: pindah ke token tema kalau palet biru
-// pucat ini diadopsi ke semua layar.
-const SURFACE_TINT = "#E5EEFF" // chip "7 Hari" & kartu Saku Insight
-const INSIGHT_ICON_BG = "#003623" // lingkaran bohlam Saku Insight
-const CHART_BAR = "#D5E6DF" // bar biasa (secondary-fixed)
-const CHART_SATURDAY = "#FFDAD6" // bar Sabtu (error-container)
-const CHART_TODAY = "#064E3B" // bar hari ini (primary-container)
-
-function isDarkTheme(colors: ThemeColors): boolean {
-  return colors.canvas === darkColors.canvas
-}
+// Warna hero emerald selalu gelap di semua mode (focal point konsisten,
+// R-31). Tokennya hidup di tema (heroBackground, heroChip, tint, chart*),
+// bukan konstanta file, agar dark mode tidak di-patch parsial.
 
 // Abreviasi hari Indonesia, berindeks sama seperti Date.getDay() (0 = Minggu).
 const DAY_LABELS = ["Mg", "Sn", "Sl", "Rb", "Km", "Jm", "Sb"] as const
@@ -79,10 +59,7 @@ export default function AnalisisScreen(): React.ReactElement {
   const { isLoading, loadError, retryLoad, transactions } = useTransactions()
   const { budgets } = useBudgets()
   const colors = useThemeColors()
-  const isDark = isDarkTheme(colors)
-  const surfaceTint = isDark ? colors.surfaceMuted : SURFACE_TINT
-  const titleColor = isDark ? "#95D3BA" : HERO.background
-  const styles = useMemo(() => createStyles(colors, surfaceTint, titleColor), [colors, surfaceTint, titleColor])
+  const styles = useMemo(() => createStyles(colors), [colors])
   const currentMonth = toMonthKey(new Date())
 
   const balance = selectBalance(transactions)
@@ -127,7 +104,7 @@ export default function AnalisisScreen(): React.ReactElement {
           {monthChangePercent !== undefined ? (
             <View style={styles.changeChip}>
               <MaterialCommunityIcons
-                color={HERO.chipText}
+                color={colors.heroChipText}
                 name={monthChangePercent >= 0 ? "trending-up" : "trending-down"}
                 size={14}
               />
@@ -164,6 +141,9 @@ export default function AnalisisScreen(): React.ReactElement {
                 <Text style={styles.labelMuted}>Total Minggu Ini</Text>
                 <Text style={styles.weekTotal}>{formatCurrency(weekTotal)}</Text>
               </View>
+              {weekTotal === 0 ? (
+                <Text style={styles.chartEmpty}>Belum ada pengeluaran 7 hari terakhir. Chart terisi setelah kamu mencatat.</Text>
+              ) : (
               <View style={styles.chart}>
                 <View style={styles.chartBarsArea}>
                   {[0.2, 0.5, 0.8].map((ratio) => (
@@ -176,7 +156,7 @@ export default function AnalisisScreen(): React.ReactElement {
                     {weekDays.map((day) => {
                       const maxAmount = Math.max(...weekDays.map((item) => item.amount), 1)
                       const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / maxAmount) * 96))
-                      const barColor = day.isToday ? CHART_TODAY : day.isSaturday ? CHART_SATURDAY : CHART_BAR
+                      const barColor = day.isToday ? colors.chartToday : day.isSaturday ? colors.chartSaturday : colors.chartBar
                       return (
                         <View key={day.key} style={styles.chartBarColumn}>
                           <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
@@ -200,6 +180,7 @@ export default function AnalisisScreen(): React.ReactElement {
                   ))}
                 </View>
               </View>
+              )}
             </View>
           </View>
 
@@ -208,7 +189,7 @@ export default function AnalisisScreen(): React.ReactElement {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
               {breakdown.map((item, index) => (
-                <CategoryRow index={index} item={item} key={item.category} styles={styles} />
+                <CategoryRow colors={colors} index={index} item={item} key={item.category} styles={styles} />
               ))}
             </View>
           ) : null}
@@ -240,8 +221,7 @@ type AnalisisStyles = ReturnType<typeof createStyles>
 // judul + tombol profil (Pressable dengan hover), bukan ikon telanjang.
 function Header(): React.ReactElement {
   const colors = useThemeColors()
-  const isDark = isDarkTheme(colors)
-  const styles = useMemo(() => createStyles(colors, colors.surfaceMuted, isDark ? "#95D3BA" : HERO.background), [colors, isDark])
+  const styles = useMemo(() => createStyles(colors), [colors])
 
   return (
     <View style={styles.header}>
@@ -260,16 +240,20 @@ function Header(): React.ReactElement {
 }
 
 type CategoryRowProps = {
+  readonly colors: ThemeColors
   readonly index: number
   readonly item: { readonly category: string; readonly percentage: number }
   readonly styles: AnalisisStyles
 }
 
-function CategoryRow({ index, item, styles }: CategoryRowProps): React.ReactElement {
+function CategoryRow({ colors, index, item, styles }: CategoryRowProps): React.ReactElement {
+  // Palet dari token tema, bukan hex file (R-29, R-34): baris 1 netral,
+  // baris 2 aksen, baris 3 danger. Alasan satu baris: variasi mencerminkan
+  // hierarki peringkat kategori.
   const palette = [
-    { well: "#D3E3DC", icon: "#566660", fill: "#003527" }, // secondary-container → primary
-    { well: "#004F34", icon: "#31C98F", fill: "#003623" }, // tertiary-container → tertiary
-    { well: "#FFDAD6", icon: "#93000A", fill: "#BA1A1A" }, // error-container → error
+    { well: colors.accentSurface, icon: colors.accent, fill: colors.heroBackground },
+    { well: colors.heroChip, icon: colors.heroChipText, fill: colors.heroBackground },
+    { well: colors.expenseSurface, icon: colors.expense, fill: colors.error },
   ][index % 3]
 
   return (
@@ -292,10 +276,10 @@ function CategoryRow({ index, item, styles }: CategoryRowProps): React.ReactElem
   )
 }
 
-function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: string) {
+function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     balanceAmount: {
-      color: HERO.text,
+      color: colors.heroText,
       fontFamily: fontFamilies.bold,
       fontSize: 32,
       fontWeight: "700",
@@ -303,14 +287,14 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       marginTop: spacing.xs,
     },
     balanceCard: {
-      backgroundColor: HERO.background,
+      backgroundColor: colors.heroBackground,
       borderRadius: radii.lg,
       overflow: "hidden",
       padding: spacing.lg,
       ...shadows.elevated,
     },
     balanceLabel: {
-      color: HERO.label,
+      color: colors.heroMuted,
       fontFamily: typography.caption.fontFamily,
       fontSize: typography.caption.fontSize,
       fontWeight: typography.caption.fontWeight,
@@ -325,7 +309,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       marginTop: spacing.md,
     },
     balanceMetaText: {
-      color: HERO.label,
+      color: colors.heroMuted,
       fontSize: typography.bodyMedium.fontSize,
       lineHeight: typography.bodyMedium.lineHeight,
     },
@@ -348,7 +332,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
     },
     changeChip: {
       alignItems: "center",
-      backgroundColor: HERO.chipBackground,
+      backgroundColor: colors.heroChip,
       borderRadius: radii.pill,
       flexDirection: "row",
       gap: spacing.xs,
@@ -356,7 +340,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       paddingVertical: spacing.xs,
     },
     changeChipText: {
-      color: HERO.chipText,
+      color: colors.heroChipText,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.caption.fontSize,
       fontWeight: "600",
@@ -400,6 +384,14 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
+    chartEmpty: {
+      color: colors.textSecondary,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontSize: typography.bodyMedium.fontSize,
+      fontWeight: typography.bodyMedium.fontWeight,
+      lineHeight: typography.bodyMedium.lineHeight,
+      paddingVertical: spacing.md,
+    },
     chartLabelsRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -407,7 +399,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       paddingHorizontal: spacing.xs,
     },
     chip: {
-      backgroundColor: surfaceTint,
+      backgroundColor: colors.tint,
       borderRadius: radii.pill,
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
@@ -420,7 +412,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       lineHeight: typography.caption.lineHeight,
     },
     glowBottom: {
-      backgroundColor: "#004f34",
+      backgroundColor: colors.heroChip,
       borderRadius: 100,
       bottom: -40,
       height: 96,
@@ -430,7 +422,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       width: 96,
     },
     glowTop: {
-      backgroundColor: "#064e3b",
+      backgroundColor: colors.heroBackground,
       borderRadius: 100,
       height: 128,
       opacity: 0.5,
@@ -459,7 +451,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
       gap: spacing.row,
     },
     headerTitle: {
-      color: titleColor,
+      color: colors.heroBackground,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.heading.fontSize,
       fontWeight: "700",
@@ -472,7 +464,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
     },
     insightCard: {
       alignItems: "flex-start",
-      backgroundColor: surfaceTint,
+      backgroundColor: colors.tint,
       borderRadius: radii.lg,
       flexDirection: "row",
       gap: spacing.md,
@@ -480,7 +472,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, titleColor: stri
     },
     insightIcon: {
       alignItems: "center",
-      backgroundColor: INSIGHT_ICON_BG,
+      backgroundColor: colors.insightIcon,
       borderRadius: 16,
       height: 32,
       justifyContent: "center",

@@ -18,53 +18,84 @@
 
 const USERS_COLLECTION = "users";
 
-// null = belum diinisialisasi, false = tidak tersedia, objek = modul admin.
+// null = belum diinisialisasi, false = tidak tersedia, objek = SDK siap pakai.
 let adminCache = null;
 
 function isFirebaseEnabled() {
   return Boolean(process.env.FIREBASE_PROJECT_ID);
 }
 
-function loadAdmin() {
+// firebase-admin v11 (namespaced: admin.apps/auth/credential) vs v12+
+// (flat modular: getApps/getAuth + cert/applicationDefault langsung).
+// Dukung keduanya agar upgrade SDK tidak mematikan verifikasi diam-diam.
+function loadSdk() {
   if (adminCache !== null) return adminCache || null;
-  let admin = null;
   try {
-    // Lazy require: paket firebase-admin tidak wajib terinstal untuk
-    // menjalankan server dalam mode legacy (file).
-    admin = require("firebase-admin");
-    if (admin.apps.length === 0) {
+    const admin = require("firebase-admin");
+    const getApps = typeof admin.getApps === "function" ? admin.getApps.bind(admin) : () => admin.apps;
+    const initApp = typeof admin.initializeApp === "function" ? admin.initializeApp.bind(admin) : null;
+    const certFn =
+      admin.credential && typeof admin.credential.cert === "function"
+        ? admin.credential.cert.bind(admin.credential)
+        : admin.cert;
+    const adcFn =
+      admin.credential && typeof admin.credential.applicationDefault === "function"
+        ? admin.credential.applicationDefault.bind(admin.credential)
+        : admin.applicationDefault;
+    if (getApps().length === 0) {
       const projectId = process.env.FIREBASE_PROJECT_ID;
-      if (!projectId) {
+      if (!projectId || !initApp || typeof certFn !== "function" || typeof adcFn !== "function") {
         adminCache = false;
         return null;
       }
       const options = { projectId };
       const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
       if (serviceAccountJson) {
-        options.credential = admin.credential.cert(JSON.parse(serviceAccountJson));
+        options.credential = certFn(JSON.parse(serviceAccountJson));
       } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIRESTORE_EMULATOR_HOST) {
         // Emulator atau ADC: applicationDefault() cukup.
-        options.credential = admin.credential.applicationDefault();
+        options.credential = adcFn();
       } else {
         // projectId ada tapi tanpa kredensial → anggap belum dikonfigurasi.
         adminCache = false;
         return null;
       }
-      admin.initializeApp(options);
+      initApp(options);
     }
-    adminCache = admin;
-    return admin;
+    let getAuth = typeof admin.auth === "function" ? () => admin.auth() : null;
+    if (!getAuth) {
+      try {
+        getAuth = require("firebase-admin/auth").getAuth;
+      } catch {
+        getAuth = null;
+      }
+    }
+    let getFirestore =
+      typeof admin.firestore === "function" ? () => admin.firestore() : null;
+    if (!getFirestore) {
+      try {
+        getFirestore = require("firebase-admin/firestore").getFirestore;
+      } catch {
+        getFirestore = null;
+      }
+    }
+    adminCache = { getAuth, getFirestore };
+    return adminCache;
   } catch {
     adminCache = false;
     return null;
   }
 }
 
+function loadAdmin() {
+  return loadSdk();
+}
+
 function getDb() {
-  const admin = loadAdmin();
-  if (!admin) return null;
+  const sdk = loadSdk();
+  if (!sdk || typeof sdk.getFirestore !== "function") return null;
   try {
-    return admin.firestore();
+    return sdk.getFirestore();
   } catch {
     return null;
   }
@@ -73,10 +104,10 @@ function getDb() {
 // Verifikasi Firebase ID token (dari client). Gagal/ tak terkonfigurasi → null.
 async function verifyFirebaseToken(idToken) {
   if (typeof idToken !== "string" || !idToken) return null;
-  const admin = loadAdmin();
-  if (!admin) return null;
+  const sdk = loadSdk();
+  if (!sdk || typeof sdk.getAuth !== "function") return null;
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await sdk.getAuth().verifyIdToken(idToken);
     if (!decoded || typeof decoded.uid !== "string") return null;
     return { uid: decoded.uid, email: typeof decoded.email === "string" ? decoded.email : null };
   } catch {

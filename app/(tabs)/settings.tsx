@@ -7,27 +7,28 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { SegmentedControl } from "../../src/components/SegmentedControl"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
-const themeLabels: Record<ThemePreference, string> = {
-  system: "Sistem",
-  light: "Terang",
-  dark: "Gelap",
+// TODO: hubungkan baris "Segera hadir" ke fitur saat tersedia. Baris tanpa
+// onPress sengaja non-interaktif (R-26): dead control dilarang, placeholder
+// harus jujur dengan label yang terlihat.
+
+function initialsOf(name: string | undefined, email: string | undefined): string {
+  const source = (name ?? "").trim() || (email ?? "").trim()
+  if (source.length === 0) {
+    return "?"
+  }
+  const parts = source.split(/\s+/)
+  if (parts.length === 1) {
+    return (parts[0] ?? "?").slice(0, 2).toUpperCase()
+  }
+  return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase()
 }
-
-const THEME_CYCLE: readonly ThemePreference[] = ["system", "light", "dark"]
-
-function nextTheme(current: ThemePreference): ThemePreference {
-  return THEME_CYCLE[(THEME_CYCLE.indexOf(current) + 1) % THEME_CYCLE.length]
-}
-
-// Tombol referensi desain yang belum punya fitur: tetap dirender agar mirip,
-// tapi onPress-nya no-op. ponytail: ganti dengan navigasi/aksi saat fiturnya ada.
-function noop(): void {}
 
 export default function SettingsScreen(): React.ReactElement {
   const { settings, isLoading, loadError, retryLoad, setBiometricLock, setTheme } = useSettings()
@@ -63,7 +64,9 @@ export default function SettingsScreen(): React.ReactElement {
             {profilePhoto !== null ? (
               <Image accessibilityLabel="Foto profil" source={{ uri: profilePhoto }} style={styles.avatarPhoto} />
             ) : (
-              <Image accessibilityLabel="Foto profil" source={require("../../assets/images/avatar-budi.jpg")} style={styles.avatarPhoto} />
+              <View accessibilityLabel="Foto profil" style={styles.avatarFallback}>
+                <Text style={styles.avatarInitials}>{initialsOf(user?.name, user?.email)}</Text>
+              </View>
             )}
           </View>
           <View accessibilityLabel="Ubah foto profil" style={styles.avatarEdit}>
@@ -99,7 +102,7 @@ export default function SettingsScreen(): React.ReactElement {
             onPress={() => router.push("/change-password")}
           />
           <View style={styles.divider} />
-          <MenuRow icon="bank-outline" iconTone="accent" label="Hubungkan Bank/E-wallet" trailing={chevron} onPress={noop} />
+          <MenuRow icon="bank-outline" iconTone="accent" label="Hubungkan Bank/E-wallet" subtitle="Segera hadir" trailing={chevron} />
         </View>
       </View>
 
@@ -128,16 +131,23 @@ export default function SettingsScreen(): React.ReactElement {
             </>
           ) : null}
           <View style={styles.divider} />
-          <MenuRow
-            accessibilityHint="Ketuk untuk mengganti tema"
-            icon="theme-light-dark"
-            iconTone="muted"
-            label="Tema"
-            trailing={valueTrailing(themeLabels[settings.theme])}
-            onPress={() => void setTheme(nextTheme(settings.theme))}
-          />
+          <View style={styles.themeBlock}>
+            <View style={styles.themeBlockHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
+                <MaterialCommunityIcons color={colors.textPrimary} name="theme-light-dark" size={20} />
+              </View>
+              <Text style={styles.rowLabel}>Tema</Text>
+            </View>
+            <SegmentedControl
+              accessibilityLabel="Pilih tema"
+              onChange={(value) => void setTheme(value as ThemePreference)}
+              options={themePreferenceOptions}
+              selectedValue={settings.theme}
+            />
+            {settings.theme === "system" ? <Text style={styles.rowSubtitle}>Mengikuti pengaturan perangkatmu.</Text> : null}
+          </View>
           <View style={styles.divider} />
-          <MenuRow icon="translate" iconTone="muted" label="Bahasa" trailing={valueTrailing("Indonesia")} onPress={noop} />
+          <MenuRow icon="translate" iconTone="muted" label="Bahasa" subtitle="Segera hadir" trailing={valueTrailing("Indonesia")} />
         </View>
       </View>
 
@@ -168,9 +178,9 @@ export default function SettingsScreen(): React.ReactElement {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Lainnya</Text>
         <View style={styles.card}>
-          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan" trailing={chevron} onPress={noop} />
+          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan" subtitle="Segera hadir" trailing={chevron} />
           <View style={styles.divider} />
-          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" trailing={chevron} onPress={noop} />
+          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" subtitle="Segera hadir" trailing={chevron} />
           <View style={styles.divider} />
           <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => setConfirmLogout(true)} />
         </View>
@@ -271,7 +281,7 @@ function MenuRow({ accessibilityHint, icon, iconTone, label, subtitle, danger, t
     <Pressable
       accessibilityHint={accessibilityHint}
       accessibilityLabel={label}
-      accessibilityRole="button"
+      accessibilityRole={onPress === undefined ? undefined : "button"}
       disabled={onPress === undefined}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -334,6 +344,20 @@ function createStyles(colors: ThemeColors) {
       right: 0,
       width: 32,
       ...shadows.card,
+    },
+    avatarFallback: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: 40,
+      height: "100%",
+      justifyContent: "center",
+      width: "100%",
+    },
+    avatarInitials: {
+      color: colors.accent,
+      fontFamily: fontFamilies.bold,
+      fontSize: 28,
+      fontWeight: "700",
     },
     avatarPhoto: {
       borderRadius: 40,
@@ -536,6 +560,15 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.caption.lineHeight,
       marginLeft: spacing.sm,
       textTransform: "uppercase",
+    },
+    themeBlock: {
+      gap: spacing.sm,
+      padding: spacing.group,
+    },
+    themeBlockHeader: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.group,
     },
     title: {
       color: colors.textPrimary,

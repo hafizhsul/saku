@@ -8,6 +8,10 @@ import { radii, useThemeColors, type SemanticTone, type ThemeColors } from "../t
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
+// Relevansi ikon per kategori (R-04): setiap glyph memvisualkan kategorinya
+// langsung (uang, makanan, bus, belanja, rumah, hiburan, kesehatan, kerja),
+// bukan ikon generik AI (sparkle/magic/robot). Set MaterialCommunityIcons
+// dipilih karena stroke tebalnya terbaca di ukuran 14-28px pada kedua tema.
 const categoryIcons = {
   Gaji: "cash-multiple",
   Bonus: "gift-outline",

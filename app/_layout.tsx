@@ -114,7 +114,7 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
           <TransactionsProvider>
             <BudgetsProvider>
               <RecurringProvider>
-                <Stack screenOptions={{ animation: "fade" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
+                <Stack screenOptions={{ animation: "slide_from_right" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="add-transaction" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="budget-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />

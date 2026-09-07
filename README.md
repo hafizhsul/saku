@@ -41,6 +41,7 @@ Butuh Node.js 20+ dan [pnpm](https://pnpm.io).
 
 ```bash
 pnpm install
+pnpm dev            # Expo + server auth (:4000) sekaligus — login butuh keduanya
 ```
 
 Jalankan di platform pilihan:

@@ -75,7 +75,7 @@ export async function register(input: RegisterRequest): Promise<AuthResponse> {
       const session = await firebaseRegister(input.email, input.password, input.name)
       // Server menerima Firebase ID token sebagai Bearer dan mengembalikan
       // profil kanonis (Firestore) — samakan bentuk AuthResponse.
-      const user = await fetchMe(session.idToken)
+      const user = await withReconciledName(session.idToken, session.user, await fetchMe(session.idToken))
       return { token: session.idToken, user }
     } catch (error: unknown) {
       if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
@@ -91,7 +91,7 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
   if (isFirebaseConfigured()) {
     try {
       const session = await firebaseLogin(input.email, input.password)
-      const user = await fetchMe(session.idToken)
+      const user = await withReconciledName(session.idToken, session.user, await fetchMe(session.idToken))
       return { token: session.idToken, user }
     } catch (error: unknown) {
       if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
@@ -101,6 +101,20 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
     }
   }
   return postAuth("/login", input)
+}
+
+// Nama displayName hanya ada di sisi Firebase Auth; server (Firestore)
+// belum tentu menyimpannya sehingga profil kanonis berisi prefix email.
+// Samakan sekali via PATCH /me. Best-effort: login tetap sukses bila gagal.
+async function withReconciledName(token: string, sessionUser: User, serverUser: User): Promise<User> {
+  if (!sessionUser.name || sessionUser.name === serverUser.name) {
+    return serverUser
+  }
+  try {
+    return await updateProfile(token, { name: sessionUser.name })
+  } catch {
+    return serverUser
+  }
 }
 
 // token null = web, autentikasi lewat cookie; token string = native (Bearer).

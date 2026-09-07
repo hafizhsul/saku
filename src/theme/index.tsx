@@ -22,6 +22,18 @@ export const lightColors = {
   warning: "#B8761C",
   focus: "#2E5BD8",
   error: "#B02A20",
+  // Hero emerald selalu gelap di semua mode (focal point konsisten, R-31).
+  heroBackground: "#003527",
+  heroText: "#FFFFFF",
+  heroMuted: "#95D3BA",
+  heroChip: "#004F34",
+  heroChipText: "#7FD8B0",
+  insightIcon: "#003623",
+  // Tint biru pucat referensi Stitch untuk chip dan kartu insight.
+  tint: "#E5EEFF",
+  chartBar: "#D5E6DF",
+  chartToday: "#064E3B",
+  chartSaturday: "#FFDAD6",
 } as const
 
 export const darkColors = {
@@ -45,6 +57,17 @@ export const darkColors = {
   warning: "#D8A257",
   focus: "#8FA8FF",
   error: "#FF9C94",
+  // Hero tetap emerald gelap di mode gelap; tint mengikuti surfaceMuted.
+  heroBackground: "#003527",
+  heroText: "#FFFFFF",
+  heroMuted: "#95D3BA",
+  heroChip: "#004F34",
+  heroChipText: "#7FD8B0",
+  insightIcon: "#003623",
+  tint: "#262A2F",
+  chartBar: "#2C3A35",
+  chartToday: "#7FC19B",
+  chartSaturday: "#5A2E28",
 } as const
 
 export type ThemeColors = { readonly [Key in keyof typeof lightColors]: string }

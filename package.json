@@ -38,12 +38,15 @@
     "@types/node": "^26.2.0",
     "@types/react": "~19.2.2",
     "@vitest/coverage-v8": "^4.1.10",
+    "concurrently": "^10.0.5",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.1",
     "typescript": "~6.0.3",
     "vitest": "^4.1.10"
   },
   "scripts": {
+    "dev": "concurrently -n server,expo -c green,cyan \"pnpm server\" \"expo start\"",
+    "server": "node --env-file=server/.env server/auth-server.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
