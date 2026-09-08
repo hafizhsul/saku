@@ -87,7 +87,7 @@ export default function HomeScreen(): React.ReactElement {
           colors={colors}
           monthLabel={formatMonthLabel(currentMonth)}
           onAlokasi={() => setSheetVisible(true)}
-          onPemasukan={() => router.push("/add-transaction")}
+          onPemasukan={() => router.push({ pathname: "/add-transaction", params: { type: "income" } })}
           onToggleBalance={() => setBalanceVisible((v) => !v)}
           styles={styles}
           totalBudget={totalBudget}
@@ -189,7 +189,7 @@ function Header({ colors, styles }: { readonly colors: ThemeColors; readonly sty
         <Image
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          source={require("../../assets/images/screen.png")}
+          source={require("../../assets/images/saku-logo.png")}
           style={styles.brandIcon}
         />
         <View style={styles.headerText}>
@@ -429,7 +429,7 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
     },
     actionButtonSecondary: {
-      backgroundColor: "rgba(255, 255, 255, 0.18)",
+      backgroundColor: "rgba(255, 255, 255, 0.22)",
     },
     actionButtonSecondaryText: {
       color: colors.surface,
@@ -444,8 +444,8 @@ function createStyles(colors: ThemeColors) {
     },
     brandIcon: {
       borderRadius: radii.sm,
-      height: 36,
-      width: 36,
+      height: 40,
+      width: 40,
     },
     content: {
       gap: spacing.section,
@@ -536,7 +536,7 @@ function createStyles(colors: ThemeColors) {
       gap: 2,
     },
     monthChip: {
-      backgroundColor: `${colors.surface}2E`,
+      backgroundColor: `${colors.surface}38`,
       borderRadius: radii.pill,
       color: colors.surface,
       fontFamily: fontFamilies.semibold,
@@ -627,7 +627,7 @@ function createStyles(colors: ThemeColors) {
       lineHeight: 16,
     },
     sakuCard: {
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: colors.surface,
       borderRadius: radii.lg,
       flexBasis: "47%",
       flexGrow: 1,
@@ -676,13 +676,13 @@ function createStyles(colors: ThemeColors) {
       lineHeight: 32,
     },
     totalBudgetCard: {
-      backgroundColor: colors.accent,
+      backgroundColor: colors.heroBackground,
       borderRadius: radii.xl,
       gap: spacing.unit,
       overflow: "hidden",
       padding: spacing.group,
       ...{
-        shadowColor: colors.accent,
+        shadowColor: colors.heroBackground,
         shadowOffset: { height: 6, width: 0 },
         shadowOpacity: 0.15,
         shadowRadius: 16,
@@ -693,17 +693,17 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radii.pill,
       height: 128,
       position: "absolute" as const,
-      right: -32,
-      top: -32,
+      right: -14,
+      top: -8,
       width: 128,
     },
     decorCircleSmall: {
       backgroundColor: `${colors.surface}0D`,
       borderRadius: radii.pill,
-      bottom: 16,
+      bottom: 34,
       height: 64,
       position: "absolute" as const,
-      right: 48,
+      right: 80,
       width: 64,
     },
     totalBudgetLabel: {
