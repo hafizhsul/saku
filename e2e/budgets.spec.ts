@@ -2,35 +2,40 @@ import { expect, test } from "@playwright/test"
 
 import { openHome } from "./helpers"
 
-test("anggaran kategori dibuat, diedit, dan dihapus", async ({ page }) => {
+// Alokasi anggaran lewat bottom-sheet di Beranda: tambah, geser, simpan,
+// hapus (geser ke nol).
+test("alokasi anggaran diatur lewat sheet", async ({ page }) => {
   await openHome(page)
 
   await page.getByRole("button", { name: "Alokasi anggaran" }).click()
-  await expect(page.getByText("Atur anggaran", { exact: true })).toBeVisible()
+  await expect(page.getByText("Sesuaikan Alokasi Anggaran", { exact: true })).toBeVisible()
 
-  // Chip "Sisa bulan ini" di kartu hero: bukti nilai anggaran yang unik dan terlihat.
-  const remainingChip = page.getByText("Sisa bulan ini", { exact: true }).locator("..")
+  // Tambah kategori Transportasi (default Rp 100.000).
+  await page.getByRole("button", { name: "Tambah anggaran Transportasi" }).click()
+  const track = page.getByLabel("Ubah alokasi Transportasi", { exact: true })
+  await expect(track).toBeVisible()
+  await expect(page.getByLabel("Nilai alokasi Transportasi")).toHaveText("Rp 100.000")
 
-  // Buat anggaran baru.
-  await page.getByRole("button", { name: "Tambah anggaran" }).click()
-  await expect(page.getByText("Pilih kategori", { exact: true })).toBeVisible()
-  await page.getByRole("button", { name: "Transport" }).click()
-  await page.getByLabel("Nominal anggaran", { exact: true }).fill("500000")
-  await page.getByRole("button", { name: "Tambah", exact: true }).click()
-  await expect(page.getByLabel("Nominal anggaran", { exact: true })).toBeHidden()
-  // Baris anggaran punya tombol aksi unik di layar Atur anggaran.
-  await expect(page.getByRole("button", { name: "Edit anggaran Transportasi" })).toBeVisible()
-  await expect(remainingChip.getByText("Rp 500.000", { exact: true })).toBeVisible()
+  // Geser ke tengah track → Rp 1.500.000 (maks 3jt, step 50rb).
+  // locator.click + position: scroll otomatis, koordinat tidak basi.
+  const trackBox = await track.boundingBox()
+  expect(trackBox).not.toBeNull()
+  await track.click({ position: { x: trackBox!.width * 0.5, y: 22 } })
+  await expect(page.getByLabel("Nilai alokasi Transportasi")).toHaveText("Rp 1.500.000")
 
-  // Ubah batasnya.
-  await page.getByRole("button", { name: "Edit anggaran Transportasi" }).click()
-  await expect(page.getByText("Edit anggaran", { exact: true })).toBeVisible()
-  await page.getByLabel("Nominal anggaran", { exact: true }).fill("600000")
-  await page.getByRole("button", { name: "Simpan", exact: true }).click()
-  await expect(page.getByLabel("Nominal anggaran", { exact: true })).toBeHidden()
-  await expect(remainingChip.getByText("Rp 600.000", { exact: true })).toBeVisible()
+  // Simpan lalu buka ulang: nilai bertahan.
+  await page.getByRole("button", { name: "Simpan Alokasi Baru" }).click()
+  await expect(page.getByText("Sesuaikan Alokasi Anggaran", { exact: true })).toBeHidden({ timeout: 15_000 })
+  await page.getByRole("button", { name: "Alokasi anggaran" }).click()
+  await expect(page.getByLabel("Nilai alokasi Transportasi")).toHaveText("Rp 1.500.000", { timeout: 15_000 })
 
-  // Hapus anggaran.
-  await page.getByRole("button", { name: "Hapus anggaran Transportasi" }).click()
-  await expect(page.getByText("Belum ada anggaran", { exact: true })).toBeVisible()
+  // Geser ke ujung kiri (nol) lalu simpan = hapus.
+  const track2 = page.getByLabel("Ubah alokasi Transportasi", { exact: true })
+  await track2.click({ position: { x: 2, y: 22 } })
+  await expect(page.getByLabel("Nilai alokasi Transportasi")).toHaveText("Rp 0")
+  await page.getByRole("button", { name: "Simpan Alokasi Baru" }).click()
+  await expect(page.getByText("Sesuaikan Alokasi Anggaran", { exact: true })).toBeHidden({ timeout: 15_000 })
+  await page.getByRole("button", { name: "Alokasi anggaran" }).click()
+  await expect(page.getByText("Sesuaikan Alokasi Anggaran", { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole("button", { name: "Tambah anggaran Transportasi" })).toBeVisible({ timeout: 15_000 })
 })

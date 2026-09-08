@@ -18,6 +18,6 @@ module.exports = defineConfig([
     },
   },
   {
-    ignores: ["dist/*", "coverage/*", ".expo/*", ".playwright-cli/*", "output/*", "test-results/*"],
+    ignores: ["dist/*", "coverage/*", ".expo/*", ".playwright-cli/*", "output/*", "test-results/*", "attic/*"],
   },
 ])

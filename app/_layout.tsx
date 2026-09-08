@@ -117,8 +117,6 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
                 <Stack screenOptions={{ animation: "slide_from_right" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="add-transaction" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="budget-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="budgets" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="data" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="edit-profile" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="change-password" options={{ animation: "slide_from_right" as const }} />
