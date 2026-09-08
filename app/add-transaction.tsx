@@ -1,7 +1,8 @@
 import DateTimePicker from "@react-native-community/datetimepicker"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { createElement, useMemo, useState } from "react"
+import { createElement, useEffect, useMemo, useRef, useState } from "react"
+import Animated, { FadeInDown, useReducedMotion, ZoomIn } from "react-native-reanimated"
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../src/components/EmptyState"
@@ -11,23 +12,12 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
+import { formatCurrency } from "../src/utils/currency"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
-// Warna mengikuti referensi desain Stitch (proyek "Saku Keuangan Digital").
-// Tema gelap memakai surfaceMuted agar tetap kontras; warna lain sama di
-// kedua mode. ponytail: pindah ke token tema kalau palet biru pucat ini
-// diadopsi ke semua layar.
-const HERO = {
-  background: "#003527",
-  text: "#FFFFFF",
-  labelText: "rgba(255, 255, 255, 0.8)",
-  placeholder: "rgba(255, 255, 255, 0.3)",
-} as const
-const HERO_INCOME_BG = "#004F34" // shade hero saat jenis Pemasukan terpilih
-const SURFACE_TINT = "#E5EEFF" // field & lingkaran kategori yang tidak terpilih
-const SURFACE_TINT_STRONG = "#D3E4FE" // latar toggle Pengeluaran/Pemasukan
-const WELL_SELECTED_BG = "#004F34" // lingkaran kategori terpilih
-const WELL_SELECTED_ICON = "#31C98F" // ikon pada lingkaran kategori terpilih
+// Putih di atas hero emerald/crimson terbaca di kedua mode (R-34 aman).
+const HERO_LABEL = "rgba(255, 255, 255, 0.8)"
+const HERO_PLACEHOLDER = "rgba(255, 255, 255, 0.3)"
 
 function formatNativeDate(date: Date): string {
   const year = date.getFullYear()
@@ -59,46 +49,6 @@ function parseNativeDate(value: string): Date | null {
 
   const date = new Date(year, month - 1, day)
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
-}
-
-function HeroPattern(): React.ReactElement | null {
-  if (Platform.OS !== "web") {
-    return null
-  }
-
-  const svgStyle = {
-    color: "white", // currentColor pada path grid mengikuti warna ini
-    height: "100%",
-    width: "100%",
-  } as const
-  const wrapStyle = {
-    height: "100%",
-    opacity: 0.1, // pola sangat halus, sesuai referensi
-    position: "absolute",
-    pointerEvents: "none",
-    width: "100%",
-  } as const
-
-  // Grid 40px halus di hero (referensi Stitch) — SVG inline hanya di web.
-  // ponytail: pakai react-native-svg kalau pola dibutuhkan di perangkat.
-  return createElement(
-    "div",
-    { style: wrapStyle },
-    createElement(
-      "svg",
-      { height: "100%", style: svgStyle, width: "100%", xmlns: "http://www.w3.org/2000/svg" },
-      createElement(
-        "defs",
-        null,
-        createElement(
-          "pattern",
-          { height: 40, id: "hero-grid", patternUnits: "userSpaceOnUse", width: 40 },
-          createElement("path", { d: "M 40 0 L 0 0 0 40", fill: "none", opacity: 0.3, stroke: "currentColor", strokeWidth: 1 }),
-        ),
-      ),
-      createElement("rect", { fill: "url(#hero-grid)", height: "100%", width: "100%" }),
-    ),
-  ) as React.ReactElement
 }
 
 function WebDateInput({
@@ -142,24 +92,53 @@ function WebDateInput({
 }
 
 export default function AddTransactionScreen(): React.ReactElement {
-  const params = useLocalSearchParams<{ id?: string | string[] }>()
+  const params = useLocalSearchParams<{ id?: string | string[]; type?: string | string[] }>()
   const transactionId = typeof params.id === "string" ? params.id : undefined
+  const initialTypeParam = typeof params.type === "string" ? params.type : undefined
   const { addTransaction, isLoading, saveState, transactions, updateTransaction } = useTransactions()
   const colors = useThemeColors()
-  const isDark = colors.canvas === darkColors.canvas
-  const surfaceTint = isDark ? colors.surfaceMuted : SURFACE_TINT
-  const toggleTint = isDark ? colors.surfaceMuted : SURFACE_TINT_STRONG
-  const styles = useMemo(() => createStyles(colors, surfaceTint, toggleTint), [colors, surfaceTint, toggleTint])
+  const styles = useMemo(() => createStyles(colors), [colors])
   const editing = transactionId === undefined ? undefined : transactions.find((transaction) => transaction.id === transactionId)
-  const [type, setType] = useState<TransactionType>(editing?.type ?? "expense")
+  const [type, setType] = useState<TransactionType>(() => {
+    if (editing?.type !== undefined) {
+      return editing.type
+    }
+    // Tombol "Pemasukan" di Beranda membuka form langsung di tab Pemasukan;
+    // nilai asing diabaikan (jatuh ke Pengeluaran).
+    return initialTypeParam !== undefined && isTransactionType(initialTypeParam) ? initialTypeParam : "expense"
+  })
   const [amountInput, setAmountInput] = useState(() => (editing === undefined ? "" : new Intl.NumberFormat("id-ID").format(editing.amount)))
-  const [category, setCategory] = useState(editing?.category ?? "Makan & Minum")
+  const [category, setCategory] = useState(
+    () => editing?.category ?? (initialTypeParam === "income" && isTransactionType(initialTypeParam) ? "Gaji" : "Makan & Minum"),
+  )
   const [selectedDate, setSelectedDate] = useState(() => (editing === undefined ? new Date() : new Date(editing.date)))
   const [webDateInput, setWebDateInput] = useState(() => formatNativeDate(editing === undefined ? new Date() : new Date(editing.date)))
   const [showPicker, setShowPicker] = useState(false)
   const [note, setNote] = useState(editing?.note ?? "")
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSaved, setIsSaved] = useState(false)
+  const [toast, setToast] = useState<{ readonly title: string; readonly subtitle: string; readonly transactionId: string } | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Animasi masuk toast satu-kali (menarik mata ke konfirmasi, R-19);
+  // mati bila reduced motion.
+  const reduceMotion = useReducedMotion()
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) {
+        clearTimeout(toastTimer.current)
+      }
+    },
+    [],
+  )
+
+  function dismissToast(): void {
+    if (toastTimer.current !== null) {
+      clearTimeout(toastTimer.current)
+      toastTimer.current = null
+    }
+    setToast(null)
+  }
 
   if (transactionId !== undefined && editing === undefined) {
     return (
@@ -208,6 +187,17 @@ export default function AddTransactionScreen(): React.ReactElement {
     setErrors((current) => ({ ...current, amount: undefined, general: undefined }))
   }
 
+  function handlePreset(increment: number): void {
+    const current = parseAmountInput(amountInput) ?? 0
+    setAmountInput(formatAmountInput(String(current + increment)))
+    setErrors((currentErrors) => ({ ...currentErrors, amount: undefined, general: undefined }))
+  }
+
+  function handleResetAmount(): void {
+    setAmountInput("")
+    setErrors((currentErrors) => ({ ...currentErrors, amount: undefined, general: undefined }))
+  }
+
   function handleWebDateChange(value: string): void {
     setWebDateInput(value)
     const parsedDate = parseNativeDate(value)
@@ -252,10 +242,21 @@ export default function AddTransactionScreen(): React.ReactElement {
     }
 
     setIsSaved(true)
-    setTimeout(() => router.back(), 700)
+    const typeLabel = type === "expense" ? "Pengeluaran" : "Pemasukan"
+    setToast({
+      title: editing === undefined ? `${typeLabel} Berhasil Dicatat!` : "Perubahan Tersimpan!",
+      subtitle: `${category} • ${formatCurrency(amount)}`,
+      transactionId: result.transaction.id,
+    })
+    toastTimer.current = setTimeout(() => {
+      setToast(null)
+      router.back()
+    }, 2600)
   }
 
   const isEditing = editing !== undefined
+  // Aksen Stitch mengikuti tipe: emerald saat Pemasukan, crimson saat Pengeluaran.
+  const typeAccent = type === "expense" ? "#c0263e" : "#006B50"
   const amountLabel = type === "expense" ? "Jumlah Pengeluaran" : "Jumlah Pemasukan"
 
   return (
@@ -272,11 +273,13 @@ export default function AddTransactionScreen(): React.ReactElement {
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
           <Text style={styles.headerTitle}>{isEditing ? "Edit transaksi" : "Tambah Transaksi"}</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Header nominal */}
-        <View style={[styles.amountHero, { backgroundColor: type === "expense" ? HERO.background : HERO_INCOME_BG }]}>
-          <HeroPattern />
+        <View style={[styles.amountHero, { backgroundColor: type === "expense" ? colors.expense : colors.heroBackground }]}>
+          <View style={styles.decorCircleLarge} />
+          <View style={styles.decorCircleSmall} />
           <Text style={styles.amountLabel}>{amountLabel}</Text>
           <View style={styles.amountRow}>
             <Text style={styles.amountPrefix}>Rp</Text>
@@ -287,10 +290,37 @@ export default function AddTransactionScreen(): React.ReactElement {
               keyboardType="number-pad"
               onChangeText={handleAmountChange}
               placeholder="0"
-              placeholderTextColor={HERO.placeholder}
+              placeholderTextColor={HERO_PLACEHOLDER}
               style={styles.amountInput}
               value={amountInput}
             />
+          </View>
+          <View style={styles.presetRow}>
+            {(
+              [
+                { increment: 100_000, label: "+100rb", spoken: "Tambah 100 ribu" },
+                { increment: 500_000, label: "+500rb", spoken: "Tambah 500 ribu" },
+                { increment: 1_000_000, label: "+1jt", spoken: "Tambah 1 juta" },
+              ] as const
+            ).map((preset) => (
+              <Pressable
+                accessibilityLabel={preset.spoken}
+                accessibilityRole="button"
+                key={preset.label}
+                onPress={() => handlePreset(preset.increment)}
+                style={({ pressed }) => [styles.presetChip, pressed && styles.pressed]}
+              >
+                <Text style={styles.presetChipText}>{preset.label}</Text>
+              </Pressable>
+            ))}
+            <Pressable
+              accessibilityLabel="Atur ulang nominal"
+              accessibilityRole="button"
+              onPress={handleResetAmount}
+              style={({ pressed }) => [styles.presetReset, pressed && styles.pressed]}
+            >
+              <MaterialCommunityIcons color={HERO_LABEL} name="refresh" size={14} />
+            </Pressable>
           </View>
           {errors.amount ? (
             <Text accessibilityRole="alert" style={styles.amountError}>
@@ -311,7 +341,12 @@ export default function AddTransactionScreen(): React.ReactElement {
                 onPress={() => handleTypeChange(option.value)}
                 style={({ pressed }) => [styles.typeOption, selected && styles.typeOptionSelected, pressed && styles.pressed]}
               >
-                <Text style={[styles.typeOptionText, selected && styles.typeOptionTextSelected]}>{option.label}</Text>
+                <View style={styles.typeOptionContent}>
+                  {selected ? <View style={[styles.typeDot, { backgroundColor: typeAccent }]} /> : null}
+                  <Text style={[styles.typeOptionText, selected && styles.typeOptionTextSelected, selected && { color: typeAccent }]}>
+                    {option.label}
+                  </Text>
+                </View>
               </Pressable>
             )
           })}
@@ -334,12 +369,23 @@ export default function AddTransactionScreen(): React.ReactElement {
                     onPress={() => setCategory(option.key)}
                     style={({ pressed }) => [styles.categoryOption, pressed && styles.pressed]}
                   >
-                    <View style={[styles.categoryWell, selected && styles.categoryWellSelected]}>
+                    <View
+                      style={[
+                        styles.categoryWell,
+                        selected && styles.categoryWellSelected,
+                        selected && { backgroundColor: typeAccent, borderColor: typeAccent },
+                      ]}
+                    >
                       <MaterialCommunityIcons
-                        color={selected ? WELL_SELECTED_ICON : colors.textSecondary}
+                        color={selected ? "#FFFFFF" : "#475569"}
                         name={getCategoryIconName(option.key)}
-                        size={22}
+                        size={24}
                       />
+                      {selected ? (
+                        <View style={styles.categoryBadge}>
+                          <MaterialCommunityIcons color="#022c22" name="check" size={10} />
+                        </View>
+                      ) : null}
                     </View>
                     <Text numberOfLines={2} style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}>
                       {option.label}
@@ -354,7 +400,7 @@ export default function AddTransactionScreen(): React.ReactElement {
         {/* Tanggal & Catatan */}
         <View style={styles.section}>
           <View style={styles.inputBox}>
-            <MaterialCommunityIcons color={colors.textSecondary} name="calendar-today" size={20} />
+            <MaterialCommunityIcons color="#94a3b8" name="calendar-today" size={16} />
             {Platform.OS === "web" ? (
               <WebDateInput
                 ariaLabel="Tanggal transaksi"
@@ -371,6 +417,7 @@ export default function AddTransactionScreen(): React.ReactElement {
                 <Text style={styles.dateText}>{formatTransactionDate(selectedDate.toISOString())}</Text>
               </Pressable>
             )}
+            <MaterialCommunityIcons color="#94a3b8" name="calendar-month" size={16} />
             {Platform.OS !== "web" && showPicker ? (
               <DateTimePicker
                 display="default"
@@ -388,14 +435,14 @@ export default function AddTransactionScreen(): React.ReactElement {
           </View>
 
           <View style={[styles.inputBox, styles.noteBox]}>
-            <MaterialCommunityIcons color={colors.textSecondary} name="note-edit-outline" size={20} />
+            <MaterialCommunityIcons color="#94a3b8" name="note-edit-outline" size={16} style={styles.noteIcon} />
             <TextInput
               accessibilityLabel="Catatan transaksi"
               maxLength={120}
               multiline
               onChangeText={setNote}
               placeholder="Tambahkan catatan (opsional)..."
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor="#94a3b8"
               style={styles.noteInput}
               textAlignVertical="top"
               value={note}
@@ -412,22 +459,62 @@ export default function AddTransactionScreen(): React.ReactElement {
           onPress={() => void handleSave()}
           style={({ pressed, hovered }) => [
             styles.saveButton,
+            { backgroundColor: type === "expense" ? colors.expense : "#006B50" },
             hovered && styles.saveButtonHovered,
             pressed && styles.saveButtonPressed,
             (saveState === "saving" || isSaved) && styles.saveButtonDisabled,
           ]}
         >
-          <MaterialCommunityIcons color={HERO.text} name={isSaved ? "check-circle" : "check-circle-outline"} size={22} />
+          <MaterialCommunityIcons color={colors.surface} name={isSaved ? "check-circle" : "check-circle-outline"} size={20} />
           <Text style={styles.saveButtonText}>
-            {saveState === "saving" ? "Menyimpan..." : isSaved ? "Tersimpan" : isEditing ? "Simpan perubahan" : "Simpan Transaksi"}
+            {saveState === "saving" ? "Menyimpan..." : isSaved ? "Tersimpan!" : isEditing ? "Simpan perubahan" : "Simpan Transaksi"}
           </Text>
         </Pressable>
       </ScreenShell>
+      {toast !== null ? (
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeInDown.springify().damping(18).stiffness(220)}
+          style={styles.toast}
+        >
+          <Animated.View entering={reduceMotion ? undefined : ZoomIn.springify().delay(80)} style={styles.toastIcon}>
+            <MaterialCommunityIcons color={colors.accent} name="check" size={20} />
+          </Animated.View>
+          <View style={styles.toastText}>
+            <View style={styles.toastTitleRow}>
+              <Text style={styles.toastTitle}>{toast.title}</Text>
+              <View style={styles.toastDot} />
+            </View>
+            <Text numberOfLines={1} style={styles.toastSubtitle}>{toast.subtitle}</Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Lihat transaksi"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => {
+              const id = toast.transactionId
+              dismissToast()
+              router.replace({ pathname: "/transaction/[id]", params: { id } })
+            }}
+            style={({ pressed }) => [styles.toastAction, pressed && styles.pressed]}
+          >
+            <Text style={styles.toastActionText}>Lihat</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Tutup pemberitahuan"
+            accessibilityRole="button"
+            hitSlop={12}
+            onPress={dismissToast}
+            style={({ pressed }) => [styles.toastClose, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color={colors.textTertiary} name="close" size={16} />
+          </Pressable>
+        </Animated.View>
+      ) : null}
     </KeyboardAvoidingView>
   )
 }
 
-function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: string) {
+function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     amountError: {
       color: "#FF9C94",
@@ -439,26 +526,25 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
     },
     amountHero: {
       alignItems: "center",
-      borderBottomLeftRadius: 24,
-      borderBottomRightRadius: 24,
-      marginHorizontal: -spacing.xl,
+      borderRadius: radii.xl,
+      overflow: "hidden",
       paddingBottom: spacing["2xl"],
       paddingHorizontal: spacing.xl,
       paddingTop: spacing.xl,
       ...shadows.elevated,
     },
     amountInput: {
-      color: HERO.text,
+      color: colors.heroText,
       fontFamily: fontFamilies.bold,
-      fontSize: 32,
+      fontSize: 30,
       fontWeight: "700",
-      lineHeight: 40,
+      lineHeight: 38,
       padding: 0,
       textAlign: "center",
       width: 200,
     },
     amountLabel: {
-      color: HERO.labelText,
+      color: HERO_LABEL,
       fontFamily: typography.caption.fontFamily,
       fontSize: typography.caption.fontSize,
       fontWeight: typography.caption.fontWeight,
@@ -468,7 +554,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
       textTransform: "uppercase",
     },
     amountPrefix: {
-      color: HERO.labelText,
+      color: HERO_LABEL,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.heading.fontSize,
       fontWeight: "600",
@@ -481,10 +567,27 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
     },
     backButton: {
       alignItems: "center",
-      borderRadius: radii.sm,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.pill,
+      borderWidth: 1,
       height: 40,
       justifyContent: "center",
       width: 40,
+      ...shadows.card,
+    },
+    categoryBadge: {
+      alignItems: "center",
+      backgroundColor: "#34d399",
+      borderColor: "#FFFFFF",
+      borderRadius: 8,
+      borderWidth: 2,
+      height: 16,
+      justifyContent: "center",
+      position: "absolute",
+      right: -4,
+      top: -4,
+      width: 16,
     },
     categoryRow: {
       flexDirection: "row",
@@ -500,7 +603,7 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
       textAlign: "center",
     },
     categoryLabelSelected: {
-      color: colors.textPrimary,
+      color: "#0f172a",
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
@@ -515,26 +618,47 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
     },
     categoryWell: {
       alignItems: "center",
-      backgroundColor: surfaceTint,
-      borderRadius: 28,
-      height: 56,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: 26,
+      borderWidth: 1,
+      height: 52,
       justifyContent: "center",
-      width: 56,
+      width: 52,
       ...shadows.card,
     },
     categoryWellSelected: {
-      backgroundColor: WELL_SELECTED_BG,
+      backgroundColor: "#006B50",
+      borderColor: "#006B50",
     },
     content: {
       paddingBottom: spacing["3xl"],
     },
+    decorCircleLarge: {
+      backgroundColor: "rgba(255, 255, 255, 0.07)",
+      borderRadius: radii.pill,
+      height: 128,
+      position: "absolute",
+      right: -32,
+      top: -48,
+      width: 128,
+    },
+    decorCircleSmall: {
+      backgroundColor: "rgba(255, 255, 255, 0.07)",
+      borderRadius: radii.pill,
+      bottom: -40,
+      height: 96,
+      left: -40,
+      position: "absolute",
+      width: 96,
+    },
     dateText: {
-      color: colors.textPrimary,
+      color: "#1e293b",
       flex: 1,
-      fontSize: typography.bodyMedium.fontSize,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
+      fontFamily: fontFamilies.medium,
+      fontSize: 12,
+      fontWeight: "500",
+      lineHeight: 16,
     },
     dateTrigger: {
       alignItems: "center",
@@ -556,49 +680,162 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
       alignItems: "center",
       flexDirection: "row",
       gap: spacing.sm,
+      justifyContent: "space-between",
+    },
+    headerSpacer: {
+      width: 40,
     },
     headerTitle: {
       color: colors.textPrimary,
+      flex: 1,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.heading.fontSize,
+      fontSize: typography.bodyLarge.fontSize,
       fontWeight: "600",
-      lineHeight: typography.heading.lineHeight,
+      lineHeight: typography.bodyLarge.lineHeight,
+      textAlign: "center",
     },
     inputBox: {
       alignItems: "center",
-      backgroundColor: surfaceTint,
+      backgroundColor: "#FFFFFF",
+      borderColor: "rgba(227, 232, 229, 0.8)",
       borderRadius: radii.lg,
+      borderWidth: 1,
       flexDirection: "row",
-      gap: spacing.md,
+      gap: spacing.row,
       minHeight: 52,
-      paddingHorizontal: spacing.group,
+      paddingHorizontal: 14,
+      paddingVertical: spacing.md,
       ...shadows.card,
     },
     keyboard: {
       flex: 1,
+    },
+    toast: {
+      alignItems: "center",
+      backgroundColor: `${colors.surface}F2`,
+      borderColor: `${colors.accent}4D`,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      left: spacing.lg,
+      padding: spacing.md,
+      position: "absolute",
+      right: spacing.lg,
+      top: 48,
+      ...shadows.elevated,
+    },
+    toastAction: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.sm,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.group,
+    },
+    toastActionText: {
+      color: colors.accent,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
+    },
+    toastClose: {
+      alignItems: "center",
+      height: 32,
+      justifyContent: "center",
+      width: 32,
+    },
+    toastDot: {
+      backgroundColor: colors.accent,
+      borderRadius: 4,
+      height: 8,
+      width: 8,
+    },
+    toastIcon: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: 18,
+      height: 36,
+      justifyContent: "center",
+      width: 36,
+    },
+    toastTitleRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.compact,
+    },
+    toastSubtitle: {
+      color: colors.textSecondary,
+      fontSize: 11,
+    },
+    toastText: {
+      flex: 1,
+      gap: 2,
+      minWidth: 0,
+    },
+    toastTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: 12,
+      fontWeight: "700",
     },
     noteBox: {
       alignItems: "flex-start",
       minHeight: 96,
       paddingVertical: spacing.md,
     },
+    noteIcon: {
+      marginTop: 2,
+    },
     noteInput: {
-      color: colors.textPrimary,
+      color: "#1e293b",
       flex: 1,
-      fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
+      fontSize: 12,
       fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
+      lineHeight: 18,
       minHeight: 64,
       padding: 0,
     },
     pressed: {
       opacity: 0.72,
     },
+    presetChip: {
+      alignItems: "center",
+      backgroundColor: "rgba(255, 255, 255, 0.15)",
+      borderColor: "rgba(255, 255, 255, 0.2)",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+    },
+    presetChipText: {
+      color: colors.heroText,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "600",
+    },
+    presetReset: {
+      alignItems: "center",
+      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      borderColor: "rgba(255, 255, 255, 0.15)",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      justifyContent: "center",
+      minHeight: 44,
+      minWidth: 44,
+    },
+    presetRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      marginTop: spacing.group,
+    },
     saveButton: {
       alignItems: "center",
-      backgroundColor: HERO.background,
-      borderRadius: radii.pill,
+      borderRadius: radii.lg,
       flexDirection: "row",
       gap: spacing.compact,
       height: 52,
@@ -616,11 +853,11 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
       transform: [{ scale: 0.985 }],
     },
     saveButtonText: {
-      color: HERO.text,
-      fontFamily: fontFamilies.semibold,
-      fontSize: typography.heading.fontSize,
-      fontWeight: "600",
-      lineHeight: typography.heading.lineHeight,
+      color: colors.surface,
+      fontFamily: fontFamilies.bold,
+      fontSize: 14,
+      fontWeight: "700",
+      lineHeight: 20,
     },
     section: {
       gap: spacing.md,
@@ -634,37 +871,50 @@ function createStyles(colors: ThemeColors, surfaceTint: string, toggleTint: stri
       lineHeight: typography.caption.lineHeight,
       textTransform: "uppercase",
     },
+    typeDot: {
+      backgroundColor: "#006B50",
+      borderRadius: 4,
+      height: 8,
+      width: 8,
+    },
     typeOption: {
       alignItems: "center",
-      borderRadius: radii.pill,
+      borderRadius: radii.md,
       flex: 1,
       justifyContent: "center",
-      minHeight: 40,
+      minHeight: 44,
       paddingHorizontal: spacing.md,
     },
+    typeOptionContent: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.compact,
+      justifyContent: "center",
+    },
     typeOptionSelected: {
-      backgroundColor: colors.surface,
+      backgroundColor: "#FFFFFF",
       ...shadows.card,
     },
     typeOptionText: {
-      color: colors.textSecondary,
+      color: "#64748b",
       fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
       fontWeight: typography.bodyMedium.fontWeight,
       lineHeight: typography.bodyMedium.lineHeight,
     },
     typeOptionTextSelected: {
-      color: colors.textPrimary,
+      color: "#006B50",
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
     typeToggle: {
-      backgroundColor: toggleTint,
-      borderRadius: radii.pill,
+      backgroundColor: "rgba(219, 232, 226, 0.5)",
+      borderColor: "rgba(227, 232, 229, 0.4)",
+      borderRadius: radii.lg,
+      borderWidth: 1,
       flexDirection: "row",
       marginTop: -spacing.sm,
       padding: spacing.xs,
-      ...shadows.card,
     },
   })
 }

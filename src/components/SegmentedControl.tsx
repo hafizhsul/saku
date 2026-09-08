@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 
 export type SegmentOption = {
   readonly value: string
@@ -15,6 +15,14 @@ type SegmentedControlProps = {
   readonly accessibilityLabel: string
 }
 
+// Warna toggle persis dari referensi Stitch "Tambah Transaksi"
+// (mode terang): track #dbe8e2/50 + border saku-border/40, pill putih,
+// label aktif saku-primary #006B50 + dot, nonaktif slate-500.
+const TRACK_LIGHT = "rgba(219, 232, 226, 0.5)"
+const TRACK_BORDER_LIGHT = "rgba(227, 232, 229, 0.4)"
+const ACTIVE_LABEL_LIGHT = "#006B50"
+const INACTIVE_LABEL_LIGHT = "#64748b"
+
 export function SegmentedControl({
   options,
   selectedValue,
@@ -22,7 +30,8 @@ export function SegmentedControl({
   accessibilityLabel,
 }: SegmentedControlProps): React.ReactElement {
   const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
+  const isDark = colors.canvas === darkColors.canvas
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
 
   return (
     <View accessibilityLabel={accessibilityLabel} accessibilityRole="tablist" style={styles.container}>
@@ -37,7 +46,10 @@ export function SegmentedControl({
             onPress={() => onChange(option.value)}
             style={({ pressed }) => [styles.option, selected && styles.selected, pressed && styles.pressed]}
           >
-            <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
+            <View style={styles.optionContent}>
+              {selected ? <View style={styles.dot} /> : null}
+              <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
+            </View>
           </Pressable>
         )
       })}
@@ -45,20 +57,26 @@ export function SegmentedControl({
   )
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     container: {
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
-      borderRadius: radii.md,
+      backgroundColor: isDark ? colors.surfaceMuted : TRACK_LIGHT,
+      borderColor: isDark ? colors.border : TRACK_BORDER_LIGHT,
+      borderRadius: radii.lg,
       borderWidth: 1,
       flexDirection: "row",
       gap: spacing.unit,
       minHeight: 50,
       padding: 4,
     },
+    dot: {
+      backgroundColor: isDark ? colors.accent : ACTIVE_LABEL_LIGHT,
+      borderRadius: 4,
+      height: 8,
+      width: 8,
+    },
     label: {
-      color: colors.textSecondary,
+      color: isDark ? colors.textSecondary : INACTIVE_LABEL_LIGHT,
       fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
       fontWeight: typography.bodyMedium.fontWeight,
@@ -67,24 +85,27 @@ function createStyles(colors: ThemeColors) {
     },
     option: {
       alignItems: "center",
-      borderColor: "transparent",
       borderRadius: radii.md,
-      borderWidth: 1,
       flex: 1,
       justifyContent: "center",
       minHeight: 44,
       paddingHorizontal: spacing.sm,
     },
+    optionContent: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.unit,
+      justifyContent: "center",
+    },
     pressed: {
       opacity: 0.7,
     },
     selected: {
-      backgroundColor: colors.surfaceElevated,
-      borderColor: colors.borderStrong,
-      borderWidth: 1,
+      backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF",
+      ...shadows.card,
     },
     selectedLabel: {
-      color: colors.textPrimary,
+      color: isDark ? colors.textPrimary : ACTIVE_LABEL_LIGHT,
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
