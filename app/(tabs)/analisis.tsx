@@ -139,7 +139,7 @@ export default function AnalisisScreen(): React.ReactElement {
             <View style={styles.whiteCard}>
               <View style={styles.weekTotalBlock}>
                 <Text style={styles.labelMuted}>Total Minggu Ini</Text>
-                <Text style={styles.weekTotal}>{formatCurrency(weekTotal)}</Text>
+                <Text style={[styles.weekTotal, weekTotal === 0 && { color: colors.textPrimary }]}>{formatCurrency(weekTotal)}</Text>
               </View>
               {weekTotal === 0 ? (
                 <Text style={styles.chartEmpty}>Belum ada pengeluaran 7 hari terakhir. Chart terisi setelah kamu mencatat.</Text>

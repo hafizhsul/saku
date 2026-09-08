@@ -72,7 +72,7 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       flex: 1,
       justifyContent: "center",
-      minHeight: 42,
+      minHeight: 44,
       paddingHorizontal: spacing.sm,
     },
     pressed: {

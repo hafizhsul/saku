@@ -93,7 +93,7 @@ export default function TransactionsScreen(): React.ReactElement {
         <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
       ) : filteredTransactions.length === 0 ? (
         <EmptyState
-          actionLabel={hasActiveFilters ? "Lihat semua" : undefined}
+          actionLabel={hasActiveFilters ? "Lihat semua" : "Catat transaksi"}
           description={
             hasActiveFilters
               ? "Tidak ada transaksi yang cocok dengan pencarian atau filter ini."
@@ -106,7 +106,7 @@ export default function TransactionsScreen(): React.ReactElement {
                   setFilter("all")
                   setQuery("")
                 }
-              : undefined
+              : () => router.push("/add-transaction")
           }
           title={hasActiveFilters ? "Tidak ada hasil" : "Belum ada transaksi"}
         />
@@ -271,7 +271,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: "center",
       backgroundColor: colors.surfaceMuted,
       borderRadius: radii.pill,
-      height: 40,
+      height: 44,
       justifyContent: "center",
       paddingHorizontal: spacing.group,
     },

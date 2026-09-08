@@ -239,6 +239,13 @@ function SakuCard({ balanceVisible, category, colors, limit, ratio, spent, style
   const isOverBudget = ratio >= 1
   const progressColor = isOverBudget ? colors.expense : colors.accent
   const icon = sakuIconConfig(colors, category)
+  const remaining = limit - spent
+  // Alasan satu baris: keputusan saku adalah sisa vs lebih, bukan limit mentah.
+  const remainingLabel = !balanceVisible
+    ? "Sisa: Rp ••••••"
+    : remaining >= 0
+      ? `Sisa: ${formatCurrency(remaining)}`
+      : `Lebih: ${formatCurrency(-remaining)}`
 
   return (
     <View style={styles.sakuCard}>
@@ -254,6 +261,9 @@ function SakuCard({ balanceVisible, category, colors, limit, ratio, spent, style
       </View>
       <Text style={styles.sakuBudget}>
         {balanceVisible ? `Anggaran: ${formatCurrency(limit)}` : "Anggaran: Rp ••••••"}
+      </Text>
+      <Text style={[styles.sakuRemaining, isOverBudget && { color: colors.expense }]}>
+        {remainingLabel}
       </Text>
     </View>
   )
@@ -423,9 +433,10 @@ function createStyles(colors: ThemeColors) {
     },
     sakuCategory: {
       color: colors.textSecondary,
-      fontFamily: fontFamilies.regular,
-      fontSize: typography.body.fontSize,
-      lineHeight: typography.body.lineHeight,
+      fontFamily: fontFamilies.medium,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "500",
+      lineHeight: typography.caption.lineHeight,
     },
     sakuIcon: {
       alignItems: "center",
@@ -439,12 +450,19 @@ function createStyles(colors: ThemeColors) {
       flexWrap: "wrap",
       gap: spacing.row,
     },
+    sakuRemaining: {
+      color: colors.accent,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 10,
+      fontWeight: "600",
+      lineHeight: 14,
+    },
     sakuSpent: {
       color: colors.textPrimary,
-      fontFamily: fontFamilies.semibold,
-      fontSize: typography.bodyMedium.fontSize,
-      fontWeight: "600",
-      lineHeight: typography.bodyMedium.lineHeight,
+      fontFamily: fontFamilies.bold,
+      fontSize: 18,
+      fontWeight: "700",
+      lineHeight: 24,
       fontVariant: ["tabular-nums"],
     },
     totalBudgetAmount: {
@@ -506,9 +524,9 @@ function createStyles(colors: ThemeColors) {
     visibilityButton: {
       alignItems: "center",
       borderRadius: radii.md,
-      height: 36,
+      height: 44,
       justifyContent: "center",
-      width: 36,
+      width: 44,
     },
     visibilityButtonHovered: {
       backgroundColor: `${colors.surface}1A`,

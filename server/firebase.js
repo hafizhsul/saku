@@ -87,10 +87,6 @@ function loadSdk() {
   }
 }
 
-function loadAdmin() {
-  return loadSdk();
-}
-
 function getDb() {
   const sdk = loadSdk();
   if (!sdk || typeof sdk.getFirestore !== "function") return null;
