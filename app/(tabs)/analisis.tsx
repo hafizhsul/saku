@@ -1,10 +1,9 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
 import { useMemo } from "react"
-import { Image, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
-import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
@@ -75,7 +74,6 @@ export default function AnalisisScreen(): React.ReactElement {
   if (isLoading) {
     return (
       <ScreenShell>
-        <Header />
         <EmptyState description="Menyiapkan ringkasan keuanganmu." title="Memuat catatan..." />
       </ScreenShell>
     )
@@ -84,7 +82,6 @@ export default function AnalisisScreen(): React.ReactElement {
   if (loadError) {
     return (
       <ScreenShell>
-        <Header />
         <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
       </ScreenShell>
     )
@@ -92,8 +89,6 @@ export default function AnalisisScreen(): React.ReactElement {
 
   return (
     <ScreenShell>
-      <Header />
-
       {/* Total Saldo */}
       <View style={styles.balanceCard}>
         <View style={styles.glowTop} />
@@ -215,29 +210,6 @@ export default function AnalisisScreen(): React.ReactElement {
 }
 
 type AnalisisStyles = ReturnType<typeof createStyles>
-
-// Header mengikuti pola tab Beranda/Riwayat: ikon brand + judul + tombol profil.
-// Header harus identik dengan tab Beranda/Riwayat/Profil: ikon brand +
-// judul + tombol profil (Pressable dengan hover), bukan ikon telanjang.
-function Header(): React.ReactElement {
-  const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
-
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={require("../../assets/images/screen.png")}
-          style={styles.brandIcon}
-        />
-        <Text style={styles.headerTitle}>Analisis</Text>
-      </View>
-      <ProfileHeaderButton />
-    </View>
-  )
-}
 
 type CategoryRowProps = {
   readonly colors: ThemeColors

@@ -5,7 +5,6 @@ import { useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
-import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { SegmentedControl } from "../../src/components/SegmentedControl"
 import { useAuth } from "../../src/features/auth/AuthProvider"
@@ -193,7 +192,6 @@ export default function SettingsScreen(): React.ReactElement {
   return (
     <View style={styles.page}>
       <ScreenShell>
-        <Header />
         {content}
       </ScreenShell>
 
@@ -234,27 +232,6 @@ export default function SettingsScreen(): React.ReactElement {
           </View>
         </View>
       </Modal>
-    </View>
-  )
-}
-
-// Header mengikuti pola tab Beranda/Riwayat: ikon brand + judul + tombol profil.
-function Header(): React.ReactElement {
-  const colors = useThemeColors()
-  const styles = useMemo(() => createStyles(colors), [colors])
-
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={require("../../assets/images/screen.png")}
-          style={styles.brandIcon}
-        />
-        <Text style={styles.headerTitle}>Profil</Text>
-      </View>
-      <ProfileHeaderButton />
     </View>
   )
 }

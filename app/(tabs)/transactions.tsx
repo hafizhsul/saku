@@ -1,10 +1,9 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
 import { useMemo, useState } from "react"
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
-import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import {
@@ -47,7 +46,6 @@ export default function TransactionsScreen(): React.ReactElement {
 
   return (
     <ScreenShell>
-      <Header colors={colors} styles={styles} />
       <View style={styles.searchWell}>
         <MaterialCommunityIcons color={colors.textTertiary} name="magnify" size={22} />
         <TextInput
@@ -153,23 +151,6 @@ function groupByDay(transactions: readonly Transaction[]): readonly DayGroup[] {
 }
 
 type TransactionScreenStyles = ReturnType<typeof createStyles>
-
-function Header({ colors, styles }: { readonly colors: ThemeColors; readonly styles: TransactionScreenStyles }): React.ReactElement {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={require("../../assets/images/screen.png")}
-          style={styles.brandIcon}
-        />
-        <Text style={styles.headerTitle}>Riwayat</Text>
-      </View>
-      <ProfileHeaderButton />
-    </View>
-  )
-}
 
 type TransactionCardProps = {
   readonly colors: ThemeColors
