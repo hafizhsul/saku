@@ -42,9 +42,14 @@ export function TransactionRow({ transaction, compact = false, last = false, car
         <Text numberOfLines={1} style={styles.title}>{transaction.note ?? transaction.category}</Text>
         <Text numberOfLines={1} style={styles.meta}>{formatRelativeTransactionTime(transaction.date)}</Text>
       </View>
-      <Text style={[styles.amount, { color: isIncome ? colors.income : colors.expense }]}>
-        {formatSignedCurrency(transaction.amount, transaction.type)}
-      </Text>
+      <View style={styles.amountCol}>
+        <Text style={[styles.amount, { color: isIncome ? colors.income : colors.expense }]}>
+          {formatSignedCurrency(transaction.amount, transaction.type)}
+        </Text>
+        <Text numberOfLines={1} style={styles.tag}>
+          {transaction.category.toUpperCase()}
+        </Text>
+      </View>
     </Pressable>
   )
 }
@@ -57,8 +62,12 @@ function createStyles(colors: ThemeColors) {
       fontVariant: ["tabular-nums"],
       fontWeight: "700",
       lineHeight: typography.bodyMedium.lineHeight,
-      maxWidth: "40%",
       textAlign: "right",
+    },
+    amountCol: {
+      alignItems: "flex-end",
+      gap: spacing.unit,
+      maxWidth: "40%",
     },
     card: {
       backgroundColor: colors.surfaceElevated,
@@ -103,6 +112,14 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.row,
       minHeight: 68,
       paddingVertical: spacing.md,
+    },
+    tag: {
+      color: colors.textTertiary,
+      fontSize: typography.overline.fontSize,
+      fontFamily: fontFamilies.semibold,
+      fontWeight: "600",
+      lineHeight: typography.overline.lineHeight,
+      textAlign: "right",
     },
     title: {
       color: colors.textPrimary,

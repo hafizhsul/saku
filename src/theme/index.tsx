@@ -2,38 +2,40 @@ import { createContext, useContext } from "react"
 import { useColorScheme } from "react-native"
 
 export const lightColors = {
+  // Light diselaraskan ke token M3 Stitch (primary #00503b dkk). canvas
+  // dipertahankan #F4F5F4 (dikunci e2e theme.spec), dark tidak tersentuh.
   canvas: "#F4F5F4",
   surface: "#FFFFFF",
   surfaceMuted: "#ECEEED",
   surfaceElevated: "#FFFFFF",
-  textPrimary: "#1D2228",
-  textSecondary: "#5B636B",
-  textTertiary: "#6A7077",
-  border: "#D8DCDA",
+  textPrimary: "#141b2b",
+  textSecondary: "#4c635c",
+  textTertiary: "#6f7a73",
+  border: "#bec9c2",
   borderStrong: "#C2C8C5",
   action: "#1D2228",
   actionPressed: "#101419",
-  income: "#1E6F4E",
-  incomeSurface: "#E3EEE8",
-  expense: "#B3402E",
-  expenseSurface: "#F5E7E4",
-  accent: "#1E6F4E",
-  accentSurface: "#E3EEE8",
+  income: "#00503b",
+  incomeSurface: "#cee8df",
+  expense: "#ba1a1a",
+  expenseSurface: "#ffdad6",
+  accent: "#00503b",
+  accentSurface: "#cee8df",
   warning: "#B8761C",
   focus: "#2E5BD8",
-  error: "#B02A20",
+  error: "#ba1a1a",
   // Hero emerald selalu gelap di semua mode (focal point konsisten, R-31).
-  heroBackground: "#003527",
+  heroBackground: "#006b50",
   heroText: "#FFFFFF",
-  heroMuted: "#95D3BA",
+  heroMuted: "#93e8c6",
   heroChip: "#004F34",
   heroChipText: "#7FD8B0",
   insightIcon: "#003623",
   // Tint biru pucat referensi Stitch untuk chip dan kartu insight.
-  tint: "#E5EEFF",
-  chartBar: "#D5E6DF",
-  chartToday: "#064E3B",
-  chartSaturday: "#FFDAD6",
+  tint: "#e1e8fd",
+  chartBar: "#cee8df",
+  chartToday: "#00503b",
+  chartSaturday: "#ffdad6",
 } as const
 
 export const darkColors = {
