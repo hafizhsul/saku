@@ -6,6 +6,7 @@ import { clearToken, getToken, setToken } from "../../storage/auth"
 import { loadProfilePhoto, saveProfilePhoto } from "../../storage/profile"
 import { loadSettings } from "../../storage/settings"
 import { changePassword as apiChangePassword, fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, updateProfile as apiUpdateProfile } from "./authClient"
+import { firebaseCurrentUser, isFirebaseConfigured } from "./firebaseClient"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./types"
 
 // Rangkaian state sesi: "locked" berarti token tersimpan tapi belum terverifikasi
@@ -82,6 +83,21 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       setUser({ id: "e2e", email: "e2e@localhost", name: "E2E" })
       setState("authenticated")
       setAuthError(null)
+      return
+    }
+
+    // Jalur Firebase: sesi dibaca dari Firebase SDK langsung, tanpa server.
+    if (isFirebaseConfigured()) {
+      const current = await firebaseCurrentUser()
+      if (current) {
+        setUser(current)
+        setState("authenticated")
+        setAuthError(null)
+      } else {
+        setUser(null)
+        setState("unauthenticated")
+        setAuthError(null)
+      }
       return
     }
 
@@ -219,7 +235,22 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       return { ok: false, message: "Autentikasi dibatalkan." }
     }
 
-    // Sidik jadi / wajah cocok: verifikasi token tersimpan ke server.
+    // Sidik jadi / wajah cocok: jalur Firebase cukup cek currentUser;
+    // jalur server verifikasi token tersimpan.
+    if (isFirebaseConfigured()) {
+      const current = await firebaseCurrentUser()
+      if (current) {
+        setUser(current)
+        setState("authenticated")
+        setAuthError(null)
+        return { ok: true }
+      }
+      await clearToken()
+      setUser(null)
+      setState("unauthenticated")
+      return { ok: false, message: "Sesi tidak ditemukan. Silakan masuk kembali." }
+    }
+
     const token = await getToken()
     if (token === null) {
       setUser(null)
