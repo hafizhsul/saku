@@ -61,3 +61,6 @@ server/users.json
 
 # Screenshot artifacts at repo root (verification captures)
 /*.png
+
+# git worktrees (isolated workspaces)
+.worktrees/
