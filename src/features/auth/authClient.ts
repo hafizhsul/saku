@@ -1,9 +1,11 @@
 import { API_BASE_URL } from "./api"
 import {
   FIREBASE_UNAVAILABLE,
+  firebaseChangePassword,
   firebaseLogin,
   firebaseLogout,
   firebaseRegister,
+  firebaseUpdateName,
   isFirebaseConfigured,
 } from "./firebaseClient"
 import {
@@ -73,10 +75,7 @@ export async function register(input: RegisterRequest): Promise<AuthResponse> {
   if (isFirebaseConfigured()) {
     try {
       const session = await firebaseRegister(input.email, input.password, input.name)
-      // Server menerima Firebase ID token sebagai Bearer dan mengembalikan
-      // profil kanonis (Firestore) — samakan bentuk AuthResponse.
-      const user = await withReconciledName(session.idToken, session.user, await fetchMe(session.idToken))
-      return { token: session.idToken, user }
+      return { token: session.idToken, user: session.user }
     } catch (error: unknown) {
       if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
         return postAuth("/register", input)
@@ -91,8 +90,7 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
   if (isFirebaseConfigured()) {
     try {
       const session = await firebaseLogin(input.email, input.password)
-      const user = await withReconciledName(session.idToken, session.user, await fetchMe(session.idToken))
-      return { token: session.idToken, user }
+      return { token: session.idToken, user: session.user }
     } catch (error: unknown) {
       if (error instanceof Error && error.message === FIREBASE_UNAVAILABLE) {
         return postAuth("/login", input)
@@ -103,21 +101,8 @@ export async function login(input: LoginRequest): Promise<AuthResponse> {
   return postAuth("/login", input)
 }
 
-// Nama displayName hanya ada di sisi Firebase Auth; server (Firestore)
-// belum tentu menyimpannya sehingga profil kanonis berisi prefix email.
-// Samakan sekali via PATCH /me. Best-effort: login tetap sukses bila gagal.
-async function withReconciledName(token: string, sessionUser: User, serverUser: User): Promise<User> {
-  if (!sessionUser.name || sessionUser.name === serverUser.name) {
-    return serverUser
-  }
-  try {
-    return await updateProfile(token, { name: sessionUser.name })
-  } catch {
-    return serverUser
-  }
-}
-
 // token null = web, autentikasi lewat cookie; token string = native (Bearer).
+// Hanya dipakai jalur server; jalur Firebase memakai Firebase SDK langsung.
 export async function fetchMe(token: string | null): Promise<User> {
   const headers: Record<string, string> = {}
   if (token !== null) {
@@ -144,6 +129,15 @@ export async function fetchMe(token: string | null): Promise<User> {
 }
 
 export async function updateProfile(token: string | null, input: UpdateProfileRequest): Promise<User> {
+  if (isFirebaseConfigured()) {
+    try {
+      return await firebaseUpdateName(input.name)
+    } catch (error: unknown) {
+      if (!(error instanceof Error && error.message === FIREBASE_UNAVAILABLE)) {
+        throw error
+      }
+    }
+  }
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (token !== null) {
     headers.Authorization = `Bearer ${token}`
@@ -174,6 +168,16 @@ export async function updateProfile(token: string | null, input: UpdateProfileRe
 }
 
 export async function changePassword(token: string | null, input: ChangePasswordRequest): Promise<void> {
+  if (isFirebaseConfigured()) {
+    try {
+      await firebaseChangePassword(input.currentPassword, input.newPassword)
+      return
+    } catch (error: unknown) {
+      if (!(error instanceof Error && error.message === FIREBASE_UNAVAILABLE)) {
+        throw error
+      }
+    }
+  }
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (token !== null) {
     headers.Authorization = `Bearer ${token}`
@@ -199,6 +203,7 @@ export async function changePassword(token: string | null, input: ChangePassword
 export async function logout(token: string | null): Promise<void> {
   if (isFirebaseConfigured()) {
     await firebaseLogout()
+    return
   }
   const headers: Record<string, string> = {}
   if (token !== null) {

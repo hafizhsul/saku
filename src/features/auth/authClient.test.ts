@@ -12,6 +12,22 @@ vi.hoisted(() => {
 // pemanggilan ini ke atas file.
 vi.mock("expo-constants", () => ({ default: { expoConfig: null } }))
 
+vi.mock("firebase/app", () => ({
+  getApps: vi.fn(() => []),
+  initializeApp: vi.fn(() => ({})),
+}))
+
+vi.mock("firebase/auth", () => ({
+  getAuth: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  createUserWithEmailAndPassword: vi.fn(),
+  updateProfile: vi.fn(),
+  signOut: vi.fn(),
+  EmailAuthProvider: { credential: vi.fn() },
+  reauthenticateWithCredential: vi.fn(),
+  updatePassword: vi.fn(),
+}))
+
 const mockFetch = vi.fn()
 
 function jsonResponse(body: unknown, ok = true) {
@@ -154,5 +170,81 @@ describe("changePassword", () => {
     await expect(changePassword("token-123", { currentPassword: "salah", newPassword: "baru-12345" })).rejects.toThrow(
       "Kata sandi saat ini salah.",
     )
+  })
+})
+
+describe("jalur Firebase", () => {
+  beforeEach(() => {
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_API_KEY", "key")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN", "x.firebaseapp.com")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_PROJECT_ID", "x")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_APP_ID", "1:2:web:3")
+  })
+
+  it("login tidak memanggil server sama sekali", async () => {
+    const { getAuth, signInWithEmailAndPassword } = await import("firebase/auth")
+    vi.mocked(getAuth).mockReturnValue({} as never)
+    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({
+      user: {
+        uid: "uid-1",
+        email: "user@example.com",
+        displayName: "User",
+        getIdToken: async () => "id-token-123",
+      },
+    } as never)
+    const result = await login({ email: "user@example.com", password: "password123" })
+    expect(result).toEqual({ token: "id-token-123", user: { id: "uid-1", email: "user@example.com", name: "User" } })
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("register tidak memanggil server sama sekali", async () => {
+    const { getAuth, createUserWithEmailAndPassword } = await import("firebase/auth")
+    vi.mocked(getAuth).mockReturnValue({} as never)
+    vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
+      user: {
+        uid: "uid-2",
+        email: "baru@example.com",
+        displayName: "Baru",
+        getIdToken: async () => "id-token-456",
+      },
+    } as never)
+    const result = await register({ email: "baru@example.com", name: "Baru", password: "password123" })
+    expect(result).toEqual({ token: "id-token-456", user: { id: "uid-2", email: "baru@example.com", name: "Baru" } })
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("updateProfile jalur Firebase tidak memanggil server", async () => {
+    const { getAuth, updateProfile: updateProfileFn } = await import("firebase/auth")
+    const user = { uid: "uid-1", email: "user@example.com", displayName: "Lama" }
+    vi.mocked(getAuth).mockReturnValue({ currentUser: user } as never)
+    vi.mocked(updateProfileFn).mockImplementation(async (u: { displayName: string | null }, { displayName }: { displayName?: string | null }) => {
+      u.displayName = displayName ?? null
+    })
+    await expect(updateProfile("id-token-123", { name: "Baru" })).resolves.toEqual({
+      id: "uid-1",
+      email: "user@example.com",
+      name: "Baru",
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("changePassword jalur Firebase tidak memanggil server", async () => {
+    const { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import("firebase/auth")
+    vi.mocked(getAuth).mockReturnValue({ currentUser: { uid: "uid-1", email: "user@example.com" } } as never)
+    vi.mocked(reauthenticateWithCredential).mockResolvedValue(undefined as never)
+    vi.mocked(updatePassword).mockResolvedValue(undefined as never)
+    await expect(
+      changePassword("id-token-123", { currentPassword: "lama-12345", newPassword: "baru-12345" }),
+    ).resolves.toBeUndefined()
+    expect(EmailAuthProvider.credential).toHaveBeenCalledWith("user@example.com", "lama-12345")
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it("logout jalur Firebase tidak memanggil server", async () => {
+    const { getAuth, signOut } = await import("firebase/auth")
+    vi.mocked(getAuth).mockReturnValue({} as never)
+    vi.mocked(signOut).mockResolvedValue(undefined as never)
+    await expect(logout("id-token-123")).resolves.toBeUndefined()
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })
