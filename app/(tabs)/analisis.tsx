@@ -1,28 +1,29 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
-import { useMemo } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { useMemo, useState } from "react"
+import { Pressable, StyleSheet, Text, View } from "react-native"
 
+import { AlokasiSheet } from "../../src/components/AlokasiSheet"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
-import {
-  selectBalance,
-  selectCategoryBreakdown,
-  selectMonthlySummary,
-} from "../../src/features/transactions/selectors"
+import { selectBalance, selectMonthlySummary } from "../../src/features/transactions/selectors"
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
 
-// Warna hero emerald selalu gelap di semua mode (focal point konsisten,
-// R-31). Tokennya hidup di tema (heroBackground, heroChip, tint, chart*),
-// bukan konstanta file, agar dark mode tidak di-patch parsial.
-
 // Abreviasi hari Indonesia, berindeks sama seperti Date.getDay() (0 = Minggu).
 const DAY_LABELS = ["Mg", "Sn", "Sl", "Rb", "Km", "Jm", "Sb"] as const
+
+type TrendPeriod = 7 | 30 | 90
+
+const PERIOD_OPTIONS: readonly { readonly value: TrendPeriod; readonly label: string }[] = [
+  { value: 7, label: "7 Hari" },
+  { value: 30, label: "30 Hari" },
+  { value: 90, label: "3 Bulan" },
+]
 
 type DayBucket = {
   readonly key: string
@@ -32,11 +33,15 @@ type DayBucket = {
   readonly isSaturday: boolean
 }
 
-function last7DayBuckets(transactions: readonly { readonly type: string; readonly amount: number; readonly date: string }[]): readonly DayBucket[] {
+function trendBuckets(
+  transactions: readonly { readonly type: string; readonly amount: number; readonly date: string }[],
+  days: TrendPeriod,
+): readonly DayBucket[] {
   const today = new Date()
   const buckets: DayBucket[] = []
+  const stride = days === 7 ? 1 : days === 30 ? 5 : 14
 
-  for (let offset = 6; offset >= 0; offset -= 1) {
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
     const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset)
     const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`
     const amount = transactions
@@ -44,7 +49,8 @@ function last7DayBuckets(transactions: readonly { readonly type: string; readonl
       .reduce((sum, transaction) => sum + transaction.amount, 0)
     buckets.push({
       key,
-      label: DAY_LABELS[day.getDay()],
+      // Label ber-stride supaya sumbu tidak sesak di rentang panjang.
+      label: (days - 1 - offset) % stride === 0 ? String(day.getDate()) : "",
       amount,
       isToday: offset === 0,
       isSaturday: day.getDay() === 6,
@@ -56,20 +62,59 @@ function last7DayBuckets(transactions: readonly { readonly type: string; readonl
 
 export default function AnalisisScreen(): React.ReactElement {
   const { isLoading, loadError, retryLoad, transactions } = useTransactions()
-  const { budgets } = useBudgets()
+  const { budgets, saveBudgets } = useBudgets()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const currentMonth = toMonthKey(new Date())
+  const [period, setPeriod] = useState<TrendPeriod>(7)
+  const [sheetVisible, setSheetVisible] = useState(false)
+  const [saveBusy, setSaveBusy] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [balanceVisible, setBalanceVisible] = useState(true)
 
   const balance = selectBalance(transactions)
-  const breakdown = selectCategoryBreakdown(transactions, currentMonth, budgets)
-  const weekDays = useMemo(() => last7DayBuckets(transactions), [transactions])
-  const weekTotal = weekDays.reduce((sum, day) => sum + day.amount, 0)
+  const monthSummary = selectMonthlySummary(transactions, currentMonth)
+  const days = useMemo(() => trendBuckets(transactions, period), [period, transactions])
+  const daysTotal = days.reduce((sum, day) => sum + day.amount, 0)
+  const daysAverage = Math.round(daysTotal / period)
 
-  const net = selectMonthlySummary(transactions, currentMonth).net
   const previousNet = selectMonthlySummary(transactions, shiftMonth(currentMonth, -1)).net
   const monthChangePercent =
-    previousNet === 0 ? undefined : Math.round(((net - previousNet) / Math.abs(previousNet)) * 100)
+    previousNet === 0 ? undefined : Math.round(((monthSummary.net - previousNet) / Math.abs(previousNet)) * 100)
+
+  // Distribusi budget nyata: kategori dengan alokasi > 0 + pemakaian bulan ini.
+  const totalBudget = Object.values(budgets).reduce((sum, value) => sum + value, 0)
+  const allocationList = Object.entries(budgets)
+    .filter(([, budget]) => budget > 0)
+    .map(([category, budget]) => {
+      const spent = transactions
+        .filter(
+          (transaction) =>
+            transaction.type === "expense" && transaction.category === category && transaction.date.slice(0, 7) === currentMonth,
+        )
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+      const percent = Math.min(100, Math.round((spent / budget) * 100))
+      const status = percent >= 90 ? "Melebihi Limit" : percent >= 70 ? "Mendekati Limit" : "Aman"
+      return { budget, category, percent, rest: Math.max(0, budget - spent), spent, status }
+    })
+    .sort((left, right) => right.percent - left.percent)
+  const totalSpent = allocationList.reduce((sum, row) => sum + Math.min(row.spent, row.budget), 0)
+  const usedPercent = totalBudget === 0 ? 0 : Math.round((totalSpent / totalBudget) * 100)
+  const allocationRows = { rows: allocationList, totalBudget, totalSpent, usedPercent }
+
+  const nearLimit = allocationRows.rows.find((row) => row.percent >= 70)
+
+  async function handleSaveBudgets(next: Record<string, number>): Promise<void> {
+    setSaveBusy(true)
+    setSaveError(null)
+    const result = await saveBudgets(next)
+    setSaveBusy(false)
+    if (!result.ok) {
+      setSaveError(result.message)
+      return
+    }
+    setSheetVisible(false)
+  }
 
   if (isLoading) {
     return (
@@ -93,8 +138,18 @@ export default function AnalisisScreen(): React.ReactElement {
       <View style={styles.balanceCard}>
         <View style={styles.glowTop} />
         <View style={styles.glowBottom} />
-        <Text style={styles.balanceLabel}>Total Saldo Tergabung</Text>
-        <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+        <View style={styles.balanceTopRow}>
+          <Text style={styles.balanceLabel}>Total Saldo Tergabung</Text>
+          <Pressable
+            accessibilityLabel={balanceVisible ? "Sembunyikan saldo" : "Tampilkan saldo"}
+            accessibilityRole="button"
+            onPress={() => setBalanceVisible((visible) => !visible)}
+            style={({ pressed }) => [styles.eyeButton, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color={colors.heroMuted} name={balanceVisible ? "eye-outline" : "eye-off-outline"} size={18} />
+          </Pressable>
+        </View>
+        <Text style={styles.balanceAmount}>{balanceVisible ? formatCurrency(balance) : "Rp ••••••"}</Text>
         <View style={styles.balanceMeta}>
           {monthChangePercent !== undefined ? (
             <View style={styles.changeChip}>
@@ -105,11 +160,34 @@ export default function AnalisisScreen(): React.ReactElement {
               />
               <Text style={styles.changeChipText}>
                 {monthChangePercent >= 0 ? "+" : ""}
-                {monthChangePercent}%
+                {monthChangePercent}% ({monthChangePercent >= 0 ? "+" : "-"}Rp{formatCompactCurrency(Math.abs(monthSummary.net - previousNet))}{" "}
+                vs bln lalu)
               </Text>
             </View>
           ) : null}
           <Text style={styles.balanceMetaText}>Bulan ini</Text>
+        </View>
+      </View>
+
+      {/* Ringkasan bulan ini */}
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTop}>
+            <Text style={styles.summaryLabel}>Pemasukan</Text>
+            <View style={[styles.summaryIcon, { backgroundColor: colors.accentSurface }]}>
+              <MaterialCommunityIcons color={colors.accent} name="arrow-down" size={14} />
+            </View>
+          </View>
+          <Text style={[styles.summaryAmount, { color: colors.income }]}>+{formatCurrency(monthSummary.income)}</Text>
+        </View>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTop}>
+            <Text style={styles.summaryLabel}>Pengeluaran</Text>
+            <View style={[styles.summaryIcon, { backgroundColor: colors.expenseSurface }]}>
+              <MaterialCommunityIcons color={colors.error} name="arrow-up" size={14} />
+            </View>
+          </View>
+          <Text style={[styles.summaryAmount, { color: colors.error }]}>-{formatCurrency(monthSummary.expense)}</Text>
         </View>
       </View>
 
@@ -126,66 +204,134 @@ export default function AnalisisScreen(): React.ReactElement {
           {/* Tren Pengeluaran */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Tren Pengeluaran</Text>
-              <View style={styles.chip}>
-                <Text style={styles.chipText}>7 Hari</Text>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.sectionTitle}>Tren Pengeluaran</Text>
+                <Text style={styles.sectionSubtitle}>Analisis harian vs target batas</Text>
+              </View>
+              <View style={styles.periodRow}>
+                {PERIOD_OPTIONS.map((option) => {
+                  const active = period === option.value
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      key={option.value}
+                      onPress={() => setPeriod(option.value)}
+                      style={({ pressed }) => [styles.periodTab, active && styles.periodTabActive, pressed && styles.pressed]}
+                    >
+                      <Text style={[styles.periodTabText, active && styles.periodTabTextActive]}>{option.label}</Text>
+                    </Pressable>
+                  )
+                })}
               </View>
             </View>
             <View style={styles.whiteCard}>
-              <View style={styles.weekTotalBlock}>
-                <Text style={styles.labelMuted}>Total Minggu Ini</Text>
-                <Text style={[styles.weekTotal, weekTotal === 0 && { color: colors.textPrimary }]}>{formatCurrency(weekTotal)}</Text>
+              <View style={styles.trendHeader}>
+                <View>
+                  <Text style={styles.labelMuted}>Total {period} Hari Terakhir</Text>
+                  <Text style={[styles.trendTotal, daysTotal === 0 && { color: colors.textPrimary }]}>{formatCurrency(daysTotal)}</Text>
+                </View>
+                <View style={styles.averageBlock}>
+                  <Text style={styles.labelMuted}>Rata-rata</Text>
+                  <Text style={styles.averageValue}>{formatCurrency(daysAverage)}/hari</Text>
+                </View>
               </View>
-              {weekTotal === 0 ? (
-                <Text style={styles.chartEmpty}>Belum ada pengeluaran 7 hari terakhir. Chart terisi setelah kamu mencatat.</Text>
+              {daysTotal === 0 ? (
+                <Text style={styles.chartEmpty}>Belum ada pengeluaran {period} hari terakhir. Chart terisi setelah kamu mencatat.</Text>
               ) : (
-              <View style={styles.chart}>
-                <View style={styles.chartBarsArea}>
-                  {[0.2, 0.5, 0.8].map((ratio) => (
-                    <View
-                      key={ratio}
-                      style={[styles.gridLine, { top: 96 * ratio }]}
-                    />
-                  ))}
-                  <View style={styles.chartBarsRow}>
-                    {weekDays.map((day) => {
-                      const maxAmount = Math.max(...weekDays.map((item) => item.amount), 1)
-                      const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / maxAmount) * 96))
-                      const barColor = day.isToday ? colors.chartToday : day.isSaturday ? colors.chartSaturday : colors.chartBar
-                      return (
-                        <View key={day.key} style={styles.chartBarColumn}>
-                          <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
-                        </View>
-                      )
-                    })}
+                <View style={styles.chart}>
+                  <View style={styles.chartBarsArea}>
+                    {[0.25, 0.5, 0.75].map((ratio) => (
+                      <View key={ratio} style={[styles.gridLine, { top: 96 * ratio }]} />
+                    ))}
+                    <View style={styles.chartBarsRow}>
+                      {days.map((day) => {
+                        const maxAmount = Math.max(...days.map((item) => item.amount))
+                        const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / maxAmount) * 96))
+                        const barColor = day.isToday ? colors.chartToday : day.isSaturday ? colors.chartSaturday : colors.chartBar
+                        return (
+                          <View key={day.key} style={styles.chartBarColumn}>
+                            <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
+                          </View>
+                        )
+                      })}
+                    </View>
+                  </View>
+                  <View style={styles.chartLabelsRow}>
+                    {days.map((day) => (
+                      <Text
+                        key={day.key}
+                        style={[
+                          styles.chartLabel,
+                          day.isToday && styles.chartLabelToday,
+                          day.isSaturday && styles.chartLabelSaturday,
+                        ]}
+                      >
+                        {day.label === "" ? (period === 7 ? DAY_LABELS[new Date(day.key).getDay()] : "") : day.label}
+                      </Text>
+                    ))}
                   </View>
                 </View>
-                <View style={styles.chartLabelsRow}>
-                  {weekDays.map((day) => (
-                    <Text
-                      key={day.key}
-                      style={[
-                        styles.chartLabel,
-                        day.isToday && styles.chartLabelToday,
-                        day.isSaturday && styles.chartLabelSaturday,
-                      ]}
-                    >
-                      {day.label}
-                    </Text>
-                  ))}
-                </View>
-              </View>
               )}
             </View>
           </View>
 
           {/* Kategori Alokasi */}
-          {breakdown.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
-              {breakdown.map((item, index) => (
-                <CategoryRow colors={colors} index={index} item={item} key={item.category} styles={styles} />
-              ))}
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionHeaderText}>
+                <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
+                <Text style={styles.sectionSubtitle}>{allocationRows.rows.length} Kategori aktif bulan ini</Text>
+              </View>
+              <Pressable
+                accessibilityLabel="Atur limit"
+                accessibilityRole="button"
+                onPress={() => setSheetVisible(true)}
+                style={({ pressed }) => [styles.limitButton, pressed && styles.pressed]}
+              >
+                <MaterialCommunityIcons color={colors.accent} name="tune" size={16} />
+                <Text style={styles.limitButtonText}>Atur Limit</Text>
+              </Pressable>
+            </View>
+            <View style={styles.whiteCard}>
+              <Text style={styles.distribLabel}>
+                Distribusi Budget (Total {formatCurrency(allocationRows.totalBudget)})
+              </Text>
+              <Text style={styles.distribUsed}>
+                Terpakai: {formatCurrency(allocationRows.totalSpent)} ({allocationRows.usedPercent}%)
+              </Text>
+              {allocationRows.rows.length === 0 ? (
+                <Text style={styles.chartEmpty}>Belum ada alokasi. Ketuk &quot;Atur Limit&quot; untuk membagi budget ke kategori.</Text>
+              ) : (
+                <View style={styles.allocRows}>
+                  {allocationRows.rows.map((row) => (
+                    <AllocationRow colors={colors} key={row.category} row={row} styles={styles} />
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Peringatan kuota: hanya muncul bila ada kategori ≥ 70% */}
+          {nearLimit !== undefined ? (
+            <View style={styles.warningCard}>
+              <View style={styles.warningIcon}>
+                <MaterialCommunityIcons color={colors.error} name="alert-outline" size={20} />
+              </View>
+              <View style={styles.warningBody}>
+                <Text style={styles.warningTitle}>Peringatan Kuota Anggaran</Text>
+                <Text style={styles.warningText}>
+                  Alokasi &quot;{nearLimit.category}&quot; {nearLimit.percent >= 100 ? "sudah melebihi" : "mendekati"} batas ({nearLimit.percent}
+                  %). Sisa kuota {formatCurrency(nearLimit.rest)} untuk kategori ini.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setSheetVisible(true)}
+                  style={({ pressed }) => [styles.warningAction, pressed && styles.pressed]}
+                >
+                  <Text style={styles.warningActionText}>Sesuaikan Alokasi</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
@@ -197,51 +343,73 @@ export default function AnalisisScreen(): React.ReactElement {
             <View style={styles.insightBody}>
               <Text style={styles.insightTitle}>Saku Insight</Text>
               <Text style={styles.insightText}>
-                {breakdown.length === 0
+                {monthSummary.expense === 0
                   ? "Belum ada pengeluaran tercatat bulan ini. Tambahkan transaksi untuk melihat pola keuanganmu."
-                  : `Pengeluaran terbesar bulan ini ada di "${breakdown[0]?.category}" sebesar ${formatCompactCurrency(breakdown[0]?.amount ?? 0)}. Tinjau kembali budgetmu agar target tetap tercapai.`}
+                  : `Pengeluaran bulan ini ${formatCompactCurrency(monthSummary.expense)}. ${daysTotal > 0 ? `Rata-rata ${formatCurrency(daysAverage)}/hari dalam ${period} hari terakhir.` : ""} Tinjau kembali budgetmu agar target tetap tercapai.`}
               </Text>
             </View>
           </View>
         </>
       )}
+
+      <AlokasiSheet
+        budgets={budgets}
+        busy={saveBusy}
+        onClose={() => setSheetVisible(false)}
+        onSave={(next) => void handleSaveBudgets(next)}
+        saveError={saveError}
+        transactions={transactions}
+        visible={sheetVisible}
+      />
     </ScreenShell>
   )
 }
 
 type AnalisisStyles = ReturnType<typeof createStyles>
 
-type CategoryRowProps = {
+type AllocationRowData = {
+  readonly budget: number
+  readonly category: string
+  readonly percent: number
+  readonly rest: number
+  readonly spent: number
+  readonly status: string
+}
+
+type AllocationRowProps = {
   readonly colors: ThemeColors
-  readonly index: number
-  readonly item: { readonly category: string; readonly percentage: number }
+  readonly row: AllocationRowData
   readonly styles: AnalisisStyles
 }
 
-function CategoryRow({ colors, index, item, styles }: CategoryRowProps): React.ReactElement {
-  // Palet dari token tema, bukan hex file (R-29, R-34): baris 1 netral,
-  // baris 2 aksen, baris 3 danger. Alasan satu baris: variasi mencerminkan
-  // hierarki peringkat kategori.
-  const palette = [
-    { well: colors.accentSurface, icon: colors.accent, fill: colors.heroBackground },
-    { well: colors.heroChip, icon: colors.heroChipText, fill: colors.heroBackground },
-    { well: colors.expenseSurface, icon: colors.expense, fill: colors.error },
-  ][index % 3]
+function AllocationRow({ colors, row, styles }: AllocationRowProps): React.ReactElement {
+  const tone =
+    row.percent >= 90
+      ? { badge: colors.expenseSurface, text: colors.error, fill: colors.error }
+      : row.percent >= 70
+        ? { badge: colors.accentSurface, text: colors.accent, fill: colors.heroBackground }
+        : { badge: colors.surfaceMuted, text: colors.textSecondary, fill: colors.heroBackground }
 
   return (
-    <View style={styles.rowCard}>
-      <View style={[styles.rowWell, { backgroundColor: palette.well }]}>
-        <MaterialCommunityIcons color={palette.icon} name={getCategoryIconName(item.category)} size={20} />
+    <View style={styles.allocRow}>
+      <View style={[styles.rowWell, { backgroundColor: tone.badge }]}>
+        <MaterialCommunityIcons color={tone.text} name={getCategoryIconName(row.category)} size={20} />
       </View>
       <View style={styles.rowBody}>
         <View style={styles.rowTopLine}>
           <Text numberOfLines={1} style={styles.rowName}>
-            {item.category}
+            {row.category}
           </Text>
-          <Text style={styles.rowPercent}>{item.percentage}%</Text>
+          <Text style={[styles.rowPercent, { color: tone.text }]}>{row.percent}%</Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { backgroundColor: palette.fill, width: `${Math.min(item.percentage, 100)}%` }]} />
+          <View style={[styles.progressFill, { backgroundColor: tone.fill, width: `${row.percent}%` }]} />
+        </View>
+        <View style={styles.rowBottomLine}>
+          <Text style={styles.rowUsed}>
+            {formatCurrency(Math.min(row.spent, row.budget))} dari {formatCurrency(row.budget)}
+          </Text>
+          <Text style={styles.rowRest}>Sisa {formatCurrency(row.rest)}</Text>
         </View>
       </View>
     </View>
@@ -250,6 +418,25 @@ function CategoryRow({ colors, index, item, styles }: CategoryRowProps): React.R
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    allocRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    allocRows: {
+      gap: spacing.group,
+      marginTop: spacing.md,
+    },
+    averageBlock: {
+      alignItems: "flex-end",
+    },
+    averageValue: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.bodyMedium.fontSize,
+      fontWeight: "600",
+      marginTop: spacing.xs,
+    },
     balanceAmount: {
       color: colors.heroText,
       fontFamily: fontFamilies.bold,
@@ -277,6 +464,7 @@ function createStyles(colors: ThemeColors) {
     balanceMeta: {
       alignItems: "center",
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm,
       marginTop: spacing.md,
     },
@@ -285,22 +473,10 @@ function createStyles(colors: ThemeColors) {
       fontSize: typography.bodyMedium.fontSize,
       lineHeight: typography.bodyMedium.lineHeight,
     },
-    brandIcon: {
-      borderRadius: radii.sm,
-      height: 36,
-      width: 36,
-    },
-    pressed: {
-      opacity: 0.72,
-    },
-    profileButton: {
-      borderRadius: radii.md,
-      height: 40,
-      justifyContent: "center",
-      width: 40,
-    },
-    profileButtonHovered: {
-      backgroundColor: colors.surfaceMuted,
+    balanceTopRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
     },
     changeChip: {
       alignItems: "center",
@@ -340,6 +516,12 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "space-between",
       height: 96,
     },
+    chartEmpty: {
+      color: colors.textSecondary,
+      fontSize: typography.bodyMedium.fontSize,
+      lineHeight: typography.bodyMedium.lineHeight,
+      paddingVertical: spacing.md,
+    },
     chartLabel: {
       color: colors.textSecondary,
       fontFamily: typography.caption.fontFamily,
@@ -356,32 +538,29 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
-    chartEmpty: {
-      color: colors.textSecondary,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontSize: typography.bodyMedium.fontSize,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
-      paddingVertical: spacing.md,
-    },
     chartLabelsRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       marginTop: spacing.sm,
       paddingHorizontal: spacing.xs,
     },
-    chip: {
-      backgroundColor: colors.tint,
-      borderRadius: radii.pill,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-    },
-    chipText: {
-      color: colors.textSecondary,
+    distribLabel: {
+      color: colors.textPrimary,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.caption.fontSize,
+      fontSize: typography.bodyMedium.fontSize,
       fontWeight: "600",
-      lineHeight: typography.caption.lineHeight,
+    },
+    distribUsed: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+      marginTop: 2,
+    },
+    eyeButton: {
+      alignItems: "center",
+      borderRadius: radii.pill,
+      height: 36,
+      justifyContent: "center",
+      width: 36,
     },
     glowBottom: {
       backgroundColor: colors.heroChip,
@@ -410,24 +589,6 @@ function createStyles(colors: ThemeColors) {
       left: 0,
       position: "absolute",
       right: 0,
-    },
-    header: {
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingBottom: spacing.compact,
-    },
-    headerLeft: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing.row,
-    },
-    headerTitle: {
-      color: colors.heroBackground,
-      fontFamily: fontFamilies.semibold,
-      fontSize: typography.heading.fontSize,
-      fontWeight: "700",
-      lineHeight: typography.heading.lineHeight,
     },
     insightBody: {
       flex: 1,
@@ -470,6 +631,50 @@ function createStyles(colors: ThemeColors) {
       fontWeight: typography.caption.fontWeight,
       lineHeight: typography.caption.lineHeight,
     },
+    limitButton: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      gap: spacing.xs,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+    },
+    limitButtonText: {
+      color: colors.accent,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
+    },
+    periodRow: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      padding: 2,
+    },
+    periodTab: {
+      alignItems: "center",
+      borderRadius: radii.pill,
+      justifyContent: "center",
+      minHeight: 36,
+      paddingHorizontal: spacing.md,
+    },
+    periodTabActive: {
+      backgroundColor: colors.accent,
+    },
+    periodTabText: {
+      color: colors.textSecondary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "600",
+    },
+    periodTabTextActive: {
+      color: "#FFFFFF",
+    },
+    pressed: {
+      opacity: 0.72,
+    },
     progressFill: {
       borderRadius: radii.pill,
       height: "100%",
@@ -485,14 +690,11 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       minWidth: 0,
     },
-    rowCard: {
+    rowBottomLine: {
       alignItems: "center",
-      backgroundColor: colors.surface,
-      borderRadius: radii.lg,
       flexDirection: "row",
-      gap: spacing.md,
-      padding: spacing.group,
-      ...shadows.card,
+      justifyContent: "space-between",
+      marginTop: spacing.xs,
     },
     rowName: {
       color: colors.textPrimary,
@@ -503,17 +705,23 @@ function createStyles(colors: ThemeColors) {
       lineHeight: typography.bodyMedium.lineHeight,
     },
     rowPercent: {
-      color: colors.textSecondary,
-      fontFamily: fontFamilies.semibold,
+      fontFamily: fontFamilies.bold,
       fontSize: typography.caption.fontSize,
-      fontWeight: "600",
-      lineHeight: typography.caption.lineHeight,
+      fontWeight: "700",
+    },
+    rowRest: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
     },
     rowTopLine: {
       alignItems: "center",
       flexDirection: "row",
       gap: spacing.sm,
       justifyContent: "space-between",
+    },
+    rowUsed: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
     },
     rowWell: {
       alignItems: "center",
@@ -531,6 +739,15 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "space-between",
       paddingHorizontal: spacing.xs,
     },
+    sectionHeaderText: {
+      flex: 1,
+      gap: 2,
+      minWidth: 0,
+    },
+    sectionSubtitle: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+    },
     sectionTitle: {
       color: colors.textPrimary,
       fontFamily: fontFamilies.semibold,
@@ -538,7 +755,50 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
       lineHeight: typography.heading.lineHeight,
     },
-    weekTotal: {
+    summaryAmount: {
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.bodyLarge.fontSize,
+      fontVariant: ["tabular-nums"],
+      fontWeight: "700",
+      marginTop: spacing.xs,
+    },
+    summaryCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radii.md,
+      flex: 1,
+      padding: spacing.group,
+      ...shadows.card,
+    },
+    summaryIcon: {
+      alignItems: "center",
+      borderRadius: radii.pill,
+      height: 24,
+      justifyContent: "center",
+      width: 24,
+    },
+    summaryLabel: {
+      color: colors.textSecondary,
+      fontFamily: fontFamilies.bold,
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    summaryRow: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    summaryTop: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    trendHeader: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    trendTotal: {
       color: colors.error,
       fontFamily: fontFamilies.semibold,
       fontSize: 24,
@@ -546,8 +806,54 @@ function createStyles(colors: ThemeColors) {
       lineHeight: 32,
       marginTop: spacing.xs,
     },
-    weekTotalBlock: {
-      marginBottom: spacing.xs,
+    warningAction: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.accent,
+      borderRadius: radii.pill,
+      marginTop: spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: spacing.group,
+      paddingVertical: spacing.sm,
+    },
+    warningActionText: {
+      color: "#FFFFFF",
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
+    },
+    warningBody: {
+      flex: 1,
+      minWidth: 0,
+    },
+    warningCard: {
+      alignItems: "flex-start",
+      backgroundColor: colors.expenseSurface,
+      borderColor: colors.error,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.md,
+      padding: spacing.group,
+    },
+    warningIcon: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      height: 32,
+      justifyContent: "center",
+      width: 32,
+    },
+    warningText: {
+      color: colors.textSecondary,
+      fontSize: typography.bodyMedium.fontSize,
+      lineHeight: 20,
+    },
+    warningTitle: {
+      color: colors.error,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
+      textTransform: "uppercase",
     },
     whiteCard: {
       backgroundColor: colors.surface,
