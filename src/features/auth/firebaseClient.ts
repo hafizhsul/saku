@@ -106,3 +106,63 @@ export async function getFirebaseIdToken(): Promise<string | null> {
     return null
   }
 }
+
+export async function firebaseCurrentUser(): Promise<User | null> {
+  try {
+    const { auth } = await getAuthInstance()
+    const user = auth.currentUser
+    if (!user || !user.email) {
+      return null
+    }
+    return toUser(user.uid, user.email, user.displayName)
+  } catch {
+    return null
+  }
+}
+
+export async function firebaseUpdateName(name: string): Promise<User> {
+  const instance = await getAuthInstance()
+  const user = instance.auth.currentUser
+  if (!user) {
+    throw new Error("Sesi berakhir. Silakan masuk kembali.")
+  }
+  await instance.setName(user, { displayName: name })
+  const email = user.email ?? ""
+  return toUser(user.uid, email, user.displayName ?? name)
+}
+
+function firebaseErrorMessage(error: unknown): string {
+  const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : ""
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Kata sandi saat ini salah."
+    case "auth/weak-password":
+      return "Kata sandi baru minimal 8 karakter."
+    case "auth/requires-recent-login":
+      return "Sesi kedaluwarsa. Masuk kembali lalu coba lagi."
+    case "auth/too-many-requests":
+      return "Terlalu banyak percobaan. Coba lagi nanti."
+    case "auth/network-request-failed":
+      return "Terjadi kesalahan koneksi."
+    default:
+      return error instanceof Error && error.message ? error.message : "Terjadi kesalahan koneksi."
+  }
+}
+
+export async function firebaseChangePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const { auth } = await getAuthInstance()
+  const user = auth.currentUser
+  if (!user || !user.email) {
+    throw new Error("Sesi berakhir. Silakan masuk kembali.")
+  }
+  const authModule = await import("firebase/auth")
+  try {
+    const credential = authModule.EmailAuthProvider.credential(user.email, currentPassword)
+    await authModule.reauthenticateWithCredential(user, credential)
+    await authModule.updatePassword(user, newPassword)
+  } catch (error) {
+    throw new Error(firebaseErrorMessage(error))
+  }
+}
