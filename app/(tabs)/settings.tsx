@@ -36,11 +36,22 @@ export default function SettingsScreen(): React.ReactElement {
   const styles = useMemo(() => createStyles(colors), [colors])
   const [notificationsOn, setNotificationsOn] = useState(true)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [themePickerVisible, setThemePickerVisible] = useState(false)
+
+  const themeLabel = settings.theme === "dark" ? "Gelap" : settings.theme === "light" ? "Terang" : "Sistem"
 
   const chevron = <MaterialCommunityIcons color={colors.textTertiary} name="chevron-right" size={20} />
   const valueTrailing = (value: string): ReactNode => (
     <View style={styles.rowTrailing}>
       <Text style={styles.rowValue}>{value}</Text>
+      {chevron}
+    </View>
+  )
+  const pillTrailing = (value: string): ReactNode => (
+    <View style={styles.rowTrailing}>
+      <View style={styles.valuePill}>
+        <Text style={styles.valuePillText}>{value}</Text>
+      </View>
       {chevron}
     </View>
   )
@@ -88,9 +99,19 @@ export default function SettingsScreen(): React.ReactElement {
 
       {/* Akun */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Akun</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Akun</Text>
+          <Text style={styles.sectionCaption}>Pengaturan Utama</Text>
+        </View>
         <View style={styles.card}>
-          <MenuRow icon="account-outline" iconTone="accent" label="Edit Profil" trailing={chevron} onPress={() => router.push("/edit-profile")} />
+          <MenuRow
+            icon="account-outline"
+            iconTone="accent"
+            label="Edit Profil"
+            subtitle="Data pribadi & identitas KYC"
+            trailing={chevron}
+            onPress={() => router.push("/edit-profile")}
+          />
           <View style={styles.divider} />
           <MenuRow
             icon="shield-lock-outline"
@@ -100,19 +121,21 @@ export default function SettingsScreen(): React.ReactElement {
             trailing={chevron}
             onPress={() => router.push("/change-password")}
           />
-          <View style={styles.divider} />
-          <MenuRow icon="bank-outline" iconTone="accent" label="Hubungkan Bank/E-wallet" subtitle="Segera hadir" trailing={chevron} />
         </View>
       </View>
 
       {/* Aplikasi */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Aplikasi</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Aplikasi</Text>
+          <Text style={styles.sectionCaption}>Preferensi</Text>
+        </View>
         <View style={styles.card}>
           <MenuRow
             icon="bell-outline"
-            iconTone="muted"
+            iconTone="accent"
             label="Notifikasi"
+            subtitle="Peringatan budget & transaksi"
             trailing={<ToggleSwitch checked={notificationsOn} label="Notifikasi" onChange={setNotificationsOn} />}
           />
           {hasBiometric ? (
@@ -121,7 +144,7 @@ export default function SettingsScreen(): React.ReactElement {
               <MenuRow
                 accessibilityHint="Ketuk untuk mengaktifkan atau menonaktifkan kunci biometrik"
                 icon="fingerprint"
-                iconTone="muted"
+                iconTone="accent"
                 label="Kunci dengan biometrik"
                 trailing={
                   <ToggleSwitch checked={settings.biometricLock} label="Kunci dengan biometrik" onChange={(next) => void setBiometricLock(next)} />
@@ -130,29 +153,25 @@ export default function SettingsScreen(): React.ReactElement {
             </>
           ) : null}
           <View style={styles.divider} />
-          <View style={styles.themeBlock}>
-            <View style={styles.themeBlockHeader}>
-              <View style={[styles.iconCircle, { backgroundColor: colors.surfaceMuted }]}>
-                <MaterialCommunityIcons color={colors.textPrimary} name="theme-light-dark" size={20} />
-              </View>
-              <Text style={styles.rowLabel}>Tema</Text>
-            </View>
-            <SegmentedControl
-              accessibilityLabel="Pilih tema"
-              onChange={(value) => void setTheme(value as ThemePreference)}
-              options={themePreferenceOptions}
-              selectedValue={settings.theme}
-            />
-            {settings.theme === "system" ? <Text style={styles.rowSubtitle}>Mengikuti pengaturan perangkatmu.</Text> : null}
-          </View>
+          <MenuRow
+            icon="theme-light-dark"
+            iconTone="accent"
+            label="Tema"
+            subtitle="Tampilan aplikasi"
+            trailing={pillTrailing(themeLabel)}
+            onPress={() => setThemePickerVisible(true)}
+          />
           <View style={styles.divider} />
-          <MenuRow icon="translate" iconTone="muted" label="Bahasa" subtitle="Segera hadir" trailing={valueTrailing("Indonesia")} />
+          <MenuRow icon="translate" iconTone="accent" label="Bahasa" subtitle="Pilihan lokalisasi" trailing={valueTrailing("Indonesia")} />
         </View>
       </View>
 
       {/* Data */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Data</Text>
+          <Text style={styles.sectionCaption}>Kelola Data</Text>
+        </View>
         <View style={styles.card}>
           <MenuRow
             icon="database-cog-outline"
@@ -175,17 +194,27 @@ export default function SettingsScreen(): React.ReactElement {
 
       {/* Lainnya */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Lainnya</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Lainnya</Text>
+          <Text style={styles.sectionCaption}>Bantuan & Legal</Text>
+        </View>
         <View style={styles.card}>
-          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan" subtitle="Segera hadir" trailing={chevron} />
+          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan & FAQ" trailing={chevron} />
           <View style={styles.divider} />
-          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" subtitle="Segera hadir" trailing={chevron} />
+          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" trailing={chevron} />
           <View style={styles.divider} />
           <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => setConfirmLogout(true)} />
         </View>
       </View>
 
-      <Text style={styles.version}>Saku App Versi {Constants.expoConfig?.version ?? "1.0.0"}</Text>
+      {/* Tentang aplikasi */}
+      <View style={styles.aboutRow}>
+        <Image accessibilityIgnoresInvertColors resizeMode="contain" source={require("../../assets/images/saku-logo.png")} style={styles.aboutLogo} />
+        <View style={styles.aboutText}>
+          <Text style={styles.aboutName}>Saku</Text>
+          <Text style={styles.aboutVersion}>Versi {Constants.expoConfig?.version ?? "1.0.0"}</Text>
+        </View>
+      </View>
     </>
   )
 
@@ -232,6 +261,42 @@ export default function SettingsScreen(): React.ReactElement {
           </View>
         </View>
       </Modal>
+
+      {/* Pilih tema: baris Tema membuka picker ini */}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setThemePickerVisible(false)}
+        transparent
+        visible={themePickerVisible}
+      >
+        <View accessibilityViewIsModal style={styles.modalOverlay}>
+          <View accessibilityLabel="Pilih tema aplikasi" accessibilityRole="alert" style={styles.modalCard}>
+            <View style={styles.modalBody}>
+              <Text style={styles.modalTitle}>Tema</Text>
+              <Text style={styles.modalMessage}>Pilih tampilan aplikasi sesuai preferensimu.</Text>
+              <SegmentedControl
+                accessibilityLabel="Pilih tema"
+                onChange={(value) => {
+                  void setTheme(value as ThemePreference)
+                  setThemePickerVisible(false)
+                }}
+                options={themePreferenceOptions}
+                selectedValue={settings.theme}
+              />
+            </View>
+            <View style={styles.modalActions}>
+              <Pressable
+                accessibilityLabel="Tutup pilihan tema"
+                accessibilityRole="button"
+                onPress={() => setThemePickerVisible(false)}
+                style={({ pressed }) => [styles.modalActionSecondary, pressed && styles.pressed]}
+              >
+                <Text style={styles.modalActionSecondaryText}>Tutup</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -250,9 +315,8 @@ type MenuRowProps = {
 function MenuRow({ accessibilityHint, icon, iconTone, label, subtitle, danger, trailing, onPress }: MenuRowProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
-  const circleBackground =
-    iconTone === "accent" ? colors.accentSurface : iconTone === "danger" ? colors.expenseSurface : colors.surfaceMuted
-  const iconColor = danger ? colors.error : colors.textPrimary
+  const circleBackground = iconTone === "danger" ? colors.expenseSurface : iconTone === "muted" ? colors.tint : colors.accentSurface
+  const iconColor = danger ? colors.error : iconTone === "muted" ? colors.textPrimary : colors.accent
 
   return (
     <Pressable
@@ -302,6 +366,32 @@ function ToggleSwitch({ checked, label, onChange }: ToggleSwitchProps): React.Re
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    aboutLogo: {
+      borderRadius: 24,
+      height: 48,
+      width: 48,
+    },
+    aboutName: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
+      letterSpacing: 0.8,
+    },
+    aboutRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.group,
+      justifyContent: "center",
+      paddingVertical: spacing.xl,
+    },
+    aboutText: {
+      gap: 2,
+    },
+    aboutVersion: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+    },
     avatar: {
       borderRadius: 40,
       height: 80,
@@ -360,7 +450,7 @@ function createStyles(colors: ThemeColors) {
     },
     iconCircle: {
       alignItems: "center",
-      borderRadius: 20,
+      borderRadius: radii.md,
       height: 40,
       justifyContent: "center",
       width: 40,
@@ -484,17 +574,17 @@ function createStyles(colors: ThemeColors) {
     row: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.group,
-      minHeight: 64,
+      gap: spacing.md,
+      minHeight: 56,
       paddingHorizontal: spacing.group,
       paddingVertical: spacing.md,
     },
     rowLabel: {
       color: colors.textPrimary,
-      fontFamily: typography.body.fontFamily,
-      fontSize: typography.body.fontSize,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 15,
+      fontWeight: "600",
+      lineHeight: 20,
     },
     rowLabelDanger: {
       color: colors.error,
@@ -527,6 +617,16 @@ function createStyles(colors: ThemeColors) {
     },
     section: {
       gap: spacing.compact,
+    },
+    sectionCaption: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+    },
+    sectionHeader: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.xs,
     },
     sectionTitle: {
       color: colors.textSecondary,
@@ -603,6 +703,18 @@ function createStyles(colors: ThemeColors) {
     },
     profileButtonHovered: {
       backgroundColor: colors.surfaceMuted,
+    },
+    valuePill: {
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    valuePillText: {
+      color: colors.accent,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "700",
     },
     version: {
       color: colors.textTertiary,
