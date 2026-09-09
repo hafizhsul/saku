@@ -20,10 +20,17 @@ function jsonResponse(body: unknown, ok = true) {
 
 beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch)
+  // Test jalur REST mengasumsikan Firebase tak terkonfigurasi; bersihkan
+  // env ambien agar hermetic.
+  vi.stubEnv("EXPO_PUBLIC_FIREBASE_API_KEY", "")
+  vi.stubEnv("EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN", "")
+  vi.stubEnv("EXPO_PUBLIC_FIREBASE_PROJECT_ID", "")
+  vi.stubEnv("EXPO_PUBLIC_FIREBASE_APP_ID", "")
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   mockFetch.mockReset()
 })
 
