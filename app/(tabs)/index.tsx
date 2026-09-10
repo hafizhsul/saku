@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Image, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
@@ -8,7 +8,9 @@ import { AlokasiSheet } from "../../src/components/AlokasiSheet"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { ToastBanner } from "../../src/components/ToastBanner"
 import { TransactionRow } from "../../src/components/TransactionRow"
+import { clearPendingToast, usePendingToast } from "../../src/features/transactions/pendingToast"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import type { BudgetsMap } from "../../src/features/budgets/types"
@@ -32,6 +34,39 @@ export default function HomeScreen(): React.ReactElement {
   const [sheetVisible, setSheetVisible] = useState(false)
   const [saveBusy, setSaveBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Toast satu-kali lintas layar via store eksternal (bukan state lokal):
+  // tahan remount Home saat navigasi replace/back. Auto-dismiss 2.6 detik.
+  const toast = usePendingToast()
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (toast === null) {
+      return
+    }
+    if (toastTimer.current !== null) {
+      clearTimeout(toastTimer.current)
+    }
+    toastTimer.current = setTimeout(() => clearPendingToast(), 2600)
+    return () => {
+      if (toastTimer.current !== null) {
+        clearTimeout(toastTimer.current)
+        toastTimer.current = null
+      }
+    }
+  }, [toast])
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) {
+        clearTimeout(toastTimer.current)
+      }
+    },
+    [],
+  )
+
+  function dismissToast(): void {
+    clearPendingToast()
+  }
 
   async function handleSaveSheet(next: BudgetsMap): Promise<void> {
     setSaveBusy(true)
@@ -79,19 +114,20 @@ export default function HomeScreen(): React.ReactElement {
   }
 
   return (
-    <ScreenShell>
-      <Header colors={colors} styles={styles} />
-      <View style={styles.content}>
-        <TotalBudgetCard
-          balanceVisible={balanceVisible}
-          colors={colors}
-          monthLabel={formatMonthLabel(currentMonth)}
-          onAlokasi={() => setSheetVisible(true)}
-          onPemasukan={() => router.push({ pathname: "/add-transaction", params: { type: "income" } })}
-          onToggleBalance={() => setBalanceVisible((v) => !v)}
-          styles={styles}
-          totalBudget={totalBudget}
-        />
+    <View style={styles.homeRoot}>
+      <ScreenShell>
+        <Header colors={colors} styles={styles} />
+        <View style={styles.content}>
+          <TotalBudgetCard
+            balanceVisible={balanceVisible}
+            colors={colors}
+            monthLabel={formatMonthLabel(currentMonth)}
+            onAlokasi={() => setSheetVisible(true)}
+            onPemasukan={() => router.push({ pathname: "/add-transaction", params: { type: "income" } })}
+            onToggleBalance={() => setBalanceVisible((v) => !v)}
+            styles={styles}
+            totalBudget={totalBudget}
+          />
 
         {sakuItems.length > 0 ? (
           <View style={styles.section}>
@@ -170,9 +206,20 @@ export default function HomeScreen(): React.ReactElement {
               ))}
             </View>
           )}
+          </View>
         </View>
-      </View>
-    </ScreenShell>
+      </ScreenShell>
+      {toast !== null ? (
+        <ToastBanner
+          onDismiss={dismissToast}
+          onView={(transactionId) => {
+            dismissToast()
+            router.push({ pathname: "/transaction/[id]", params: { id: transactionId } })
+          }}
+          toast={toast}
+        />
+      ) : null}
+    </View>
   )
 }
 
@@ -568,6 +615,9 @@ function createStyles(colors: ThemeColors) {
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "space-between",
+    },
+    homeRoot: {
+      flex: 1,
     },
     pressed: {
       opacity: 0.72,

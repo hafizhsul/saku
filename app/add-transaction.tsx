@@ -1,8 +1,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, useLocalSearchParams } from "expo-router"
-import { createElement, useEffect, useMemo, useRef, useState } from "react"
-import Animated, { FadeInDown, useReducedMotion, ZoomIn } from "react-native-reanimated"
+import { createElement, useMemo, useState } from "react"
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../src/components/EmptyState"
@@ -12,6 +11,7 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
+import { setPendingToast } from "../src/features/transactions/pendingToast"
 import { formatCurrency } from "../src/utils/currency"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
@@ -117,28 +117,6 @@ export default function AddTransactionScreen(): React.ReactElement {
   const [note, setNote] = useState(editing?.note ?? "")
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSaved, setIsSaved] = useState(false)
-  const [toast, setToast] = useState<{ readonly title: string; readonly subtitle: string; readonly transactionId: string } | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Animasi masuk toast satu-kali (menarik mata ke konfirmasi, R-19);
-  // mati bila reduced motion.
-  const reduceMotion = useReducedMotion()
-
-  useEffect(
-    () => () => {
-      if (toastTimer.current !== null) {
-        clearTimeout(toastTimer.current)
-      }
-    },
-    [],
-  )
-
-  function dismissToast(): void {
-    if (toastTimer.current !== null) {
-      clearTimeout(toastTimer.current)
-      toastTimer.current = null
-    }
-    setToast(null)
-  }
 
   if (transactionId !== undefined && editing === undefined) {
     return (
@@ -243,15 +221,14 @@ export default function AddTransactionScreen(): React.ReactElement {
 
     setIsSaved(true)
     const typeLabel = type === "expense" ? "Pengeluaran" : "Pemasukan"
-    setToast({
+    // Toast dititipkan ke Home via pending store; form langsung kembali
+    // agar toast muncul di Home, bukan di layar form.
+    setPendingToast({
       title: editing === undefined ? `${typeLabel} Berhasil Dicatat!` : "Perubahan Tersimpan!",
       subtitle: `${category} • ${formatCurrency(amount)}`,
       transactionId: result.transaction.id,
     })
-    toastTimer.current = setTimeout(() => {
-      setToast(null)
-      router.back()
-    }, 2600)
+    router.replace("/")
   }
 
   const isEditing = editing !== undefined
@@ -471,45 +448,6 @@ export default function AddTransactionScreen(): React.ReactElement {
           </Text>
         </Pressable>
       </ScreenShell>
-      {toast !== null ? (
-        <Animated.View
-          entering={reduceMotion ? undefined : FadeInDown.springify().damping(18).stiffness(220)}
-          style={styles.toast}
-        >
-          <Animated.View entering={reduceMotion ? undefined : ZoomIn.springify().delay(80)} style={styles.toastIcon}>
-            <MaterialCommunityIcons color={colors.accent} name="check" size={20} />
-          </Animated.View>
-          <View style={styles.toastText}>
-            <View style={styles.toastTitleRow}>
-              <Text style={styles.toastTitle}>{toast.title}</Text>
-              <View style={styles.toastDot} />
-            </View>
-            <Text numberOfLines={1} style={styles.toastSubtitle}>{toast.subtitle}</Text>
-          </View>
-          <Pressable
-            accessibilityLabel="Lihat transaksi"
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={() => {
-              const id = toast.transactionId
-              dismissToast()
-              router.replace({ pathname: "/transaction/[id]", params: { id } })
-            }}
-            style={({ pressed }) => [styles.toastAction, pressed && styles.pressed]}
-          >
-            <Text style={styles.toastActionText}>Lihat</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel="Tutup pemberitahuan"
-            accessibilityRole="button"
-            hitSlop={12}
-            onPress={dismissToast}
-            style={({ pressed }) => [styles.toastClose, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons color={colors.textTertiary} name="close" size={16} />
-          </Pressable>
-        </Animated.View>
-      ) : null}
     </KeyboardAvoidingView>
   )
 }
@@ -709,75 +647,6 @@ function createStyles(colors: ThemeColors) {
     },
     keyboard: {
       flex: 1,
-    },
-    toast: {
-      alignItems: "center",
-      backgroundColor: `${colors.surface}F2`,
-      borderColor: `${colors.accent}4D`,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: spacing.sm,
-      left: spacing.lg,
-      padding: spacing.md,
-      position: "absolute",
-      right: spacing.lg,
-      top: 48,
-      ...shadows.elevated,
-    },
-    toastAction: {
-      alignItems: "center",
-      backgroundColor: colors.accentSurface,
-      borderRadius: radii.sm,
-      justifyContent: "center",
-      minHeight: 44,
-      paddingHorizontal: spacing.group,
-    },
-    toastActionText: {
-      color: colors.accent,
-      fontFamily: fontFamilies.bold,
-      fontSize: typography.caption.fontSize,
-      fontWeight: "700",
-    },
-    toastClose: {
-      alignItems: "center",
-      height: 32,
-      justifyContent: "center",
-      width: 32,
-    },
-    toastDot: {
-      backgroundColor: colors.accent,
-      borderRadius: 4,
-      height: 8,
-      width: 8,
-    },
-    toastIcon: {
-      alignItems: "center",
-      backgroundColor: colors.accentSurface,
-      borderRadius: 18,
-      height: 36,
-      justifyContent: "center",
-      width: 36,
-    },
-    toastTitleRow: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing.compact,
-    },
-    toastSubtitle: {
-      color: colors.textSecondary,
-      fontSize: 11,
-    },
-    toastText: {
-      flex: 1,
-      gap: 2,
-      minWidth: 0,
-    },
-    toastTitle: {
-      color: colors.textPrimary,
-      fontFamily: fontFamilies.bold,
-      fontSize: 12,
-      fontWeight: "700",
     },
     noteBox: {
       alignItems: "flex-start",
