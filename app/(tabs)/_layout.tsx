@@ -99,7 +99,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceElevated,
       borderTopColor: colors.border,
       borderTopWidth: 1,
-      paddingTop: 8,
+      paddingTop: 2,
     },
     fab: {
       alignItems: "center",
