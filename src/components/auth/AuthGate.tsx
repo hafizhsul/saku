@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { useAuth } from "../../features/auth/AuthProvider"
@@ -36,24 +37,35 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
 
   if (state === "locked") {
     return (
-      <ScreenShell contentStyle={styles.content} withTabBar={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Saku terkunci</Text>
+      <ScreenShell contentStyle={styles.lockedContent} withTabBar={false}>
+        <View style={styles.lockedHeader}>
+          <View style={styles.lockIcon}>
+            <MaterialCommunityIcons color={colors.textPrimary} name="lock-outline" size={28} />
+          </View>
+          <Text style={styles.lockedTitle}>Saku Terkunci</Text>
           {authError !== null ? (
-            <Text accessibilityRole="alert" style={styles.errorText}>
-              {authError}
-            </Text>
+            <View style={styles.statusPill}>
+              <Text accessibilityRole="alert" style={styles.statusText}>
+                {authError}
+              </Text>
+            </View>
           ) : null}
-          <Text style={styles.description}>Periksa koneksi atau buka dengan biometrik.</Text>
+          <Text style={styles.lockedDescription}>
+            Sesi Anda diamankan secara otomatis. Periksa koneksi atau verifikasi identitas Anda untuk melanjutkan.
+          </Text>
         </View>
 
         {hasBiometric ? (
-          <PrimaryButton
+          <Pressable
             accessibilityLabel="Buka dengan biometrik"
-            icon="fingerprint"
-            label="Buka dengan biometrik"
+            accessibilityRole="button"
             onPress={() => void biometricUnlock()}
-          />
+            style={({ pressed }) => [styles.biometricCard, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color={colors.accent} name="face-recognition" size={28} />
+            <Text style={styles.biometricTitle}>Ketuk untuk Buka Biometrik</Text>
+            <Text style={styles.biometricSub}>Face ID atau Sidik Jari</Text>
+          </Pressable>
         ) : null}
 
         <PrimaryButton
@@ -61,7 +73,6 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
           icon="refresh"
           label="Coba lagi"
           onPress={() => void retryLoad()}
-          variant="secondary"
         />
 
         <Pressable
@@ -72,6 +83,11 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
         >
           <Text style={styles.logoutText}>Keluar dari akun ini</Text>
         </Pressable>
+
+        <View style={styles.trustRow}>
+          <MaterialCommunityIcons color={colors.textTertiary} name="shield-check-outline" size={14} />
+          <Text style={styles.trustText}>Berizin & Diawasi OJK • LPS Terdaftar</Text>
+        </View>
       </ScreenShell>
     )
   }
@@ -89,35 +105,62 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    content: {
+    biometricCard: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: radii.lg,
+      elevation: 3,
+      gap: spacing.xs,
+      minHeight: 88,
+      justifyContent: "center",
+      padding: spacing.group,
+    },
+    biometricSub: {
+      color: colors.textTertiary,
+      fontSize: 12,
+    },
+    biometricTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    lockedContent: {
+      gap: spacing.lg,
       paddingTop: spacing["3xl"],
     },
-    description: {
+    lockedDescription: {
       color: colors.textSecondary,
-      fontSize: typography.body.fontSize,
       fontFamily: typography.body.fontFamily,
+      fontSize: typography.body.fontSize,
       fontWeight: typography.body.fontWeight,
       lineHeight: typography.body.lineHeight,
       textAlign: "center",
     },
-    errorText: {
-      backgroundColor: colors.expenseSurface,
-      borderRadius: radii.sm,
-      color: colors.error,
-      fontSize: typography.bodyMedium.fontSize,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontWeight: typography.bodyMedium.fontWeight,
-      lineHeight: typography.bodyMedium.lineHeight,
-      padding: spacing.md,
+    lockedHeader: {
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    lockedTitle: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: 22,
+      fontWeight: "700",
       textAlign: "center",
     },
-    header: {
+    lockIcon: {
       alignItems: "center",
-      gap: spacing.group,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      elevation: 2,
+      height: 64,
+      justifyContent: "center",
+      width: 64,
     },
     logoutButton: {
       alignItems: "center",
-      paddingVertical: spacing.sm,
+      minHeight: 44,
+      justifyContent: "center",
     },
     logoutText: {
       color: colors.textSecondary,
@@ -130,13 +173,29 @@ function createStyles(colors: ThemeColors) {
     pressed: {
       opacity: 0.72,
     },
-    title: {
-      color: colors.textPrimary,
-      fontSize: typography.heading.fontSize,
-      fontFamily: fontFamilies.bold,
-      fontWeight: "700",
-      lineHeight: typography.heading.lineHeight,
+    statusPill: {
+      borderColor: colors.textTertiary,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      paddingHorizontal: spacing.group,
+      paddingVertical: spacing.compact,
+    },
+    statusText: {
+      color: colors.textSecondary,
+      fontFamily: typography.bodyMedium.fontFamily,
+      fontSize: typography.bodyMedium.fontSize,
+      fontWeight: typography.bodyMedium.fontWeight,
       textAlign: "center",
+    },
+    trustRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.xs,
+      justifyContent: "center",
+    },
+    trustText: {
+      color: colors.textTertiary,
+      fontSize: 12,
     },
   })
 }
