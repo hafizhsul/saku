@@ -19,6 +19,18 @@ const DAY_LABELS = ["Mg", "Sn", "Sl", "Rb", "Km", "Jm", "Sb"] as const
 
 type TrendPeriod = 7 | 30 | 90
 
+const PLOT_HEIGHT = 96
+const TAG_ZONE = 20
+const TAG_GAP = 4
+const CHART_TOP = TAG_ZONE + TAG_GAP
+const AXIS_WIDTH = 56
+
+// Label sumbu/tooltip gaya referensi: ringkas tanpa "Rp " dan tanpa spasi
+// ("300rb") supaya muat satu baris di kolom sempit.
+function axisLabel(amount: number): string {
+  return formatCompactCurrency(amount).replace("Rp ", "").replace(" ", "")
+}
+
 const PERIOD_OPTIONS: readonly { readonly value: TrendPeriod; readonly label: string }[] = [
   { value: 7, label: "7 Hari" },
   { value: 30, label: "30 Hari" },
@@ -39,7 +51,7 @@ function trendBuckets(
 ): readonly DayBucket[] {
   const today = new Date()
   const buckets: DayBucket[] = []
-  const stride = days === 7 ? 1 : days === 30 ? 5 : 14
+  const stride = days === 30 ? 5 : 14
 
   for (let offset = days - 1; offset >= 0; offset -= 1) {
     const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset)
@@ -49,8 +61,9 @@ function trendBuckets(
       .reduce((sum, transaction) => sum + transaction.amount, 0)
     buckets.push({
       key,
-      // Label ber-stride supaya sumbu tidak sesak di rentang panjang.
-      label: (days - 1 - offset) % stride === 0 ? String(day.getDate()) : "",
+      // 7 hari: label nama hari seperti referensi; rentang panjang:
+      // tanggal ber-stride supaya sumbu tidak sesak.
+      label: days === 7 ? DAY_LABELS[day.getDay()] : (days - 1 - offset) % stride === 0 ? String(day.getDate()) : "",
       amount,
       isToday: offset === 0,
       isSaturday: day.getDay() === 6,
@@ -77,6 +90,16 @@ export default function AnalisisScreen(): React.ReactElement {
   const days = useMemo(() => trendBuckets(transactions, period), [period, transactions])
   const daysTotal = days.reduce((sum, day) => sum + day.amount, 0)
   const daysAverage = Math.round(daysTotal / period)
+
+  // Skala chart dari data nyata: benchmark hijau = rata-rata harian
+  // referensi; zona atas TAG_ZONE dicadangkan untuk tooltip puncak supaya
+  // tidak menutupi badge rata-rata.
+  const maxAmount = Math.max(1, ...days.map((day) => day.amount))
+  const barZone = PLOT_HEIGHT - CHART_TOP
+  const scaleMax = maxAmount * (PLOT_HEIGHT / barZone)
+  const benchmarkPerDay = daysAverage
+  const benchmarkTop = CHART_TOP + Math.min(barZone, Math.max(0, barZone - (benchmarkPerDay / scaleMax) * PLOT_HEIGHT))
+  const axisStep = maxAmount / 2
 
   const previousNet = selectMonthlySummary(transactions, shiftMonth(currentMonth, -1)).net
   const monthChangePercent =
@@ -151,6 +174,10 @@ export default function AnalisisScreen(): React.ReactElement {
         </View>
         <Text style={styles.balanceAmount}>{balanceVisible ? formatCurrency(balance) : "Rp ••••••"}</Text>
         <View style={styles.balanceMeta}>
+          <View style={styles.monthPill}>
+            <MaterialCommunityIcons color={colors.heroChipText} name="calendar-today" size={14} />
+            <Text style={styles.monthPillText}>Bulan ini</Text>
+          </View>
           {monthChangePercent !== undefined ? (
             <View style={styles.changeChip}>
               <MaterialCommunityIcons
@@ -165,29 +192,28 @@ export default function AnalisisScreen(): React.ReactElement {
               </Text>
             </View>
           ) : null}
-          <Text style={styles.balanceMetaText}>Bulan ini</Text>
         </View>
-      </View>
-
-      {/* Ringkasan bulan ini */}
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryTop}>
-            <Text style={styles.summaryLabel}>Pemasukan</Text>
-            <View style={[styles.summaryIcon, { backgroundColor: colors.accentSurface }]}>
-              <MaterialCommunityIcons color={colors.accent} name="arrow-down" size={14} />
+        <View style={styles.heroDivider} />
+        <View style={styles.heroFlow}>
+          <View style={styles.heroFlowItem}>
+            <View style={styles.heroFlowIcon}>
+              <MaterialCommunityIcons color={colors.heroChipText} name="arrow-down" size={14} />
+            </View>
+            <View>
+              <Text style={styles.heroFlowLabel}>Pemasukan</Text>
+              <Text style={styles.heroFlowValue}>+{formatCurrency(monthSummary.income)}</Text>
             </View>
           </View>
-          <Text style={[styles.summaryAmount, { color: colors.income }]}>+{formatCurrency(monthSummary.income)}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryTop}>
-            <Text style={styles.summaryLabel}>Pengeluaran</Text>
-            <View style={[styles.summaryIcon, { backgroundColor: colors.expenseSurface }]}>
-              <MaterialCommunityIcons color={colors.error} name="arrow-up" size={14} />
+          <View style={styles.heroFlowDivider} />
+          <View style={styles.heroFlowItem}>
+            <View style={styles.heroFlowIcon}>
+              <MaterialCommunityIcons color={colors.heroChipText} name="arrow-up" size={14} />
+            </View>
+            <View>
+              <Text style={styles.heroFlowLabel}>Pengeluaran</Text>
+              <Text style={styles.heroFlowValue}>-{formatCurrency(monthSummary.expense)}</Text>
             </View>
           </View>
-          <Text style={[styles.summaryAmount, { color: colors.error }]}>-{formatCurrency(monthSummary.expense)}</Text>
         </View>
       </View>
 
@@ -204,9 +230,14 @@ export default function AnalisisScreen(): React.ReactElement {
           {/* Tren Pengeluaran */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionHeaderText}>
-                <Text style={styles.sectionTitle}>Tren Pengeluaran</Text>
-                <Text style={styles.sectionSubtitle}>Analisis harian vs target batas</Text>
+              <View style={styles.trendTitleBlock}>
+                <View style={styles.sectionIcon}>
+                  <MaterialCommunityIcons color={colors.accent} name="chart-line" size={18} />
+                </View>
+                <View style={styles.sectionHeaderText}>
+                  <Text style={styles.sectionTitle}>Tren Pengeluaran</Text>
+                  <Text style={styles.sectionSubtitle}>Analisis harian vs target batas</Text>
+                </View>
               </View>
               <View style={styles.periodRow}>
                 {PERIOD_OPTIONS.map((option) => {
@@ -226,35 +257,63 @@ export default function AnalisisScreen(): React.ReactElement {
               </View>
             </View>
             <View style={styles.whiteCard}>
-              <View style={styles.trendHeader}>
+              <View style={styles.trendSummary}>
                 <View>
-                  <Text style={styles.labelMuted}>Total {period} Hari Terakhir</Text>
+                  <Text style={styles.labelMuted}>
+                    {period === 7 ? "Total 7 Hari Terakhir" : period === 30 ? "Total 30 Hari Terakhir" : "Total 3 Bulan Terakhir"}
+                  </Text>
                   <Text style={[styles.trendTotal, daysTotal === 0 && { color: colors.textPrimary }]}>{formatCurrency(daysTotal)}</Text>
                 </View>
-                <View style={styles.averageBlock}>
-                  <Text style={styles.labelMuted}>Rata-rata</Text>
-                  <Text style={styles.averageValue}>{formatCurrency(daysAverage)}/hari</Text>
+                <View style={styles.averageBadge}>
+                  <View style={styles.averageDash} />
+                  <Text style={styles.averageText}>
+                    Rata-rata: <Text style={styles.averageStrong}>{formatCompactCurrency(daysAverage)}/hari</Text>
+                  </Text>
                 </View>
               </View>
               {daysTotal === 0 ? (
                 <Text style={styles.chartEmpty}>Belum ada pengeluaran {period} hari terakhir. Chart terisi setelah kamu mencatat.</Text>
               ) : (
                 <View style={styles.chart}>
-                  <View style={styles.chartBarsArea}>
-                    {[0.25, 0.5, 0.75].map((ratio) => (
-                      <View key={ratio} style={[styles.gridLine, { top: 96 * ratio }]} />
-                    ))}
-                    <View style={styles.chartBarsRow}>
-                      {days.map((day) => {
-                        const maxAmount = Math.max(...days.map((item) => item.amount))
-                        const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / maxAmount) * 96))
-                        const barColor = day.isToday ? colors.chartToday : day.isSaturday ? colors.chartSaturday : colors.chartBar
-                        return (
-                          <View key={day.key} style={styles.chartBarColumn}>
-                            <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
-                          </View>
-                        )
-                      })}
+                  <View style={styles.chartWithAxis}>
+                    <View style={styles.yAxis}>
+                      <Text numberOfLines={1} style={styles.yLabel}>
+                        {axisLabel(maxAmount)}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.yLabel}>
+                        {axisLabel(axisStep)}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.yLabel}>
+                        0
+                      </Text>
+                    </View>
+                    <View style={styles.chartBarsArea}>
+                      <View style={[styles.benchmarkLine, { top: benchmarkTop }]} />
+                      <View style={[styles.benchmarkTag, { top: Math.min(PLOT_HEIGHT - 18, Math.max(0, benchmarkTop - 9)) }]}>
+                        <Text style={styles.benchmarkTagText}>Batas: {formatCompactCurrency(benchmarkPerDay)}/hr</Text>
+                      </View>
+                      {[0.25, 0.5, 0.75].map((ratio) => (
+                        <View key={ratio} style={[styles.gridLine, { top: PLOT_HEIGHT * ratio }]} />
+                      ))}
+                      <View style={styles.chartBarsRow}>
+                        {days.map((day) => {
+                          const height = day.amount === 0 ? 0 : Math.max(4, Math.round((day.amount / scaleMax) * PLOT_HEIGHT))
+                          const barColor = day.isToday ? colors.chartToday : day.isSaturday ? colors.chartSaturday : colors.chartBar
+                          const peak = day.amount === maxAmount && maxAmount > 0
+                          return (
+                            <View key={day.key} style={styles.chartBarColumn}>
+                              <View style={styles.peakSlot}>
+                                {peak ? (
+                                  <View style={styles.peakTag}>
+                                    <Text style={styles.peakTagText}>{axisLabel(day.amount)}</Text>
+                                  </View>
+                                ) : null}
+                              </View>
+                              <View style={[styles.chartBar, { backgroundColor: barColor, height }]} />
+                            </View>
+                          )
+                        })}
+                      </View>
                     </View>
                   </View>
                   <View style={styles.chartLabelsRow}>
@@ -267,9 +326,19 @@ export default function AnalisisScreen(): React.ReactElement {
                           day.isSaturday && styles.chartLabelSaturday,
                         ]}
                       >
-                        {day.label === "" ? (period === 7 ? DAY_LABELS[new Date(day.key).getDay()] : "") : day.label}
+                        {day.label}
                       </Text>
                     ))}
+                  </View>
+                  <View style={styles.chartLegend}>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: colors.chartToday }]} />
+                      <Text style={styles.legendText}>Hari Aktif (Puncak)</Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: colors.chartBar }]} />
+                      <Text style={styles.legendText}>Di Bawah Target Rata-rata</Text>
+                    </View>
                   </View>
                 </View>
               )}
@@ -279,9 +348,14 @@ export default function AnalisisScreen(): React.ReactElement {
           {/* Kategori Alokasi */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
-              <View style={styles.sectionHeaderText}>
-                <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
-                <Text style={styles.sectionSubtitle}>{allocationRows.rows.length} Kategori aktif bulan ini</Text>
+              <View style={styles.trendTitleBlock}>
+                <View style={styles.sectionIcon}>
+                  <MaterialCommunityIcons color={colors.accent} name="chart-pie" size={18} />
+                </View>
+                <View style={styles.sectionHeaderText}>
+                  <Text style={styles.sectionTitle}>Kategori Alokasi</Text>
+                  <Text style={styles.sectionSubtitle}>{allocationRows.rows.length} Kategori aktif bulan ini</Text>
+                </View>
               </View>
               <Pressable
                 accessibilityLabel="Atur limit"
@@ -300,6 +374,25 @@ export default function AnalisisScreen(): React.ReactElement {
               <Text style={styles.distribUsed}>
                 Terpakai: {formatCurrency(allocationRows.totalSpent)} ({allocationRows.usedPercent}%)
               </Text>
+              {allocationRows.rows.length > 0 ? (
+                <View style={styles.segmentBar}>
+                  {allocationRows.rows.map((row, index) => {
+                    const share = allocationRows.totalBudget > 0 ? (row.budget / allocationRows.totalBudget) * 100 : 0
+                    return (
+                      <View
+                        key={row.category}
+                        style={[
+                          styles.segmentFill,
+                          {
+                            backgroundColor: index === 0 ? colors.accent : colors.accentSurface,
+                            width: `${Math.max(share, 4)}%`,
+                          },
+                        ]}
+                      />
+                    )
+                  })}
+                </View>
+              ) : null}
               {allocationRows.rows.length === 0 ? (
                 <Text style={styles.chartEmpty}>Belum ada alokasi. Ketuk &quot;Atur Limit&quot; untuk membagi budget ke kategori.</Text>
               ) : (
@@ -324,13 +417,22 @@ export default function AnalisisScreen(): React.ReactElement {
                   Alokasi &quot;{nearLimit.category}&quot; {nearLimit.percent >= 100 ? "sudah melebihi" : "mendekati"} batas ({nearLimit.percent}
                   %). Sisa kuota {formatCurrency(nearLimit.rest)} untuk kategori ini.
                 </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setSheetVisible(true)}
-                  style={({ pressed }) => [styles.warningAction, pressed && styles.pressed]}
-                >
-                  <Text style={styles.warningActionText}>Sesuaikan Alokasi</Text>
-                </Pressable>
+                <View style={styles.warningActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => setSheetVisible(true)}
+                    style={({ pressed }) => [styles.warningAction, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.warningActionText}>Sesuaikan Alokasi</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => router.push("/(tabs)/transactions")}
+                    style={({ pressed }) => [styles.warningSecondary, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.warningSecondaryText}>Lihat Detail</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           ) : null}
@@ -348,6 +450,10 @@ export default function AnalisisScreen(): React.ReactElement {
                   : `Pengeluaran bulan ini ${formatCompactCurrency(monthSummary.expense)}. ${daysTotal > 0 ? `Rata-rata ${formatCurrency(daysAverage)}/hari dalam ${period} hari terakhir.` : ""} Tinjau kembali budgetmu agar target tetap tercapai.`}
               </Text>
             </View>
+          </View>
+          <View style={styles.protectedRow}>
+            <MaterialCommunityIcons color={colors.accent} name="shield-check-outline" size={16} />
+            <Text style={styles.protectedText}>Diproteksi oleh Saku Financial Assistant</Text>
           </View>
         </>
       )}
@@ -387,8 +493,8 @@ function AllocationRow({ colors, row, styles }: AllocationRowProps): React.React
     row.percent >= 90
       ? { badge: colors.expenseSurface, text: colors.error, fill: colors.error }
       : row.percent >= 70
-        ? { badge: colors.accentSurface, text: colors.accent, fill: colors.heroBackground }
-        : { badge: colors.surfaceMuted, text: colors.textSecondary, fill: colors.heroBackground }
+        ? { badge: colors.expenseSurface, text: colors.error, fill: colors.heroBackground }
+        : { badge: colors.accentSurface, text: colors.accent, fill: colors.heroBackground }
 
   return (
     <View style={styles.allocRow}>
@@ -400,6 +506,9 @@ function AllocationRow({ colors, row, styles }: AllocationRowProps): React.React
           <Text numberOfLines={1} style={styles.rowName}>
             {row.category}
           </Text>
+          <View style={[styles.statusBadge, { backgroundColor: tone.badge }]}>
+            <Text style={[styles.statusBadgeText, { color: tone.text }]}>{row.status.toUpperCase()}</Text>
+          </View>
           <Text style={[styles.rowPercent, { color: tone.text }]}>{row.percent}%</Text>
         </View>
         <View style={styles.progressTrack}>
@@ -427,15 +536,31 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.group,
       marginTop: spacing.md,
     },
-    averageBlock: {
-      alignItems: "flex-end",
+    averageBadge: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
     },
-    averageValue: {
+    averageDash: {
+      borderTopColor: colors.textSecondary,
+      borderTopWidth: 1,
+      borderStyle: "dashed",
+      width: 12,
+    },
+    averageText: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+    },
+    averageStrong: {
       color: colors.textPrimary,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.bodyMedium.fontSize,
       fontWeight: "600",
-      marginTop: spacing.xs,
     },
     balanceAmount: {
       color: colors.heroText,
@@ -468,11 +593,6 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.sm,
       marginTop: spacing.md,
     },
-    balanceMetaText: {
-      color: colors.heroMuted,
-      fontSize: typography.bodyMedium.fontSize,
-      lineHeight: typography.bodyMedium.lineHeight,
-    },
     balanceTopRow: {
       alignItems: "center",
       flexDirection: "row",
@@ -494,8 +614,179 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
       lineHeight: typography.caption.lineHeight,
     },
+    monthPill: {
+      alignItems: "center",
+      backgroundColor: colors.heroChip,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      gap: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    monthPillText: {
+      color: colors.heroChipText,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.caption.fontSize,
+      fontWeight: "600",
+    },
+    heroDivider: {
+      backgroundColor: colors.heroChip,
+      height: 1,
+      marginTop: spacing.md,
+      opacity: 0.5,
+    },
+    heroFlow: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: spacing.md,
+    },
+    heroFlowItem: {
+      alignItems: "center",
+      flex: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    heroFlowIcon: {
+      alignItems: "center",
+      backgroundColor: colors.heroChip,
+      borderRadius: radii.pill,
+      height: 28,
+      justifyContent: "center",
+      width: 28,
+    },
+    heroFlowLabel: {
+      color: colors.heroMuted,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 10,
+      fontWeight: "600",
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    heroFlowValue: {
+      color: colors.heroText,
+      fontFamily: fontFamilies.bold,
+      fontSize: typography.bodyMedium.fontSize,
+      fontVariant: ["tabular-nums"],
+      fontWeight: "700",
+    },
+    heroFlowDivider: {
+      backgroundColor: colors.heroChip,
+      height: 28,
+      opacity: 0.6,
+      width: 1,
+    },
     chart: {
       marginTop: spacing.md,
+    },
+    chartWithAxis: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    yAxis: {
+      height: PLOT_HEIGHT,
+      justifyContent: "space-between",
+      paddingTop: CHART_TOP - 8,
+      width: AXIS_WIDTH,
+    },
+    yLabel: {
+      color: colors.textTertiary,
+      flexShrink: 1,
+      fontSize: 10,
+      textAlign: "right",
+    },
+    benchmarkLine: {
+      borderTopColor: colors.accent,
+      borderTopWidth: 1.5,
+      borderStyle: "dashed",
+      left: 0,
+      opacity: 0.85,
+      position: "absolute",
+      right: 0,
+      zIndex: 1,
+    },
+    benchmarkTag: {
+      backgroundColor: colors.accent,
+      borderRadius: 4,
+      maxWidth: 110,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      position: "absolute",
+      right: 0,
+      zIndex: 2,
+    },
+    benchmarkTagText: {
+      color: "#FFFFFF",
+      fontFamily: fontFamilies.bold,
+      fontSize: 9,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    peakTag: {
+      alignSelf: "center",
+      backgroundColor: colors.textPrimary,
+      borderRadius: 6,
+      maxWidth: 52,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+    },
+    peakSlot: {
+      alignItems: "center",
+      height: TAG_ZONE,
+      justifyContent: "flex-end",
+      marginBottom: 4,
+    },
+    peakTagText: {
+      color: colors.surface,
+      fontFamily: fontFamilies.bold,
+      fontSize: 9,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    chartLegend: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: spacing.sm,
+    },
+    legendItem: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.xs,
+    },
+    legendDot: {
+      borderRadius: 6,
+      height: 10,
+      width: 10,
+    },
+    legendText: {
+      color: colors.textSecondary,
+      fontSize: typography.caption.fontSize,
+    },
+    trendSummary: {
+      alignItems: "center",
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.md,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      justifyContent: "space-between",
+      padding: spacing.md,
+    },
+    trendTitleBlock: {
+      alignItems: "center",
+      flex: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      minWidth: 220,
+    },
+    sectionIcon: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: radii.sm,
+      height: 32,
+      justifyContent: "center",
+      width: 32,
     },
     chartBar: {
       borderRadius: radii.sm,
@@ -506,6 +797,7 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
     },
     chartBarsArea: {
+      flex: 1,
       height: 96,
       justifyContent: "flex-end",
       position: "relative",
@@ -524,6 +816,7 @@ function createStyles(colors: ThemeColors) {
     },
     chartLabel: {
       color: colors.textSecondary,
+      flex: 1,
       fontFamily: typography.caption.fontFamily,
       fontSize: typography.caption.fontSize,
       fontWeight: typography.caption.fontWeight,
@@ -541,6 +834,7 @@ function createStyles(colors: ThemeColors) {
     chartLabelsRow: {
       flexDirection: "row",
       justifyContent: "space-between",
+      marginLeft: AXIS_WIDTH + spacing.sm,
       marginTop: spacing.sm,
       paddingHorizontal: spacing.xs,
     },
@@ -719,6 +1013,17 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.sm,
       justifyContent: "space-between",
     },
+    statusBadge: {
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    statusBadgeText: {
+      fontFamily: fontFamilies.bold,
+      fontSize: 10,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
     rowUsed: {
       color: colors.textSecondary,
       fontSize: typography.caption.fontSize,
@@ -736,6 +1041,8 @@ function createStyles(colors: ThemeColors) {
     sectionHeaderRow: {
       alignItems: "center",
       flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
       justifyContent: "space-between",
       paddingHorizontal: spacing.xs,
     },
@@ -755,49 +1062,6 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
       lineHeight: typography.heading.lineHeight,
     },
-    summaryAmount: {
-      fontFamily: fontFamilies.bold,
-      fontSize: typography.bodyLarge.fontSize,
-      fontVariant: ["tabular-nums"],
-      fontWeight: "700",
-      marginTop: spacing.xs,
-    },
-    summaryCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radii.md,
-      flex: 1,
-      padding: spacing.group,
-      ...shadows.card,
-    },
-    summaryIcon: {
-      alignItems: "center",
-      borderRadius: radii.pill,
-      height: 24,
-      justifyContent: "center",
-      width: 24,
-    },
-    summaryLabel: {
-      color: colors.textSecondary,
-      fontFamily: fontFamilies.bold,
-      fontSize: 11,
-      fontWeight: "700",
-      letterSpacing: 0.6,
-      textTransform: "uppercase",
-    },
-    summaryRow: {
-      flexDirection: "row",
-      gap: spacing.md,
-    },
-    summaryTop: {
-      alignItems: "center",
-      flexDirection: "row",
-      justifyContent: "space-between",
-    },
-    trendHeader: {
-      alignItems: "flex-start",
-      flexDirection: "row",
-      justifyContent: "space-between",
-    },
     trendTotal: {
       color: colors.error,
       fontFamily: fontFamilies.semibold,
@@ -807,19 +1071,71 @@ function createStyles(colors: ThemeColors) {
       marginTop: spacing.xs,
     },
     warningAction: {
-      alignSelf: "flex-start",
+      alignItems: "center",
       backgroundColor: colors.accent,
-      borderRadius: radii.pill,
+      borderRadius: radii.sm,
+      flex: 1,
+      justifyContent: "center",
       marginTop: spacing.sm,
       minHeight: 44,
-      paddingHorizontal: spacing.group,
+      paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
+    },
+    warningActions: {
+      flexDirection: "row",
+      gap: spacing.sm,
     },
     warningActionText: {
       color: "#FFFFFF",
       fontFamily: fontFamilies.bold,
-      fontSize: typography.caption.fontSize,
+      fontSize: 13,
       fontWeight: "700",
+      textAlign: "center",
+    },
+    warningSecondary: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.sm,
+      borderWidth: 1,
+      flex: 1,
+      justifyContent: "center",
+      marginTop: spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    warningSecondaryText: {
+      color: colors.textPrimary,
+      fontFamily: fontFamilies.bold,
+      fontSize: 13,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    segmentBar: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.pill,
+      flexDirection: "row",
+      gap: 4,
+      height: 12,
+      marginTop: spacing.sm,
+      overflow: "hidden",
+      padding: 2,
+    },
+    segmentFill: {
+      borderRadius: radii.pill,
+      height: "100%",
+    },
+    protectedRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      paddingVertical: spacing.sm,
+    },
+    protectedText: {
+      color: colors.textSecondary,
+      fontSize: typography.bodyMedium.fontSize,
     },
     warningBody: {
       flex: 1,
