@@ -4,7 +4,7 @@ import { useMemo, type ComponentProps } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-import { fontFamilies, radii, shadows, useThemeColors, type ThemeColors } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, useThemeColors, type ThemeColors } from "../../src/theme"
 
 type TabBarProps = NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
 type TabBarPropsArg = Parameters<TabBarProps>[0]
@@ -67,7 +67,7 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
           <MaterialCommunityIcons
             color={focused ? colors.accent : colors.textTertiary}
             name={focused ? activeIcon : slot.icon}
-            size={focused ? 24 : 22}
+            size={22}
           />
         </View>
         <Text style={[styles.label, focused && styles.labelActive]}>{slot.label}</Text>
@@ -76,7 +76,7 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
   }
 
   return (
-    <View style={[styles.bar, { bottom: 20 + insets.bottom }]}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
       <View style={styles.row}>
         {left.map(renderSlot)}
         <Pressable
@@ -85,7 +85,7 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
           onPress={() => router.push("/add-transaction")}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
-          <MaterialCommunityIcons color={colors.surface} name="plus" size={30} />
+          <MaterialCommunityIcons color={colors.surface} name="plus" size={34} />
         </Pressable>
         {right.map(renderSlot)}
       </View>
@@ -97,15 +97,9 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     bar: {
       backgroundColor: colors.surfaceElevated,
-      borderColor: colors.border,
-      borderRadius: radii.xl,
-      borderWidth: 1,
-      left: 20,
-      paddingBottom: 0,
-      paddingTop: 0,
-      position: "absolute" as const,
-      right: 20,
-      ...shadows.elevated,
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      paddingTop: 8,
     },
     fab: {
       alignItems: "center",
@@ -113,10 +107,10 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.surfaceElevated,
       borderRadius: radii.pill,
       borderWidth: 4,
-      height: 56,
+      height: 64,
       justifyContent: "center",
-      marginTop: -28,
-      width: 56,
+      marginTop: -32,
+      width: 64,
       ...shadows.elevated,
     },
     fabPressed: {
