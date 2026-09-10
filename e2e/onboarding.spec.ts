@@ -12,19 +12,16 @@ async function openOnboarding(page: import("@playwright/test").Page): Promise<vo
     }
   })
   await page.goto("/")
-  await expect(page.getByText("Catat tanpa ribet", { exact: true })).toBeVisible({ timeout: 120_000 })
+  await expect(page.getByText("Atur Gaji & Pos Pengeluaran Tanpa Ribet", { exact: true })).toBeVisible({ timeout: 120_000 })
 }
 
 test("onboarding selesai membawa ke Beranda dan tidak tampil lagi", async ({ page }) => {
   await openOnboarding(page)
 
-  await page.getByRole("button", { name: "Lanjut" }).click()
-  await expect(page.getByText("Kendalikan anggaran", { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Lanjutkan" }).click()
+  await expect(page.getByText("Ketahui Kemana Setiap Rupiah Mengalir", { exact: true })).toBeVisible()
 
-  await page.getByRole("button", { name: "Lanjut" }).click()
-  await expect(page.getByText("Otomatiskan tagihan", { exact: true })).toBeVisible()
-
-  await page.getByRole("button", { name: "Mulai mencatat" }).click()
+  await page.getByRole("button", { name: "Mulai Sekarang" }).click()
 
   // Beranda dengan aksi utama tambah transaksi.
   await expect(page.getByRole("button", { name: "Tambah transaksi" })).toBeVisible({ timeout: 120_000 })
@@ -33,7 +30,7 @@ test("onboarding selesai membawa ke Beranda dan tidak tampil lagi", async ({ pag
   // Tandai onboarding tersimpan: buka ulang langsung ke Beranda.
   await page.goto("/")
   await expect(page.getByRole("button", { name: "Tambah transaksi" })).toBeVisible({ timeout: 120_000 })
-  await expect(page.getByText("Catat tanpa ribet", { exact: true })).toBeHidden()
+  await expect(page.getByText("Atur Gaji & Pos Pengeluaran Tanpa Ribet", { exact: true })).toBeHidden()
 })
 
 test("onboarding bisa dilewati langsung", async ({ page }) => {
