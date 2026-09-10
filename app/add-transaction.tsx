@@ -11,8 +11,6 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
-import { setPendingToast } from "../src/features/transactions/pendingToast"
-import { formatCurrency } from "../src/utils/currency"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
 // Putih di atas hero emerald/crimson terbaca di kedua mode (R-34 aman).
@@ -220,22 +218,11 @@ export default function AddTransactionScreen(): React.ReactElement {
     }
 
     setIsSaved(true)
-    const typeLabel = type === "expense" ? "Pengeluaran" : "Pemasukan"
-    // Toast dititipkan ke Home via pending store; form langsung kembali
-    // agar toast muncul di Home, bukan di layar form.
-    setPendingToast({
-      title: editing === undefined ? `${typeLabel} Berhasil Dicatat!` : "Perubahan Tersimpan!",
-      subtitle: `${category} • ${formatCurrency(amount)}`,
-      transactionId: result.transaction.id,
-    })
-    // Tambah baru: back() pop modal ke tabs yang sudah ada, navigate("/")
-    // memastikan mendarat di tab Beranda (toast konfirmasi tampil di Home).
-    // navigate/replace TANPA back() dari modal menumpuk instance tabs baru
-    // (tab bar terduplikasi di DOM). Edit: cukup back() ke layar asal.
-    router.back()
-    if (editing === undefined) {
-      router.navigate("/")
-    }
+    // Tahan tombol di state "Tersimpan!" 0.5 detik sebagai konfirmasi,
+    // lalu kembali ke layar sebelumnya.
+    setTimeout(() => {
+      router.back()
+    }, 500)
   }
 
   const isEditing = editing !== undefined
