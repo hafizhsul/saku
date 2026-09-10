@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 
 import { CategoryIcon } from "./CategoryIcon"
@@ -38,6 +38,10 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
   const styles = useMemo(() => createStyles(colors), [colors])
   const [draft, setDraft] = useState<BudgetsMap>(budgets)
   const [opened, setOpened] = useState(false)
+  const [fadeValue] = useState(() => new Animated.Value(0))
+  const [slideAnim] = useState(() => new Animated.Value(0))
+  const [dragY] = useState(() => new Animated.Value(0))
+  const [sheetHeight, setSheetHeight] = useState(0)
 
   // Draf disalin dari data tersimpan setiap kali sheet dibuka; Batal
   // membuangnya. Penyesuaian saat render (bukan effect) sesuai anjuran React.
@@ -49,6 +53,57 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
     setOpened(false)
   }
 
+  // Backdrop meredup sendiri (fade), sheet meluncur naik (slide): dua
+  // animasi terpisah agar backdrop tidak ikut gerak sheet.
+  useEffect(() => {
+    if (visible) {
+      fadeValue.setValue(0)
+      slideAnim.setValue(0)
+      Animated.parallel([
+        Animated.timing(fadeValue, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+      ]).start()
+    }
+  }, [fadeValue, slideAnim, visible])
+
+  const enterY = slideAnim.interpolate({ inputRange: [0, 1], outputRange: [320, 0] })
+  const sheetTranslateY = Animated.add(enterY, dragY)
+
+  // Geser-turun-untuk-tutup pada zona handle + header, tapi jangan rebut
+  // tap tombol tutup: responder hanya diklaim setelah benar-benar geser.
+  // Jarak dilepas di bawah ambang → pegas kembali; di atas ambang atau
+  // fling cepat → tutup. gesture.dy saat release sudah total perpindahan.
+  const dragResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_event, gesture) => gesture.dy > 8,
+        onPanResponderMove: (_event, gesture) => {
+          dragY.setValue(Math.max(gesture.dy, 0))
+        },
+        onPanResponderRelease: (_event, gesture) => {
+          const threshold = Math.max(sheetHeight * 0.25, 120)
+          const fling = gesture.vy > 0.9
+          if (gesture.dy > threshold || fling) {
+            onClose()
+            return
+          }
+          Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start()
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start()
+        },
+      }),
+    [dragY, onClose, sheetHeight],
+  )
+
+  // Reset posisi drag setiap sheet dibuka agar tidak nyangkut di bawah.
+  useEffect(() => {
+    if (visible) {
+      dragY.setValue(0)
+    }
+  }, [dragY, visible])
+
   const total = useMemo(() => Object.values(draft).reduce((sum, amount) => sum + amount, 0), [draft])
   const balance = useMemo(() => selectBalance(transactions), [transactions])
   const remaining = balance - total
@@ -56,12 +111,18 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
   const available = EXPENSE_CATEGORY_OPTIONS.filter((option) => draft[option.key] === undefined)
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
+    <Modal animationType="none" onRequestClose={onClose} transparent visible={visible}>
       <View style={styles.overlay}>
-        <Pressable accessibilityLabel="Tutup alokasi" onPress={onClose} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
+        <Animated.View style={[styles.backdropFill, { opacity: fadeValue }]}>
+          <Pressable accessibilityLabel="Tutup alokasi" onPress={onClose} style={styles.backdrop} />
+        </Animated.View>
+        <Animated.View
+          onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
+          style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}
+        >
+          <View style={styles.grabZone} {...dragResponder.panHandlers}>
+            <View style={styles.handle} />
+            <View style={styles.header}>
             <View style={styles.headerIcon}>
               <MaterialCommunityIcons color={colors.surface} name="tune" size={22} />
             </View>
@@ -77,6 +138,7 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
             >
               <MaterialCommunityIcons color={colors.textSecondary} name="close" size={20} />
             </Pressable>
+            </View>
           </View>
 
           <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
@@ -178,7 +240,7 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
               <Text style={styles.saveText}>{busy ? "Menyimpan..." : "Simpan Alokasi Baru"}</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   )
@@ -257,6 +319,10 @@ function createStyles(colors: ThemeColors) {
     backdrop: {
       flex: 1,
     },
+    backdropFill: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: "rgba(16, 20, 25, 0.5)",
+    },
     body: {
       gap: spacing.md,
       paddingBottom: spacing.lg,
@@ -321,12 +387,14 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.md,
       padding: spacing.group,
     },
+    grabZone: {
+      paddingTop: spacing.md,
+    },
     handle: {
       alignSelf: "center",
       backgroundColor: colors.borderStrong,
       borderRadius: 2,
       height: 4,
-      marginTop: spacing.md,
       width: 40,
     },
     header: {
@@ -350,7 +418,6 @@ function createStyles(colors: ThemeColors) {
       paddingRight: spacing.md,
     },
     overlay: {
-      backgroundColor: "rgba(16, 20, 25, 0.5)",
       flex: 1,
       justifyContent: "flex-end",
     },
