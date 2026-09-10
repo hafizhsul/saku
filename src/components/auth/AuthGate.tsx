@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { useAuth } from "../../features/auth/AuthProvider"
 import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../../theme"
 import { EmptyState } from "../EmptyState"
-import { PrimaryButton } from "../PrimaryButton"
 import { ScreenShell } from "../ScreenShell"
 import { LoginForm } from "./LoginForm"
 import { RegisterForm } from "./RegisterForm"
@@ -26,6 +25,42 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const [mode, setMode] = useState<AuthMode>("login")
+  const [reduceMotion, setReduceMotion] = useState(false)
+  const [pulse] = useState(() => new Animated.Value(0))
+
+  useEffect(() => {
+    let mounted = true
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) {
+        setReduceMotion(enabled)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Denyut ring ikon gembok ala Stitch; hormati reduced motion.
+  useEffect(() => {
+    if (state !== "locked" || reduceMotion) {
+      return
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { duration: 1400, toValue: 1, useNativeDriver: true }),
+        Animated.timing(pulse, { duration: 1400, toValue: 0, useNativeDriver: true }),
+      ]),
+    )
+    loop.start()
+    return () => {
+      loop.stop()
+    }
+  }, [pulse, reduceMotion, state])
+
+  const ringStyle = {
+    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0.2] }),
+    transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1.15] }) }],
+  }
 
   if (isLoading) {
     return (
@@ -39,12 +74,21 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
     return (
       <ScreenShell contentStyle={styles.lockedContent} withTabBar={false}>
         <View style={styles.lockedHeader}>
-          <View style={styles.lockIcon}>
-            <MaterialCommunityIcons color={colors.textPrimary} name="lock-outline" size={28} />
+          <View style={styles.lockIconWrap}>
+            <Animated.View style={[styles.lockRing, ringStyle]} />
+            <View style={styles.lockIcon}>
+              <View style={styles.lockIconInner}>
+                <MaterialCommunityIcons color={colors.accent} name="lock-outline" size={24} />
+              </View>
+              <View style={styles.lockBeacon}>
+                <View style={styles.lockBeaconDot} />
+              </View>
+            </View>
           </View>
           <Text style={styles.lockedTitle}>Saku Terkunci</Text>
           {authError !== null ? (
             <View style={styles.statusPill}>
+              <View style={styles.statusDot} />
               <Text accessibilityRole="alert" style={styles.statusText}>
                 {authError}
               </Text>
@@ -56,37 +100,47 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
         </View>
 
         {hasBiometric ? (
-          <Pressable
-            accessibilityLabel="Buka dengan biometrik"
-            accessibilityRole="button"
-            onPress={() => void biometricUnlock()}
-            style={({ pressed }) => [styles.biometricCard, pressed && styles.pressed]}
-          >
-            <MaterialCommunityIcons color={colors.accent} name="face-recognition" size={28} />
-            <Text style={styles.biometricTitle}>Ketuk untuk Buka Biometrik</Text>
-            <Text style={styles.biometricSub}>Face ID atau Sidik Jari</Text>
-          </Pressable>
+          <View style={styles.biometricCard}>
+            <Pressable
+              accessibilityLabel="Buka dengan biometrik"
+              accessibilityRole="button"
+              onPress={() => void biometricUnlock()}
+              style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
+            >
+              <View style={styles.biometricCircle}>
+                <MaterialCommunityIcons color={colors.accent} name="face-recognition" size={32} />
+              </View>
+              <Text style={styles.biometricTitle}>Ketuk untuk Buka Biometrik</Text>
+              <Text style={styles.biometricSub}>Face ID atau Sidik Jari</Text>
+            </Pressable>
+          </View>
         ) : null}
 
-        <PrimaryButton
-          accessibilityLabel="Coba lagi"
-          icon="refresh"
-          label="Coba lagi"
-          onPress={() => void retryLoad()}
-        />
+        <View style={styles.lockedActions}>
+          <Pressable
+            accessibilityLabel="Coba lagi"
+            accessibilityRole="button"
+            onPress={() => void retryLoad()}
+            style={({ pressed }) => [styles.retryButton, pressed && styles.retryPressed]}
+          >
+            <MaterialCommunityIcons color={colors.surface} name="refresh" size={18} />
+            <Text style={styles.retryText}>Coba lagi</Text>
+          </Pressable>
 
-        <Pressable
-          accessibilityLabel="Keluar dari akun ini"
-          accessibilityRole="link"
-          onPress={() => void logout()}
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.logoutText}>Keluar dari akun ini</Text>
-        </Pressable>
+          <Pressable
+            accessibilityLabel="Keluar dari akun ini"
+            accessibilityRole="link"
+            onPress={() => void logout()}
+            style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color={colors.textTertiary} name="logout" size={14} />
+            <Text style={styles.logoutText}>Keluar dari akun ini</Text>
+          </Pressable>
 
-        <View style={styles.trustRow}>
-          <MaterialCommunityIcons color={colors.textTertiary} name="shield-check-outline" size={14} />
-          <Text style={styles.trustText}>Berizin & Diawasi OJK • LPS Terdaftar</Text>
+          <View style={styles.trustRow}>
+            <MaterialCommunityIcons color={colors.accent} name="shield-check-outline" size={12} />
+            <Text style={styles.trustText}>Berizin & Diawasi OJK • LPS Terdaftar</Text>
+          </View>
         </View>
       </ScreenShell>
     )
@@ -105,25 +159,44 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    biometricCard: {
+    biometricButton: {
       alignItems: "center",
-      backgroundColor: colors.surface,
-      borderRadius: radii.lg,
-      elevation: 3,
       gap: spacing.xs,
       minHeight: 88,
       justifyContent: "center",
-      padding: spacing.group,
+      padding: spacing.md,
+    },
+    biometricCard: {
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      elevation: 3,
+      padding: spacing.sm,
+    },
+    biometricCircle: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderColor: colors.accent,
+      borderRadius: 32,
+      borderWidth: 2,
+      height: 64,
+      justifyContent: "center",
+      width: 64,
     },
     biometricSub: {
       color: colors.textTertiary,
-      fontSize: 12,
+      fontSize: 11,
     },
     biometricTitle: {
       color: colors.textPrimary,
       fontFamily: fontFamilies.semibold,
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "600",
+    },
+    lockedActions: {
+      gap: spacing.md,
     },
     lockedContent: {
       gap: spacing.lg,
@@ -131,10 +204,9 @@ function createStyles(colors: ThemeColors) {
     },
     lockedDescription: {
       color: colors.textSecondary,
-      fontFamily: typography.body.fontFamily,
-      fontSize: typography.body.fontSize,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
+      fontSize: 13,
+      lineHeight: 20,
+      maxWidth: 290,
       textAlign: "center",
     },
     lockedHeader: {
@@ -144,47 +216,122 @@ function createStyles(colors: ThemeColors) {
     lockedTitle: {
       color: colors.textPrimary,
       fontFamily: fontFamilies.bold,
-      fontSize: 22,
+      fontSize: 24,
       fontWeight: "700",
       textAlign: "center",
+    },
+    lockBeacon: {
+      alignItems: "center",
+      backgroundColor: colors.error,
+      borderColor: colors.surface,
+      borderRadius: 10,
+      borderWidth: 2,
+      bottom: -4,
+      elevation: 2,
+      height: 20,
+      justifyContent: "center",
+      position: "absolute",
+      right: -4,
+      width: 20,
+    },
+    lockBeaconDot: {
+      backgroundColor: colors.surface,
+      borderRadius: 3,
+      height: 6,
+      width: 6,
     },
     lockIcon: {
       alignItems: "center",
       backgroundColor: colors.surface,
+      borderColor: colors.border,
       borderRadius: 20,
-      elevation: 2,
-      height: 64,
+      borderWidth: 1,
+      elevation: 4,
+      height: 80,
       justifyContent: "center",
-      width: 64,
+      width: 80,
+    },
+    lockIconInner: {
+      alignItems: "center",
+      backgroundColor: colors.accentSurface,
+      borderRadius: 12,
+      height: 48,
+      justifyContent: "center",
+      width: 48,
+    },
+    lockIconWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+      marginVertical: spacing.group,
+    },
+    lockRing: {
+      backgroundColor: colors.accentSurface,
+      borderRadius: 24,
+      height: 96,
+      opacity: 0.8,
+      position: "absolute",
+      width: 96,
     },
     logoutButton: {
       alignItems: "center",
+      flexDirection: "row",
+      gap: spacing.xs,
       minHeight: 44,
       justifyContent: "center",
     },
     logoutText: {
       color: colors.textSecondary,
-      fontSize: typography.body.fontSize,
-      fontFamily: typography.body.fontFamily,
-      fontWeight: typography.body.fontWeight,
-      lineHeight: typography.body.lineHeight,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 12,
+      fontWeight: "600",
       textDecorationLine: "underline",
     },
     pressed: {
       opacity: 0.72,
     },
+    retryButton: {
+      alignItems: "center",
+      backgroundColor: colors.accent,
+      borderRadius: radii.md,
+      flexDirection: "row",
+      gap: spacing.sm,
+      justifyContent: "center",
+      minHeight: 52,
+      paddingHorizontal: spacing.xl,
+    },
+    retryPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    retryText: {
+      color: colors.surface,
+      fontFamily: fontFamilies.semibold,
+      fontSize: typography.bodyLarge.fontSize,
+      fontWeight: "600",
+      lineHeight: typography.bodyLarge.lineHeight,
+    },
+    statusDot: {
+      backgroundColor: colors.error,
+      borderRadius: 4,
+      height: 8,
+      width: 8,
+    },
     statusPill: {
-      borderColor: colors.textTertiary,
+      alignItems: "center",
+      backgroundColor: colors.expenseSurface,
+      borderColor: colors.border,
       borderRadius: radii.pill,
       borderWidth: 1,
-      paddingHorizontal: spacing.group,
+      flexDirection: "row",
+      gap: spacing.compact,
+      paddingHorizontal: spacing.md,
       paddingVertical: spacing.compact,
     },
     statusText: {
-      color: colors.textSecondary,
-      fontFamily: typography.bodyMedium.fontFamily,
-      fontSize: typography.bodyMedium.fontSize,
-      fontWeight: typography.bodyMedium.fontWeight,
+      color: colors.error,
+      fontFamily: fontFamilies.semibold,
+      fontSize: 12,
+      fontWeight: "600",
       textAlign: "center",
     },
     trustRow: {
@@ -195,7 +342,7 @@ function createStyles(colors: ThemeColors) {
     },
     trustText: {
       color: colors.textTertiary,
-      fontSize: 12,
+      fontSize: 10,
     },
   })
 }
