@@ -228,7 +228,14 @@ export default function AddTransactionScreen(): React.ReactElement {
       subtitle: `${category} • ${formatCurrency(amount)}`,
       transactionId: result.transaction.id,
     })
-    router.replace("/")
+    // Tambah baru: back() pop modal ke tabs yang sudah ada, navigate("/")
+    // memastikan mendarat di tab Beranda (toast konfirmasi tampil di Home).
+    // navigate/replace TANPA back() dari modal menumpuk instance tabs baru
+    // (tab bar terduplikasi di DOM). Edit: cukup back() ke layar asal.
+    router.back()
+    if (editing === undefined) {
+      router.navigate("/")
+    }
   }
 
   const isEditing = editing !== undefined
