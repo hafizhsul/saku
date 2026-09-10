@@ -45,19 +45,6 @@ export async function addTransaction(
   await expect(page.getByLabel("Nominal transaksi", { exact: true })).toBeHidden({ timeout: 30_000 })
 }
 
-export async function openDataScreen(page: Page): Promise<void> {
-  await page.getByText("Profil", { exact: true }).first().click()
-  await page.getByRole("button", { name: "Data & Cadangan" }).click()
-  await expect(page.getByText("Kelola data", { exact: true })).toBeVisible()
-}
-
-export async function openRecurring(page: Page): Promise<void> {
-  // Entri Transaksi berulang ada di tab Profil (settings).
-  await page.getByText("Profil", { exact: true }).first().click()
-  await page.getByRole("button", { name: "Transaksi berulang" }).click()
-  await expect(page.getByRole("button", { name: "Tambah transaksi berulang" })).toBeVisible()
-}
-
 export function hasBackgroundColor(page: Page, color: string): Promise<boolean> {
   return page.evaluate((expected) => {
     return Array.from(document.querySelectorAll("*")).some((element) => {

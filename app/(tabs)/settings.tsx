@@ -166,32 +166,6 @@ export default function SettingsScreen(): React.ReactElement {
         </View>
       </View>
 
-      {/* Data */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Data</Text>
-          <Text style={styles.sectionCaption}>Kelola Data</Text>
-        </View>
-        <View style={styles.card}>
-          <MenuRow
-            icon="database-cog-outline"
-            iconTone="accent"
-            label="Data & Cadangan"
-            subtitle="Backup, pulihkan, impor CSV"
-            trailing={chevron}
-            onPress={() => router.push("/data")}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="repeat"
-            iconTone="accent"
-            label="Transaksi berulang"
-            trailing={chevron}
-            onPress={() => router.push("/recurring")}
-          />
-        </View>
-      </View>
-
       {/* Lainnya */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -367,9 +341,9 @@ function ToggleSwitch({ checked, label, onChange }: ToggleSwitchProps): React.Re
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     aboutLogo: {
-      borderRadius: 24,
-      height: 48,
-      width: 48,
+      borderRadius: 16,
+      height: 32,
+      width: 32,
     },
     aboutName: {
       color: colors.textPrimary,
@@ -381,9 +355,9 @@ function createStyles(colors: ThemeColors) {
     aboutRow: {
       alignItems: "center",
       flexDirection: "row",
-      gap: spacing.group,
+      gap: spacing.sm,
       justifyContent: "center",
-      paddingVertical: spacing.xl,
+      paddingVertical: spacing.lg,
     },
     aboutText: {
       gap: 2,

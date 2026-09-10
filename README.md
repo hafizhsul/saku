@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  Aplikasi catatan keuangan pribadi yang tenang dan mudah: catat pemasukan &amp; pengeluaran, kendalikan anggaran bulanan, dan biarkan transaksi berulang tercatat otomatis.
+  Aplikasi catatan keuangan pribadi yang tenang dan mudah: catat pemasukan &amp; pengeluaran dan kendalikan anggaran bulanan.
 </p>
 
 <p align="center">
@@ -17,9 +17,7 @@
 - **Beranda ringkas** — saldo, pemasukan/pengeluaran bulan berjalan, tren netto 6 bulan, dan pengeluaran per kategori dalam satu layar. Navigasi bulan untuk melihat riwayat.
 - **Catatan transaksi** — tambah/edit/hapus pemasukan &amp; pengeluaran dengan kategori yang realistis per jenis (Gaji, Bonus, Freelance, Bisnis, Investasi vs Makan &amp; Minum, Transportasi, Kesehatan, dan lainnya), input tanggal native, dan pencarian + filter bulan di tab Transaksi.
 - **Anggaran bulanan** — batas pengeluaran per kategori dengan progress bar, indikator *sisa harian* (≈ Rp X/hari), dan peringatan saat mendekati atau melebihi batas.
-- **Transaksi berulang** — gaji dan tagihan bulanan masuk otomatis saat bulan berganti.
 - **Tema terang/gelap/sistem** — token warna yang sama, dua palet konsisten; favicon web ikut menyesuaikan mode gelap browser.
-- **Data &amp; pencadangan** — ekspor/impor JSON dan CSV, pulihkan otomatis dari cadangan saat instal ulang.
 - **Aksesibilitas** — label, peran, dan urutan fokus untuk layar modal dan tab; hormati *reduced motion*.
 - **Onboarding** — alur singkat untuk pengguna baru (bisa dilewati).
 
@@ -68,8 +66,8 @@ pnpm ios            # simulator iOS
 ```
 app/                  # layar & navigasi (expo-router)
 src/components/       # komponen UI bersama (HeroCard, MonthNavigator, …)
-src/features/         # logika domain: transaksi, anggaran, berulang, tema
-src/storage/          # penyimpanan AsyncStorage + cadangan
+src/features/         # logika domain: transaksi, anggaran, tema
+src/storage/          # penyimpanan AsyncStorage
 src/theme/            # token desain: warna, tipografi, jarak, shadow
 e2e/                  # spec Playwright
 DESIGN.md             # dokumentasi design system

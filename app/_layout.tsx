@@ -17,7 +17,6 @@ import { AuthGate } from "../src/components/auth/AuthGate"
 import { AuthProvider, useAuth } from "../src/features/auth/AuthProvider"
 import { BackupProvider } from "../src/features/backup/BackupProvider"
 import { BudgetsProvider } from "../src/features/budgets/BudgetsProvider"
-import { RecurringProvider } from "../src/features/recurring/RecurringProvider"
 import { SettingsProvider } from "../src/features/settings/SettingsProvider"
 import { TransactionsProvider } from "../src/features/transactions/TransactionsProvider"
 import { getOnboardingDone } from "../src/storage/onboarding"
@@ -113,20 +112,15 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
         <SettingsProvider>
           <TransactionsProvider>
             <BudgetsProvider>
-              <RecurringProvider>
                 <Stack screenOptions={{ animation: "slide_from_right" as const, contentStyle: { backgroundColor: colors.canvas }, headerShown: false }}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="add-transaction" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="data" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="edit-profile" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="change-password" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
-                  <Stack.Screen name="recurring" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
-                  <Stack.Screen name="recurring-form" options={{ animation: "slide_from_bottom" as const, presentation: "modal" }} />
                   <Stack.Screen name="transaction/[id]" />
                   <Stack.Screen name="showcase" />
                 </Stack>
-              </RecurringProvider>
             </BudgetsProvider>
           </TransactionsProvider>
         </SettingsProvider>
