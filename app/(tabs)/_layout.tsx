@@ -146,14 +146,14 @@ function createStyles(colors: ThemeColors) {
       flexDirection: "row",
       height: 60,
       paddingHorizontal: 4,
-      paddingTop: 4,
+      paddingTop: 2,
     },
     slot: {
       alignItems: "center",
       flex: 1,
       gap: 2,
       justifyContent: "center",
-      paddingVertical: 4,
+      paddingVertical: 2,
     },
   })
 }
