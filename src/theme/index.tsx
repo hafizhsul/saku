@@ -168,4 +168,9 @@ export const motion = {
   emphasis: 400,
 } as const
 
+export const stateTokens = {
+  disabledOpacity: 0.55, // unifies scattered 0.45/0.55/0.6/0.7 (PrimaryButton value wins)
+  focusWidth: 2, // 2px ring + 2px offset, renders unused colors.focus
+} as const
+
 export type SemanticTone = "income" | "expense" | "neutral"
