@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native"
 
-import { darkColors, fontFamilies, radii, spacing, typography, type ThemeColors } from "../../theme"
+import { darkColors, fontFamilies, radii, spacing, stateTokens, typography, type ThemeColors } from "../../theme"
+import { stateInteraction } from "../state/pressable"
 
 // Token disalin dari layar Stitch "Masuk ke Akun - Saku" (brand 700 #006B50,
 // surface #F8FAF9, border #E4EBE7, muted #64748B, dark #121826). Register
@@ -28,6 +29,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
   const titleColor = isDark ? colors.textPrimary : AUTH_DARK
 
   return StyleSheet.create({
+    focusRing: stateInteraction(colors).focusRing,
     ambientLeft: {
       backgroundColor: "#10B981",
       borderRadius: 160,
@@ -322,7 +324,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       borderWidth: 2,
     },
     inputShellFocused: {
-      borderColor: AUTH_BRAND,
+      borderColor: colors.focus,
       borderWidth: 1,
     },
     label: {
@@ -374,7 +376,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       shadowRadius: 20,
     },
     primaryButtonDisabled: {
-      opacity: 0.7,
+      opacity: stateTokens.disabledOpacity,
     },
     primaryButtonText: {
       color: AUTH_BRAND_TEXT,

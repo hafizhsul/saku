@@ -35,6 +35,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [focusedField, setFocusedField] = useState<"email" | "password" | null>(null)
+  const [submitFocused, setSubmitFocused] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   // Error dari server (kredensial salah) ditandai lewat authError; border input
@@ -200,8 +201,10 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
               accessibilityRole="button"
               accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
               disabled={isSubmitting}
+              onBlur={() => setSubmitFocused(false)}
+              onFocus={() => setSubmitFocused(true)}
               onPress={() => void handleSubmit()}
-              style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed]}
+              style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed, submitFocused && !isSubmitting && styles.focusRing]}
             >
               {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
               <Text style={styles.primaryButtonText}>{isSubmitting ? "Memproses..." : "Masuk ke Akun"}</Text>

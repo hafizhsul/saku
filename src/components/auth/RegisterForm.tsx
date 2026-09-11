@@ -39,6 +39,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [focusedField, setFocusedField] = useState<"name" | "email" | "password" | "confirm" | null>(null)
+  const [submitFocused, setSubmitFocused] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   // Error dari server (email sudah terdaftar, dsb.) — border ikut merah.
@@ -308,8 +309,10 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
               accessibilityRole="button"
               accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
               disabled={isSubmitting}
+              onBlur={() => setSubmitFocused(false)}
+              onFocus={() => setSubmitFocused(true)}
               onPress={() => void handleSubmit()}
-              style={({ pressed }) => [styles.registerButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed]}
+              style={({ pressed }) => [styles.registerButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed, submitFocused && !isSubmitting && styles.focusRing]}
             >
               {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
               <Text style={styles.primaryButtonText}>{isSubmitting ? "Mendaftar..." : "Daftar Sekarang"}</Text>
