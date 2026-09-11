@@ -1,11 +1,12 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import type { Transaction } from "../features/transactions/types"
 import { formatSignedCurrency } from "../utils/currency"
 import { formatRelativeTransactionTime } from "../utils/dates"
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
+import { stateInteraction } from "./state/pressable"
 
 type TransactionRowProps = {
   readonly transaction: Transaction
@@ -18,6 +19,8 @@ type TransactionRowProps = {
 export function TransactionRow({ transaction, compact = false, last = false, card = false, onPress }: TransactionRowProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
   const isIncome = transaction.type === "income"
   const typeLabel = isIncome ? "Pemasukan" : "Pengeluaran"
   const tone = isIncome ? "income" : "expense"
@@ -27,6 +30,8 @@ export function TransactionRow({ transaction, compact = false, last = false, car
       accessibilityLabel={`${transaction.note ?? transaction.category}, ${typeLabel}, ${transaction.category}, ${formatRelativeTransactionTime(transaction.date)}, ${formatSignedCurrency(transaction.amount, transaction.type)}`}
       accessibilityRole={onPress ? "button" : undefined}
       disabled={!onPress}
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
       onPress={onPress}
       style={({ pressed, hovered }) => [
         styles.row,
@@ -35,6 +40,8 @@ export function TransactionRow({ transaction, compact = false, last = false, car
         card && styles.card,
         hovered && styles.hovered,
         pressed && styles.pressed,
+        focused && onPress && interaction.focusRing,
+        !onPress && { opacity: stateTokens.disabledOpacity },
       ]}
     >
       <CategoryIcon category={transaction.category} tone={tone} size={compact ? 18 : 20} />

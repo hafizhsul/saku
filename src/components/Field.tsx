@@ -2,16 +2,20 @@ import { useEffect, useMemo } from "react"
 import { StyleSheet, Text } from "react-native"
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from "react-native-reanimated"
 
-import { spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
 
 type FieldProps = {
   readonly label: string
   readonly hint?: string
   readonly error?: string
+  readonly disabled?: boolean
   readonly children: React.ReactNode
 }
 
-export function Field({ label, hint, error, children }: FieldProps): React.ReactElement {
+// Input state note: Field itself renders only the disabled visual. Input
+// shells add the focus ring with their own focused pattern plus
+// stateInteraction(colors).focusRing, since RN has no :focus-visible.
+export function Field({ label, hint, error, disabled = false, children }: FieldProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   // Error shake (mobileui): goyangan 3 osilasi saat error muncul, lalu
@@ -33,7 +37,7 @@ export function Field({ label, hint, error, children }: FieldProps): React.React
   }, [error, reduceMotion, shake])
 
   return (
-    <Animated.View style={[styles.field, animatedStyle]}>
+    <Animated.View style={[styles.field, disabled && { opacity: stateTokens.disabledOpacity }, animatedStyle]}>
       <Text style={styles.label}>{label}</Text>
       {children}
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}

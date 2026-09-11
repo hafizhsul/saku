@@ -1,7 +1,8 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { darkColors, fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
+import { stateInteraction } from "./state/pressable"
 
 export type SegmentOption = {
   readonly value: string
@@ -13,6 +14,7 @@ type SegmentedControlProps = {
   readonly selectedValue: string
   readonly onChange: (value: string) => void
   readonly accessibilityLabel: string
+  readonly disabled?: boolean
 }
 
 // Warna toggle persis dari referensi Stitch "Tambah Transaksi"
@@ -28,23 +30,35 @@ export function SegmentedControl({
   selectedValue,
   onChange,
   accessibilityLabel,
+  disabled = false,
 }: SegmentedControlProps): React.ReactElement {
   const colors = useThemeColors()
   const isDark = colors.canvas === darkColors.canvas
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedValue, setFocusedValue] = useState<string | null>(null)
 
   return (
-    <View accessibilityLabel={accessibilityLabel} accessibilityRole="tablist" style={styles.container}>
+    <View accessibilityLabel={accessibilityLabel} accessibilityRole="tablist" style={[styles.container, disabled && styles.disabled]}>
       {options.map((option) => {
         const selected = option.value === selectedValue
 
         return (
           <Pressable
             accessibilityRole="tab"
-            accessibilityState={{ selected }}
+            accessibilityState={{ selected, disabled }}
+            disabled={disabled}
             key={option.value}
+            onBlur={() => setFocusedValue(null)}
+            onFocus={() => setFocusedValue(option.value)}
             onPress={() => onChange(option.value)}
-            style={({ pressed }) => [styles.option, selected && styles.selected, pressed && styles.pressed]}
+            style={({ pressed, hovered }) => [
+              styles.option,
+              selected && styles.selected,
+              hovered && !disabled && interaction.hovered,
+              pressed && !disabled && styles.pressed,
+              focusedValue === option.value && interaction.focusRing,
+            ]}
           >
             <View style={styles.optionContent}>
               {selected ? <View style={styles.dot} /> : null}
@@ -74,6 +88,9 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       borderRadius: 4,
       height: 8,
       width: 8,
+    },
+    disabled: {
+      opacity: stateTokens.disabledOpacity,
     },
     label: {
       color: isDark ? colors.textSecondary : INACTIVE_LABEL_LIGHT,

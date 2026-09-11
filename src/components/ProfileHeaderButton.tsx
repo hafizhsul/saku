@@ -1,10 +1,11 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router } from "expo-router"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Image, Pressable, StyleSheet } from "react-native"
 
 import { useAuth } from "../features/auth/AuthProvider"
 import { radii, useThemeColors, type ThemeColors } from "../theme"
+import { stateInteraction } from "./state/pressable"
 
 // Tombol profil di header semua tab: menampilkan foto profil jika sudah diatur,
 // fallback ikon akun. Menuju layar Edit Profil saat ditekan.
@@ -12,13 +13,17 @@ export function ProfileHeaderButton(): React.ReactElement {
   const { profilePhoto } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
 
   return (
     <Pressable
       accessibilityLabel="Profil"
       accessibilityRole="button"
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
       onPress={() => router.push("/edit-profile")}
-      style={({ pressed, hovered }) => [styles.button, hovered && styles.hovered, pressed && styles.pressed]}
+      style={({ pressed, hovered }) => [styles.button, hovered && styles.hovered, pressed && styles.pressed, focused && interaction.focusRing]}
     >
       {profilePhoto !== null ? (
         <Image accessibilityLabel="Foto profil" source={{ uri: profilePhoto }} style={styles.photo} />
