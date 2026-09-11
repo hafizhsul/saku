@@ -55,7 +55,7 @@ export function SegmentedControl({
             style={({ pressed, hovered }) => [
               styles.option,
               selected && styles.selected,
-              hovered && !disabled && interaction.hovered,
+              hovered && !disabled && (selected ? styles.selectedHover : interaction.hovered),
               pressed && !disabled && styles.pressed,
               focusedValue === option.value && interaction.focusRing,
             ]}
@@ -120,6 +120,9 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     selected: {
       backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF",
       ...shadows.card,
+    },
+    selectedHover: {
+      opacity: 0.92,
     },
     selectedLabel: {
       color: isDark ? colors.textPrimary : ACTIVE_LABEL_LIGHT,
