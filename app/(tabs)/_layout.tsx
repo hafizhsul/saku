@@ -1,10 +1,11 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { router, Tabs } from "expo-router"
-import { useMemo, type ComponentProps } from "react"
+import { useMemo, useState, type ComponentProps } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { fontFamilies, radii, shadows, spacing, useThemeColors, type ThemeColors } from "../../src/theme"
+import { stateInteraction } from "../../src/components/state/pressable"
 
 type TabBarProps = NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
 type TabBarPropsArg = Parameters<TabBarProps>[0]
@@ -35,6 +36,8 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
   const left = tabSlots.slice(0, 2)
   const right = tabSlots.slice(2)
@@ -54,6 +57,8 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
         accessibilityRole="button"
         accessibilityState={{ selected: focused }}
         key={slot.route}
+        onBlur={() => setFocusedKey(null)}
+        onFocus={() => setFocusedKey(slot.route)}
         onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
         onPress={() => {
           const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true })
@@ -61,7 +66,7 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
             navigation.navigate(route.name)
           }
         }}
-        style={({ pressed }) => [styles.slot, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.slot, pressed && styles.pressed, focusedKey === slot.route && interaction.focusRing]}
       >
         <View style={[styles.iconWell, focused && styles.iconWellActive]}>
           <MaterialCommunityIcons
@@ -82,8 +87,10 @@ function SakuTabBar({ state, navigation }: TabBarPropsArg): React.ReactElement {
         <Pressable
           accessibilityLabel="Tambah transaksi"
           accessibilityRole="button"
+          onBlur={() => setFocusedKey(null)}
+          onFocus={() => setFocusedKey("fab")}
           onPress={() => router.push("/add-transaction")}
-          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed, focusedKey === "fab" && { borderColor: colors.focus }]}
         >
           <MaterialCommunityIcons color={colors.surface} name="plus" size={34} />
         </Pressable>
