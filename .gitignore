@@ -64,3 +64,6 @@ server/users.json
 
 # git worktrees (isolated workspaces)
 .worktrees/
+
+# Task 7 visual QA evidence (screenshots, gitignored by brief)
+.playwright-mcp/
