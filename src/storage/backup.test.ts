@@ -17,7 +17,6 @@ import {
   writeRestoredData,
 } from "./backup"
 import { BUDGETS_STORAGE_KEY } from "./budgets"
-import { RECURRING_STORAGE_KEY } from "./recurring"
 import { SETTINGS_STORAGE_KEY } from "./settings"
 import { TRANSACTIONS_STORAGE_KEY } from "./transactions"
 
@@ -87,7 +86,6 @@ const payload = {
     }),
   ],
   budgets: { "Makan & Minum": 100_000 },
-  recurring: [],
   settings: { theme: "dark" as const, biometricLock: true },
 }
 
@@ -167,7 +165,6 @@ describe("stored data detection", () => {
     mockMultiGet.mockResolvedValueOnce([
       [TRANSACTIONS_STORAGE_KEY, null],
       [BUDGETS_STORAGE_KEY, "{}"],
-      [RECURRING_STORAGE_KEY, null],
       [SETTINGS_STORAGE_KEY, null],
     ])
 
@@ -178,7 +175,6 @@ describe("stored data detection", () => {
     mockMultiGet.mockResolvedValueOnce([
       [TRANSACTIONS_STORAGE_KEY, null],
       [BUDGETS_STORAGE_KEY, null],
-      [RECURRING_STORAGE_KEY, null],
       [SETTINGS_STORAGE_KEY, null],
     ])
 
@@ -187,13 +183,12 @@ describe("stored data detection", () => {
 })
 
 describe("restore", () => {
-  it("persists all four data slices", async () => {
+  it("persists all three data slices", async () => {
     await writeRestoredData(payload)
 
     const writtenKeys = mockSetItem.mock.calls.map((call) => call[0])
     expect(writtenKeys).toContain(TRANSACTIONS_STORAGE_KEY)
     expect(writtenKeys).toContain(BUDGETS_STORAGE_KEY)
-    expect(writtenKeys).toContain(RECURRING_STORAGE_KEY)
     expect(writtenKeys).toContain(SETTINGS_STORAGE_KEY)
   })
 

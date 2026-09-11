@@ -4,7 +4,6 @@ import { Platform } from "react-native"
 
 import type { BackupPayload } from "../utils/backup"
 import { BUDGETS_STORAGE_KEY, saveBudgets } from "./budgets"
-import { RECURRING_STORAGE_KEY, saveRecurringDefinitions } from "./recurring"
 import { saveProfilePhoto } from "./profile"
 import { SETTINGS_STORAGE_KEY, saveSettings } from "./settings"
 import { TRANSACTIONS_STORAGE_KEY, saveTransactions } from "./transactions"
@@ -86,7 +85,7 @@ export async function readAutoRestoreMirror(): Promise<string | null> {
 }
 
 export async function hasAnyStoredData(): Promise<boolean> {
-  const keys = [TRANSACTIONS_STORAGE_KEY, BUDGETS_STORAGE_KEY, RECURRING_STORAGE_KEY, SETTINGS_STORAGE_KEY]
+  const keys = [TRANSACTIONS_STORAGE_KEY, BUDGETS_STORAGE_KEY, SETTINGS_STORAGE_KEY]
   // multiGet: tersedia di semua versi async-storage (getMany baru ada di v3).
   const found = await AsyncStorage.multiGet(keys)
   return found.some(([, value]) => value !== null)
@@ -95,7 +94,6 @@ export async function hasAnyStoredData(): Promise<boolean> {
 export async function writeRestoredData(payload: BackupPayload): Promise<void> {
   await saveTransactions(payload.transactions)
   await saveBudgets(payload.budgets)
-  await saveRecurringDefinitions(payload.recurring)
   await saveSettings(payload.settings)
   if (payload.profilePhoto !== undefined) {
     await saveProfilePhoto(payload.profilePhoto)
