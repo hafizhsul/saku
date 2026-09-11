@@ -139,7 +139,7 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
 
           <View style={styles.trustRow}>
             <MaterialCommunityIcons color={colors.accent} name="shield-check-outline" size={12} />
-            <Text style={styles.trustText}>Berizin & Diawasi OJK • LPS Terdaftar</Text>
+            <Text style={styles.trustText}>Data tersimpan aman di perangkat ini</Text>
           </View>
         </View>
       </ScreenShell>

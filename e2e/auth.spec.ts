@@ -20,7 +20,9 @@ test("daftar, keluar, dan masuk ulang lewat layar autentikasi", async ({ page })
   await page.getByText("Daftar Sekarang", { exact: true }).click()
   await page.getByLabel("Nama").fill("Pengguna Uji")
   await page.getByLabel("Email").fill(email)
-  await page.getByRole("textbox", { name: "Kata sandi" }).fill(password)
+  await page.getByRole("textbox", { name: "Kata sandi", exact: true }).fill(password)
+  await page.getByLabel("Ulangi kata sandi").fill(password)
+  await page.getByRole("checkbox", { name: "Setujui Ketentuan Layanan dan Kebijakan Privasi" }).click()
   await page.getByRole("button", { name: "Daftar Sekarang" }).click()
 
   // Beranda tampil dengan sapaan nama depan.

@@ -262,6 +262,34 @@ test("logout revokes the token (all sessions) and re-login works", async () => {
   assert.equal((await request("GET", "/me", { token: relogin.body.token })).status, 200);
 });
 
+test("smoke: register → login → me → patch name → patch password → logout → revoked", async () => {
+  const email = "smoke@example.com";
+  const registered = await register({ email });
+  assert.equal(registered.status, 201);
+  assert.equal(registered.body.user.email, email);
+
+  const login = await request("POST", "/login", { body: { email, password: "password123" } });
+  assert.equal(login.status, 200);
+  const token = login.body.token;
+  assert.equal((await request("GET", "/me", { token })).status, 200);
+
+  const renamed = await request("PATCH", "/me", { token, body: { name: "Smoke User" } });
+  assert.equal(renamed.status, 200);
+  assert.equal(renamed.body.user.name, "Smoke User");
+
+  const rotated = await request("PATCH", "/me/password", {
+    token,
+    body: { currentPassword: "password123", newPassword: "smoke-baru-789" },
+  });
+  assert.equal(rotated.status, 204);
+  // Password lama mati, password baru hidup — token lama tetap valid sampai logout.
+  assert.equal((await request("POST", "/login", { body: { email, password: "password123" } })).status, 401);
+  assert.equal((await request("POST", "/login", { body: { email, password: "smoke-baru-789" } })).status, 200);
+
+  assert.equal((await request("POST", "/logout", { token })).status, 204);
+  assert.equal((await request("GET", "/me", { token })).status, 401);
+});
+
 test("register sets httpOnly cookie; /me and logout work with cookie auth", async () => {
   const res = await register();
   const setCookie = res.headers.getSetCookie ? res.headers.getSetCookie()[0] : res.headers.get("set-cookie");

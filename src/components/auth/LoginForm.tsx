@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useAuth } from "../../features/auth/AuthProvider"
 import { useThemeColors } from "../../theme"
-import { createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
+import { AUTH_BRAND, createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
 
 type LoginFormProps = {
   readonly onSwitchToRegister: () => void
@@ -91,22 +91,24 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
-      {/* Watermark logo di belakang form, selayang ilustrasi 3D pada referensi. */}
-      <View pointerEvents="none" style={styles.watermark}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={require("../../../assets/images/wallet-watermark.jpg")}
-          style={styles.watermarkImage}
-        />
-      </View>
+      {/* Ambient emerald/mint sesuai latar Stitch (radial kanan-atas + kiri-bawah). */}
+      <View pointerEvents="none" style={styles.ambientRight} />
+      <View pointerEvents="none" style={styles.ambientLeft} />
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {/* Header */}
+          {/* Brand & sapaan */}
           <View style={styles.header}>
+            <Image
+              accessibilityIgnoresInvertColors
+              source={require("../../../assets/saku-app.png")}
+              style={styles.brandBadge}
+            />
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>SAKU FINANSIAL</Text>
+            </View>
             <Text style={styles.title}>Selamat Datang</Text>
-            <Text style={styles.subtitle}>Masuk untuk lanjut.</Text>
+            <Text style={styles.subtitle}>Masuk untuk kelola finansial pribadi dengan aman dan terencana.</Text>
           </View>
 
           {/* Banner error server (bukan validasi lokal) */}
@@ -117,101 +119,100 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
             </View>
           ) : null}
 
-          {/* Email */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
-            <View style={[styles.inputShell, focusedField === "email" && styles.inputShellFocused, (errors.email !== undefined || hasServerError) && styles.inputShellError]}>
-              <MaterialCommunityIcons color={colors.textTertiary} name="at" size={20} />
-              <TextInput
-                accessibilityLabel="Email"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isSubmitting}
-                keyboardType="email-address"
-                onBlur={() => setFocusedField(null)}
-                onFocus={() => setFocusedField("email")}
-                onChangeText={(value) => {
-                  setEmail(value)
-                  setErrors((current) => ({ ...current, email: undefined }))
-                }}
-                placeholder="nama@email.com"
-                placeholderTextColor={colors.textTertiary}
-                style={styles.input}
-                value={email}
-              />
+          {/* Form kredensial */}
+          <View style={styles.form}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Email</Text>
+              <View style={[styles.inputShell, focusedField === "email" && styles.inputShellFocused, (errors.email !== undefined || hasServerError) && styles.inputShellError]}>
+                <MaterialCommunityIcons color={colors.textTertiary} name="at" size={20} />
+                <TextInput
+                  accessibilityLabel="Email"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isSubmitting}
+                  keyboardType="email-address"
+                  onBlur={() => setFocusedField(null)}
+                  onFocus={() => setFocusedField("email")}
+                  onChangeText={(value) => {
+                    setEmail(value)
+                    setErrors((current) => ({ ...current, email: undefined }))
+                  }}
+                  placeholder="nama@email.com"
+                  placeholderTextColor={colors.textTertiary}
+                  style={styles.input}
+                  value={email}
+                />
+              </View>
+              {errors.email !== undefined ? (
+                <Text accessibilityRole="alert" style={styles.fieldError}>
+                  {errors.email}
+                </Text>
+              ) : null}
             </View>
-            {errors.email !== undefined ? (
-              <Text accessibilityRole="alert" style={styles.fieldError}>
-                {errors.email}
-              </Text>
-            ) : null}
-          </View>
 
-          {/* Kata sandi */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Kata Sandi</Text>
-            <View style={[styles.inputShell, focusedField === "password" && styles.inputShellFocused, (errors.password !== undefined || hasServerError) && styles.inputShellError]}>
-              <MaterialCommunityIcons color={colors.textTertiary} name="lock" size={20} />
-              <TextInput
-                accessibilityLabel="Kata sandi"
-                editable={!isSubmitting}
-                onBlur={() => setFocusedField(null)}
-                onFocus={() => setFocusedField("password")}
-                onChangeText={(value) => {
-                  setPassword(value)
-                  setErrors((current) => ({ ...current, password: undefined }))
-                }}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textTertiary}
-                secureTextEntry={!showPassword}
-                style={styles.input}
-                value={password}
-              />
-              <Pressable
-                accessibilityLabel={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={() => setShowPassword((current) => !current)}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <MaterialCommunityIcons color={colors.textSecondary} name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} />
-              </Pressable>
+            <View style={styles.field}>
+              <Text style={styles.label}>Kata Sandi</Text>
+              <View style={[styles.inputShell, focusedField === "password" && styles.inputShellFocused, (errors.password !== undefined || hasServerError) && styles.inputShellError]}>
+                <MaterialCommunityIcons color={colors.textTertiary} name="lock-outline" size={20} />
+                <TextInput
+                  accessibilityLabel="Kata sandi"
+                  editable={!isSubmitting}
+                  onBlur={() => setFocusedField(null)}
+                  onFocus={() => setFocusedField("password")}
+                  onChangeText={(value) => {
+                    setPassword(value)
+                    setErrors((current) => ({ ...current, password: undefined }))
+                  }}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.textTertiary}
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                  value={password}
+                />
+                <Pressable
+                  accessibilityLabel={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => setShowPassword((current) => !current)}
+                  style={({ pressed }) => pressed && styles.pressed}
+                >
+                  <MaterialCommunityIcons color={colors.textSecondary} name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} />
+                </Pressable>
+              </View>
+              {errors.password !== undefined ? (
+                <Text accessibilityRole="alert" style={styles.fieldError}>
+                  {errors.password}
+                </Text>
+              ) : null}
+              <View style={styles.forgotRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={handleForgotPassword}
+                  style={({ pressed }) => pressed && styles.pressed}
+                >
+                  <Text style={styles.forgotText}>Lupa sandi?</Text>
+                </Pressable>
+              </View>
             </View>
-            {errors.password !== undefined ? (
-              <Text accessibilityRole="alert" style={styles.fieldError}>
-                {errors.password}
-              </Text>
-            ) : null}
-          </View>
 
-          {/* Lupa sandi */}
-          <View style={styles.forgotRow}>
             <Pressable
               accessibilityRole="button"
-              hitSlop={8}
-              onPress={handleForgotPassword}
-              style={({ pressed }) => pressed && styles.pressed}
+              accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
+              disabled={isSubmitting}
+              onPress={() => void handleSubmit()}
+              style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed]}
             >
-              <Text style={styles.forgotText}>Lupa sandi?</Text>
+              {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
+              <Text style={styles.primaryButtonText}>{isSubmitting ? "Memproses..." : "Masuk ke Akun"}</Text>
+              {isSubmitting ? null : <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={16} />}
             </Pressable>
           </View>
-
-          {/* Tombol utama */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ busy: isSubmitting, disabled: isSubmitting }}
-            disabled={isSubmitting}
-            onPress={() => void handleSubmit()}
-            style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed]}
-          >
-            {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
-            <Text style={styles.primaryButtonText}>{isSubmitting ? "Memproses..." : "Masuk ke Akun"}</Text>
-          </Pressable>
 
           {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>atau</Text>
+            <Text style={styles.dividerText}>ATAU</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -222,7 +223,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
             onPress={() => void handleBiometricPress()}
             style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
           >
-            <MaterialCommunityIcons color={colors.textPrimary} name="fingerprint" size={20} />
+            <MaterialCommunityIcons color={AUTH_BRAND} name="fingerprint" size={20} />
             <Text style={styles.biometricText}>Masuk dengan Biometrik</Text>
           </Pressable>
 
@@ -234,6 +235,10 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
                 Daftar Sekarang
               </Text>
             </Text>
+            <View style={styles.securityBadge}>
+              <MaterialCommunityIcons color={AUTH_BRAND} name="shield-check" size={14} />
+              <Text style={styles.securityText}>Data tersimpan aman di perangkat ini</Text>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
