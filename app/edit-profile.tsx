@@ -173,11 +173,15 @@ export default function EditProfileScreen(): React.ReactElement {
         {/* Nama */}
         <View style={styles.field}>
           <Text style={styles.label}>Nama</Text>
-          <View style={[styles.inputShell, nameError !== null && styles.inputShellError]}>
+          <View
+            style={[styles.inputShell, focusedKey === "name" && styles.inputShellFocused, nameError !== null && styles.inputShellError]}
+          >
             <TextInput
               accessibilityLabel="Nama"
               autoCapitalize="words"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("name")}
               onChangeText={(value) => {
                 setName(value)
                 setNameError(null)
@@ -284,6 +288,10 @@ function createStyles(colors: ThemeColors) {
     inputShellError: {
       borderColor: colors.error,
       borderWidth: 2,
+    },
+    inputShellFocused: {
+      borderColor: colors.focus,
+      borderWidth: stateTokens.focusWidth,
     },
     keyboard: {
       flex: 1,

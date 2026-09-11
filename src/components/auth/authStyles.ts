@@ -325,7 +325,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     inputShellFocused: {
       borderColor: colors.focus,
-      borderWidth: 1,
+      borderWidth: stateTokens.focusWidth,
     },
     label: {
       color: titleColor,

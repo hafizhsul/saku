@@ -73,10 +73,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
 
         <View style={styles.field}>
           <Text style={styles.label}>Kata sandi saat ini</Text>
-          <View style={[styles.inputShell, fieldErrors.current !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "current" && styles.inputShellFocused,
+              fieldErrors.current !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Kata sandi saat ini"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("current")}
               onChangeText={(value) => {
                 setCurrentPassword(value)
                 setFieldErrors((current) => ({ ...current, current: undefined }))
@@ -97,10 +105,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
 
         <View style={styles.field}>
           <Text style={styles.label}>Kata sandi baru</Text>
-          <View style={[styles.inputShell, fieldErrors.next !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "next" && styles.inputShellFocused,
+              fieldErrors.next !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Kata sandi baru"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("next")}
               onChangeText={(value) => {
                 setNewPassword(value)
                 setFieldErrors((current) => ({ ...current, next: undefined }))
@@ -114,10 +130,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
           </View>
 
           <Text style={styles.label}>Konfirmasi kata sandi baru</Text>
-          <View style={[styles.inputShell, fieldErrors.next !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "confirm" && styles.inputShellFocused,
+              fieldErrors.next !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Konfirmasi kata sandi baru"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("confirm")}
               onChangeText={setConfirmPassword}
               placeholder="Ulangi kata sandi baru"
               placeholderTextColor={colors.textTertiary}
@@ -224,6 +248,10 @@ function createStyles(colors: ThemeColors) {
     inputShellError: {
       borderColor: colors.error,
       borderWidth: 2,
+    },
+    inputShellFocused: {
+      borderColor: colors.focus,
+      borderWidth: stateTokens.focusWidth,
     },
     keyboard: {
       flex: 1,

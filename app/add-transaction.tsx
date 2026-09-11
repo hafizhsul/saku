@@ -10,7 +10,7 @@ import { stateInteraction } from "../src/components/state/pressable"
 import { useTransactions } from "../src/features/transactions/TransactionsProvider"
 import { isTransactionType, transactionTypeOptions, type FormErrors } from "../src/features/transactions/addTransactionForm"
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
-import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { darkColors, fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
@@ -293,7 +293,7 @@ export default function AddTransactionScreen(): React.ReactElement {
                 disabled={saving}
                 key={preset.label}
                 onPress={() => handlePreset(preset.increment)}
-                style={({ pressed }) => [styles.presetChip, pressed && styles.pressed]}
+                style={({ pressed }) => [styles.presetChip, pressed && !saving && styles.pressed, saving && styles.presetDisabled]}
               >
                 <Text style={styles.presetChipText}>{preset.label}</Text>
               </Pressable>
@@ -304,7 +304,7 @@ export default function AddTransactionScreen(): React.ReactElement {
               accessibilityState={{ disabled: saving }}
               disabled={saving}
               onPress={handleResetAmount}
-              style={({ pressed }) => [styles.presetReset, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.presetReset, pressed && !saving && styles.pressed, saving && styles.presetDisabled]}
             >
               <MaterialCommunityIcons color={HERO_LABEL} name="refresh" size={14} />
             </Pressable>
@@ -724,6 +724,9 @@ function createStyles(colors: ThemeColors) {
       fontSize: typography.caption.fontSize,
       fontWeight: "600",
     },
+    presetDisabled: {
+      opacity: stateTokens.disabledOpacity,
+    },
     presetReset: {
       alignItems: "center",
       backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -751,7 +754,7 @@ function createStyles(colors: ThemeColors) {
       ...shadows.elevated,
     },
     saveButtonDisabled: {
-      opacity: 0.6,
+      opacity: stateTokens.disabledOpacity,
     },
     saveButtonHovered: {
       opacity: 0.92,

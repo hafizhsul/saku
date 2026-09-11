@@ -6,7 +6,7 @@ import { Skeleton } from "../Skeleton"
 export function TransactionsSkeleton(): React.ReactElement {
   return (
     <View style={styles.container}>
-      <Skeleton height={52} />
+      <Skeleton height={48} />
       <View style={styles.chips}>
         <View style={styles.chip}>
           <Skeleton height={44} />
