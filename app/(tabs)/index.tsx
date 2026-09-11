@@ -8,6 +8,8 @@ import { AlokasiSheet } from "../../src/components/AlokasiSheet"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ProfileHeaderButton } from "../../src/components/ProfileHeaderButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { DataState } from "../../src/components/state/DataState"
+import { HomeSkeleton } from "../../src/components/state/skeletons/HomeSkeleton"
 import { TransactionRow } from "../../src/components/TransactionRow"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
@@ -59,27 +61,18 @@ export default function HomeScreen(): React.ReactElement {
   // berubah setiap transaksi baru (gaji, belanja, dst) tercatat.
   const totalBudget = selectBalance(transactions)
 
-  if (isLoading) {
-    return (
-      <ScreenShell>
-        <Header colors={colors} styles={styles} />
-        <EmptyState description="Menyiapkan ringkasan keuanganmu." title="Memuat catatan..." />
-      </ScreenShell>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <ScreenShell>
-        <Header colors={colors} styles={styles} />
-        <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
-      </ScreenShell>
-    )
-  }
-
   return (
     <ScreenShell>
       <Header colors={colors} styles={styles} />
+      <DataState
+        emptyFallback={null}
+        error={loadError}
+        isEmpty={false}
+        loading={isLoading}
+        loadingFallback={<HomeSkeleton />}
+        onRetry={() => void retryLoad()}
+        partial={null}
+      >
         <View style={styles.content}>
           <TotalBudgetCard
             balanceVisible={balanceVisible}
@@ -170,7 +163,8 @@ export default function HomeScreen(): React.ReactElement {
             </View>
           )}
           </View>
-      </View>
+        </View>
+      </DataState>
     </ScreenShell>
   )
 }

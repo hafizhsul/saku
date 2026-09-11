@@ -7,6 +7,8 @@ import { EmptyState } from "../../src/components/EmptyState"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { PrimaryButton } from "../../src/components/PrimaryButton"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { DetailSkeleton } from "../../src/components/state/skeletons/DetailSkeleton"
+import { ErrorState } from "../../src/components/state/ErrorState"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
@@ -20,7 +22,7 @@ const EXPENSE_ACCENT = "#c0263e"
 export default function TransactionDetailScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string | string[] }>()
   const transactionId = typeof params.id === "string" ? params.id : undefined
-  const { transactions, isLoading, deleteTransaction, saveState } = useTransactions()
+  const { transactions, isLoading, loadError, retryLoad, deleteTransaction, saveState } = useTransactions()
   const { budgets } = useBudgets()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -61,7 +63,16 @@ export default function TransactionDetailScreen(): React.ReactElement {
     return (
       <ScreenShell withTabBar={false}>
         <DetailHeader onBack={() => router.back()} />
-        <EmptyState description="Menyiapkan detail transaksi." title="Memuat catatan..." />
+        <DetailSkeleton />
+      </ScreenShell>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <ScreenShell withTabBar={false}>
+        <DetailHeader onBack={() => router.back()} />
+        <ErrorState description={loadError} onRetry={() => void retryLoad()} title="Data belum siap" />
       </ScreenShell>
     )
   }

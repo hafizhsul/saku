@@ -7,6 +7,7 @@ import { formatShortMonthLabel, shiftMonth } from "../utils/dates"
 import { formatCompactCurrency } from "../utils/currency"
 import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
+import { EmptyState } from "./EmptyState"
 
 type CategoryTrendChartProps = {
   readonly transactions: readonly Transaction[]
@@ -14,7 +15,7 @@ type CategoryTrendChartProps = {
   readonly count?: number
 }
 
-export function CategoryTrendChart({ transactions, month, count = 6 }: CategoryTrendChartProps): React.ReactElement | null {
+export function CategoryTrendChart({ transactions, month, count = 6 }: CategoryTrendChartProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const trends = useMemo(() => selectCategoryTrends(transactions, month, count), [count, month, transactions])
@@ -29,7 +30,13 @@ export function CategoryTrendChart({ transactions, month, count = 6 }: CategoryT
   }, [count, month])
 
   if (trends.length === 0) {
-    return null
+    return (
+      <EmptyState
+        description="Catat pengeluaran beberapa bulan untuk melihat tren per kategori."
+        icon="chart-line"
+        title="Belum ada tren"
+      />
+    )
   }
 
   const maxValue = Math.max(...trends.flatMap((trend) => [...trend.values]), 1)

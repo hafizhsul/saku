@@ -5,6 +5,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native"
 
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { DataState } from "../../src/components/state/DataState"
+import { TransactionsSkeleton } from "../../src/components/state/skeletons/TransactionsSkeleton"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import {
   selectRecentTransactions,
@@ -138,52 +140,56 @@ export default function TransactionsScreen(): React.ReactElement {
           <Text style={styles.summarySub}>{monthlySummary.expenseCount} transaksi bulan ini</Text>
         </View>
       </View>
-      {isLoading ? (
-        <EmptyState description="Menyiapkan daftar transaksi." title="Memuat catatan..." />
-      ) : loadError ? (
-        <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
-      ) : filteredTransactions.length === 0 ? (
-        <EmptyState
-          actionLabel={hasActiveFilters ? "Lihat semua" : "Catat transaksi"}
-          description={
-            hasActiveFilters
-              ? "Tidak ada transaksi yang cocok dengan pencarian atau filter ini."
-              : "Catatan yang kamu tambahkan akan muncul di sini."
-          }
-          icon={hasActiveFilters ? "magnify-close" : "receipt-text-outline"}
-          onAction={
-            hasActiveFilters
-              ? () => {
-                  setFilter("all")
-                  setQuery("")
-                }
-              : () => router.push("/add-transaction")
-          }
-          title={hasActiveFilters ? "Tidak ada hasil" : "Belum ada transaksi"}
-        />
-      ) : (
-        <View style={styles.groups}>
-          {groups.map((group) => (
-            <View key={group.day} style={styles.group}>
-              <View style={styles.groupHeader}>
-                <Text style={styles.groupLabel}>{formatDayGroupLabel(group.day).toUpperCase()}</Text>
-                <Text style={styles.groupWeekday}>{formatWeekday(group.day)}</Text>
-              </View>
-              <View style={styles.groupList}>
-                {group.transactions.map((transaction) => (
-                  <TransactionRow
-                    colors={colors}
-                    key={transaction.id}
-                    onPress={() => router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } })}
-                    styles={styles}
-                    transaction={transaction}
-                  />
-                ))}
-              </View>
+      <DataState
+        emptyFallback={
+          <EmptyState
+            actionLabel={hasActiveFilters ? "Lihat semua" : "Catat transaksi"}
+            description={
+              hasActiveFilters
+                ? "Tidak ada transaksi yang cocok dengan pencarian atau filter ini."
+                : "Catatan yang kamu tambahkan akan muncul di sini."
+            }
+            icon={hasActiveFilters ? "magnify-close" : "receipt-text-outline"}
+            onAction={
+              hasActiveFilters
+                ? () => {
+                    setFilter("all")
+                    setQuery("")
+                  }
+                : () => router.push("/add-transaction")
+            }
+            title={hasActiveFilters ? "Tidak ada hasil" : "Belum ada transaksi"}
+          />
+        }
+        error={loadError}
+        isEmpty={filteredTransactions.length === 0}
+        loading={isLoading}
+        loadingFallback={<TransactionsSkeleton />}
+        onRetry={() => void retryLoad()}
+        partial={null}
+      >
+      <View style={styles.groups}>
+        {groups.map((group) => (
+          <View key={group.day} style={styles.group}>
+            <View style={styles.groupHeader}>
+              <Text style={styles.groupLabel}>{formatDayGroupLabel(group.day).toUpperCase()}</Text>
+              <Text style={styles.groupWeekday}>{formatWeekday(group.day)}</Text>
             </View>
-          ))}
-        </View>
-      )}
+            <View style={styles.groupList}>
+              {group.transactions.map((transaction) => (
+                <TransactionRow
+                  colors={colors}
+                  key={transaction.id}
+                  onPress={() => router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } })}
+                  styles={styles}
+                  transaction={transaction}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
+      </View>
+      </DataState>
     </ScreenShell>
   )
 }
