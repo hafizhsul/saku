@@ -33,10 +33,10 @@ Jujur agar README tidak overklaim:
 
 - **Bahasa** terkunci Indonesia dan non-interaktif. **Pusat Bantuan & FAQ** dan **Kebijakan Privasi** baris placeholder non-interaktif (TODO di kode).
 - **KYC** dan **2 Langkah aktif** hanya subtitle statis di Profil, bukan status verifikasi nyata.
-- **Transaksi berulang**: kode `src/features/recurring` ada dan teruji, tapi provider tidak dipasang di layout dan tanpa layar. Jadi belum berjalan untuk pengguna.
+- **Transaksi berulang**: dihapus (kode lama di `attic/` sebagai arsip). Cadangan lama yang masih memuat field `recurring` tetap bisa dibaca.
 - **Ekspor/impor CSV/JSON**: util `src/utils/csv.ts` dan `src/utils/backup.ts` ada dan teruji, tapi tanpa tombol di layar.
-- **MonthNavigator**: komponen ada tapi tidak dipakai layar mana pun. Chip bulan di Beranda hanya label bulan berjalan, tanpa navigasi bulan.
-- **Showcase** (`/showcase`): kontrak visual untuk dev, tidak ditautkan dari UI produk.
+- **Navigasi bulan**: chip bulan di Beranda hanya label bulan berjalan, tanpa navigasi bulan.
+- **Showcase**: rute dev `/showcase` dihapus; referensi visual kini di `stitch-output/` (di-ignore, bukan bagian build).
 
 ## Teknologi
 
@@ -129,10 +129,10 @@ Catatan file env: client baca `.env.local` (Expo), server baca `server/.env` (li
 ## Struktur
 
 ```
-app/                  # layar & navigasi (expo-router): onboarding, (tabs), add-transaction, transaction/[id], edit-profile, change-password, showcase (dev)
-src/components/       # UI bersama: ScreenShell, HeroCard, TransactionRow, MonthNavigator (tak dipakai), SegmentedControl, chart, auth forms
-src/features/         # domain: transactions, budgets, settings, auth, backup (auto-restore), recurring (kode saja, belum dipasang)
-src/storage/          # AsyncStorage/SecureStore: transactions, budgets, recurring, backup, settings, auth, profile, onboarding
+app/                  # layar & navigasi (expo-router): onboarding, (tabs), add-transaction, transaction/[id], edit-profile, change-password
+src/components/       # UI bersama: ScreenShell, HeroCard, TransactionRow, SegmentedControl, chart, auth forms, state (loading/error/empty/partial/skeleton)
+src/features/         # domain: transactions, budgets, settings, auth, backup (auto-restore)
+src/storage/          # AsyncStorage/SecureStore: transactions, budgets, backup, settings, auth, profile, onboarding
 src/theme/            # token desain: warna light/dark, tipografi, jarak, shadow
 src/utils/            # currency (Rp), dates (id-ID), csv, backup
 server/               # auth backend Node http murni: auth-server.js, firebase.js, users.json, migrate-users-to-firestore.js
@@ -145,7 +145,6 @@ DESIGN.md             # dokumentasi design system
 
 - Transaksi: `{ id, type: income|expense, amount, category, note, date }` (Zod, key AsyncStorage `bendahara.transactions.v1`).
 - Anggaran: map `kategori ke limit` (`bendahara.budgets.v1`). Hook sisa harian (`useDailyBudget`) ada tapi belum dipakai di layar mana pun.
-- Recurring tersimpan (`bendahara.recurring.v1`) tapi provider belum dipasang, jadi belum diterapkan otomatis di UI.
 - Backup mirror (`bendahara.backup.mirror.v1`) untuk auto-restore, bukan ekspor manual.
 - Settings (`bendahara.settings.v1`, default tema light + biometricLock true), onboarding (`bendahara.onboarding.v1`), foto profil (`bendahara.profile.photo.v1`), token (`bendahara.auth.token.v1`).
 
