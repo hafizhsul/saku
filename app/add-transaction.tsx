@@ -6,10 +6,11 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput,
 
 import { EmptyState } from "../src/components/EmptyState"
 import { ScreenShell } from "../src/components/ScreenShell"
+import { stateInteraction } from "../src/components/state/pressable"
 import { useTransactions } from "../src/features/transactions/TransactionsProvider"
 import { isTransactionType, transactionTypeOptions, type FormErrors } from "../src/features/transactions/addTransactionForm"
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
-import { darkColors, fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { darkColors, fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
 import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
 
@@ -51,10 +52,12 @@ function parseNativeDate(value: string): Date | null {
 
 function WebDateInput({
   ariaLabel,
+  disabled = false,
   onChange,
   value,
 }: {
   readonly ariaLabel: string
+  readonly disabled?: boolean
   readonly onChange: (value: string) => void
   readonly value: string
 }): React.ReactElement {
@@ -81,6 +84,7 @@ function WebDateInput({
 
   return createElement("input", {
     "aria-label": ariaLabel,
+    disabled,
     max: formatNativeDate(new Date()),
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
     style,
@@ -115,6 +119,9 @@ export default function AddTransactionScreen(): React.ReactElement {
   const [note, setNote] = useState(editing?.note ?? "")
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSaved, setIsSaved] = useState(false)
+  const saving = saveState === "saving"
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
   if (transactionId !== undefined && editing === undefined) {
     return (
@@ -125,8 +132,10 @@ export default function AddTransactionScreen(): React.ReactElement {
               accessibilityLabel="Kembali"
               accessibilityRole="button"
               hitSlop={10}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("back-notfound")}
               onPress={() => router.back()}
-              style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.backButton, pressed && styles.pressed, focusedKey === "back-notfound" && interaction.focusRing]}
             >
               <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
             </Pressable>
@@ -238,8 +247,10 @@ export default function AddTransactionScreen(): React.ReactElement {
             accessibilityLabel="Kembali"
             accessibilityRole="button"
             hitSlop={10}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("back-main")}
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed, focusedKey === "back-main" && interaction.focusRing]}
           >
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
@@ -257,6 +268,7 @@ export default function AddTransactionScreen(): React.ReactElement {
             <TextInput
               accessibilityLabel="Nominal transaksi"
               autoFocus
+              editable={!saving}
               inputMode="numeric"
               keyboardType="number-pad"
               onChangeText={handleAmountChange}
@@ -277,9 +289,11 @@ export default function AddTransactionScreen(): React.ReactElement {
               <Pressable
                 accessibilityLabel={preset.spoken}
                 accessibilityRole="button"
+                accessibilityState={{ disabled: saving }}
+                disabled={saving}
                 key={preset.label}
                 onPress={() => handlePreset(preset.increment)}
-                style={({ pressed }) => [styles.presetChip, pressed && styles.pressed]}
+                style={({ pressed }) => [styles.presetChip, pressed && !saving && styles.pressed, saving && styles.presetDisabled]}
               >
                 <Text style={styles.presetChipText}>{preset.label}</Text>
               </Pressable>
@@ -287,8 +301,10 @@ export default function AddTransactionScreen(): React.ReactElement {
             <Pressable
               accessibilityLabel="Atur ulang nominal"
               accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
+              disabled={saving}
               onPress={handleResetAmount}
-              style={({ pressed }) => [styles.presetReset, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.presetReset, pressed && !saving && styles.pressed, saving && styles.presetDisabled]}
             >
               <MaterialCommunityIcons color={HERO_LABEL} name="refresh" size={14} />
             </Pressable>
@@ -307,10 +323,18 @@ export default function AddTransactionScreen(): React.ReactElement {
             return (
               <Pressable
                 accessibilityRole="tab"
-                accessibilityState={{ selected }}
+                accessibilityState={{ disabled: saving, selected }}
+                disabled={saving}
                 key={option.value}
+                onBlur={() => setFocusedKey(null)}
+                onFocus={() => setFocusedKey(`type-${option.value}`)}
                 onPress={() => handleTypeChange(option.value)}
-                style={({ pressed }) => [styles.typeOption, selected && styles.typeOptionSelected, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.typeOption,
+                  selected && styles.typeOptionSelected,
+                  pressed && !saving && styles.pressed,
+                  focusedKey === `type-${option.value}` && !saving && interaction.focusRing,
+                ]}
               >
                 <View style={styles.typeOptionContent}>
                   {selected ? <View style={[styles.typeDot, { backgroundColor: typeAccent }]} /> : null}
@@ -335,10 +359,17 @@ export default function AddTransactionScreen(): React.ReactElement {
                   <Pressable
                     accessibilityLabel={`${option.label}${selected ? ", dipilih" : ""}`}
                     accessibilityRole="button"
-                    accessibilityState={{ selected }}
+                    accessibilityState={{ disabled: saving, selected }}
+                    disabled={saving}
                     key={option.key}
+                    onBlur={() => setFocusedKey(null)}
+                    onFocus={() => setFocusedKey(`category-${option.key}`)}
                     onPress={() => setCategory(option.key)}
-                    style={({ pressed }) => [styles.categoryOption, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                      styles.categoryOption,
+                      pressed && !saving && styles.pressed,
+                      focusedKey === `category-${option.key}` && !saving && interaction.focusRing,
+                    ]}
                   >
                     <View
                       style={[
@@ -375,6 +406,7 @@ export default function AddTransactionScreen(): React.ReactElement {
             {Platform.OS === "web" ? (
               <WebDateInput
                 ariaLabel="Tanggal transaksi"
+                disabled={saving}
                 onChange={handleWebDateChange}
                 value={webDateInput}
               />
@@ -382,8 +414,16 @@ export default function AddTransactionScreen(): React.ReactElement {
               <Pressable
                 accessibilityLabel={`Tanggal transaksi ${formatTransactionDate(selectedDate.toISOString())}`}
                 accessibilityRole="button"
+                accessibilityState={{ disabled: saving }}
+                disabled={saving}
+                onBlur={() => setFocusedKey(null)}
+                onFocus={() => setFocusedKey("date")}
                 onPress={() => setShowPicker(true)}
-                style={({ pressed }) => [styles.dateTrigger, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.dateTrigger,
+                  pressed && !saving && styles.pressed,
+                  focusedKey === "date" && !saving && interaction.focusRing,
+                ]}
               >
                 <Text style={styles.dateText}>{formatTransactionDate(selectedDate.toISOString())}</Text>
               </Pressable>
@@ -409,6 +449,7 @@ export default function AddTransactionScreen(): React.ReactElement {
             <MaterialCommunityIcons color="#94a3b8" name="note-edit-outline" size={16} style={styles.noteIcon} />
             <TextInput
               accessibilityLabel="Catatan transaksi"
+              editable={!saving}
               maxLength={120}
               multiline
               onChangeText={setNote}
@@ -426,14 +467,18 @@ export default function AddTransactionScreen(): React.ReactElement {
         {/* Simpan */}
         <Pressable
           accessibilityRole="button"
-          disabled={saveState === "saving"}
+          accessibilityState={{ busy: saving, disabled: saving }}
+          disabled={saving}
+          onBlur={() => setFocusedKey(null)}
+          onFocus={() => setFocusedKey("save")}
           onPress={() => void handleSave()}
           style={({ pressed, hovered }) => [
             styles.saveButton,
             { backgroundColor: type === "expense" ? colors.expense : "#006B50" },
-            hovered && styles.saveButtonHovered,
-            pressed && styles.saveButtonPressed,
-            (saveState === "saving" || isSaved) && styles.saveButtonDisabled,
+            hovered && !saving && styles.saveButtonHovered,
+            pressed && !saving && styles.saveButtonPressed,
+            (saving || isSaved) && styles.saveButtonDisabled,
+            focusedKey === "save" && !saving && interaction.focusRing,
           ]}
         >
           <MaterialCommunityIcons color={colors.surface} name={isSaved ? "check-circle" : "check-circle-outline"} size={20} />
@@ -679,6 +724,9 @@ function createStyles(colors: ThemeColors) {
       fontSize: typography.caption.fontSize,
       fontWeight: "600",
     },
+    presetDisabled: {
+      opacity: stateTokens.disabledOpacity,
+    },
     presetReset: {
       alignItems: "center",
       backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -706,7 +754,7 @@ function createStyles(colors: ThemeColors) {
       ...shadows.elevated,
     },
     saveButtonDisabled: {
-      opacity: 0.6,
+      opacity: stateTokens.disabledOpacity,
     },
     saveButtonHovered: {
       opacity: 0.92,

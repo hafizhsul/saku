@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 
-import { createRecurringDefinition } from "../features/recurring/types"
 import { createTransaction } from "../features/transactions/types"
 import { parseBackup, serializeBackup, buildBackupPayload, BackupFormatError, type BackupPayload } from "./backup"
 
@@ -16,18 +15,6 @@ function samplePayload(): BackupPayload {
       }),
     ],
     budgets: { "Makan & Minum": 1000000 },
-    recurring: [
-      createRecurringDefinition(
-        {
-          type: "expense",
-          amount: 500000,
-          category: "Tempat Tinggal",
-          note: "Sewa",
-          dayOfMonth: 1,
-        },
-        "2026-07",
-      ),
-    ],
     settings: { theme: "dark", biometricLock: true },
   })
 }
@@ -68,5 +55,13 @@ describe("serializeBackup / parseBackup", () => {
     const payload = samplePayload()
     const parsed = parseBackup(JSON.stringify({ ...payload, budgets: { "Makan & Minum": -100 } }))
     expect(parsed.budgets).toEqual({})
+  })
+
+  it("parseBackup menerima cadangan lama yang masih memuat field recurring", () => {
+    const payload = buildBackupPayload({ transactions: [], budgets: {}, settings: { theme: "light", biometricLock: true } })
+    const legacy = JSON.parse(serializeBackup(payload))
+    legacy.recurring = [{ id: "r1", type: "expense", amount: 50000, category: "Makan & Minum", dayOfMonth: 1, lastApplied: null }]
+    const parsed = parseBackup(JSON.stringify(legacy))
+    expect(parsed.transactions).toEqual([])
   })
 })

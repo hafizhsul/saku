@@ -3,9 +3,10 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { useAuth } from "../../features/auth/AuthProvider"
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../../theme"
+import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../../theme"
 import { EmptyState } from "../EmptyState"
 import { ScreenShell } from "../ScreenShell"
+import { stateInteraction } from "../state/pressable"
 import { LoginForm } from "./LoginForm"
 import { RegisterForm } from "./RegisterForm"
 
@@ -24,6 +25,9 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
   const { authError, biometricUnlock, hasBiometric, isLoading, logout, retryLoad, state } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
+  const [lockBusy, setLockBusy] = useState<"biometric" | "retry" | "logout" | null>(null)
   const [mode, setMode] = useState<AuthMode>("login")
   const [reduceMotion, setReduceMotion] = useState(false)
   const [pulse] = useState(() => new Animated.Value(0))
@@ -104,8 +108,23 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
             <Pressable
               accessibilityLabel="Buka dengan biometrik"
               accessibilityRole="button"
-              onPress={() => void biometricUnlock()}
-              style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
+              accessibilityState={{ busy: lockBusy === "biometric", disabled: lockBusy !== null }}
+              disabled={lockBusy !== null}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("biometric")}
+              onPress={() => {
+                if (lockBusy !== null) {
+                  return
+                }
+                setLockBusy("biometric")
+                void biometricUnlock().finally(() => setLockBusy(null))
+              }}
+              style={({ pressed }) => [
+                styles.biometricButton,
+                pressed && lockBusy === null && styles.pressed,
+                lockBusy !== null && styles.lockActionDisabled,
+                focusedKey === "biometric" && lockBusy === null && interaction.focusRing,
+              ]}
             >
               <View style={styles.biometricCircle}>
                 <MaterialCommunityIcons color={colors.accent} name="face-recognition" size={32} />
@@ -120,8 +139,23 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
           <Pressable
             accessibilityLabel="Coba lagi"
             accessibilityRole="button"
-            onPress={() => void retryLoad()}
-            style={({ pressed }) => [styles.retryButton, pressed && styles.retryPressed]}
+            accessibilityState={{ busy: lockBusy === "retry", disabled: lockBusy !== null }}
+            disabled={lockBusy !== null}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("retry")}
+            onPress={() => {
+              if (lockBusy !== null) {
+                return
+              }
+              setLockBusy("retry")
+              void retryLoad().finally(() => setLockBusy(null))
+            }}
+            style={({ pressed }) => [
+              styles.retryButton,
+              pressed && lockBusy === null && styles.retryPressed,
+              lockBusy !== null && styles.lockActionDisabled,
+              focusedKey === "retry" && lockBusy === null && interaction.focusRing,
+            ]}
           >
             <MaterialCommunityIcons color={colors.surface} name="refresh" size={18} />
             <Text style={styles.retryText}>Coba lagi</Text>
@@ -130,8 +164,23 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
           <Pressable
             accessibilityLabel="Keluar dari akun ini"
             accessibilityRole="link"
-            onPress={() => void logout()}
-            style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
+            accessibilityState={{ busy: lockBusy === "logout", disabled: lockBusy !== null }}
+            disabled={lockBusy !== null}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("logout")}
+            onPress={() => {
+              if (lockBusy !== null) {
+                return
+              }
+              setLockBusy("logout")
+              void logout().finally(() => setLockBusy(null))
+            }}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && lockBusy === null && styles.pressed,
+              lockBusy !== null && styles.lockActionDisabled,
+              focusedKey === "logout" && lockBusy === null && interaction.focusRing,
+            ]}
           >
             <MaterialCommunityIcons color={colors.textTertiary} name="logout" size={14} />
             <Text style={styles.logoutText}>Keluar dari akun ini</Text>
@@ -201,6 +250,9 @@ function createStyles(colors: ThemeColors) {
     lockedContent: {
       gap: spacing.lg,
       paddingTop: spacing["3xl"],
+    },
+    lockActionDisabled: {
+      opacity: stateTokens.disabledOpacity,
     },
     lockedDescription: {
       color: colors.textSecondary,

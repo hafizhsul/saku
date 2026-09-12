@@ -1,7 +1,6 @@
 import { z } from "zod"
 
 import { parseStoredBudgets, type BudgetsMap } from "../features/budgets/types"
-import { RecurringDefinitionsSchema, type RecurringDefinition } from "../features/recurring/types"
 import { TransactionsSchema, type Transaction } from "../features/transactions/types"
 import type { Settings } from "../storage/settings"
 
@@ -13,7 +12,6 @@ const BackupPayloadSchema = z
     createdAt: z.string(),
     transactions: z.unknown(),
     budgets: z.unknown(),
-    recurring: z.unknown(),
     settings: z.object({ theme: z.enum(["system", "light", "dark"]), biometricLock: z.boolean().optional() }),
     // Cadangan lama tanpa foto tetap valid (opsional, backward compatible).
     profilePhoto: z.string().optional(),
@@ -25,7 +23,6 @@ export type BackupPayload = {
   readonly createdAt: string
   readonly transactions: readonly Transaction[]
   readonly budgets: BudgetsMap
-  readonly recurring: readonly RecurringDefinition[]
   readonly settings: Settings
   readonly profilePhoto?: string
 }
@@ -37,7 +34,6 @@ export class BackupFormatError extends Error {
 export function buildBackupPayload(input: {
   readonly transactions: readonly Transaction[]
   readonly budgets: BudgetsMap
-  readonly recurring: readonly RecurringDefinition[]
   readonly settings: Settings
   readonly profilePhoto?: string
 }): BackupPayload {
@@ -46,7 +42,6 @@ export function buildBackupPayload(input: {
     createdAt: new Date().toISOString(),
     transactions: input.transactions,
     budgets: input.budgets,
-    recurring: input.recurring,
     settings: input.settings,
     ...(input.profilePhoto !== undefined ? { profilePhoto: input.profilePhoto } : {}),
   }
@@ -57,7 +52,6 @@ export function serializeBackup(payload: BackupPayload): string {
     {
       ...payload,
       transactions: [...payload.transactions],
-      recurring: [...payload.recurring],
     },
     null,
     2,
@@ -83,7 +77,6 @@ export function parseBackup(json: string): BackupPayload {
     createdAt: parsed.data.createdAt,
     transactions: parseTransactionsLenient(parsed.data.transactions),
     budgets: parseStoredBudgets(parsed.data.budgets),
-    recurring: parseRecurringLenient(parsed.data.recurring),
     settings: { theme: parsed.data.settings.theme, biometricLock: parsed.data.settings.biometricLock ?? true },
     ...(parsed.data.profilePhoto !== undefined ? { profilePhoto: parsed.data.profilePhoto } : {}),
   }
@@ -100,17 +93,6 @@ function parseTransactionsLenient(value: unknown): readonly Transaction[] {
 
   return value.flatMap((item) => {
     const parsed = TransactionsSchema.safeParse([item])
-    return parsed.success ? parsed.data : []
-  })
-}
-
-function parseRecurringLenient(value: unknown): readonly RecurringDefinition[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.flatMap((item) => {
-    const parsed = RecurringDefinitionsSchema.safeParse([item])
     return parsed.success ? parsed.data : []
   })
 }

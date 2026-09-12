@@ -1,27 +1,44 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
 import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { formatCurrency } from "../utils/currency"
+import { stateInteraction } from "./state/pressable"
 
 type DailyBudgetCardProps = {
   readonly remaining: number
   readonly daily: number
   readonly daysLeft: number
   readonly onPress: () => void
+  readonly disabled?: boolean
 }
 
-export function DailyBudgetCard({ remaining, daily, daysLeft, onPress }: DailyBudgetCardProps): React.ReactElement {
+export function DailyBudgetCard({ remaining, daily, daysLeft, onPress, disabled = false }: DailyBudgetCardProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   return (
     <Pressable
       accessibilityLabel={`Sisa harian ${formatCurrency(daily)}, sisa bulan ini ${formatCurrency(remaining)}, ${daysLeft} hari tersisa`}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        hovered && !disabled && { backgroundColor: colors.surfaceMuted },
+        pressed && !disabled && styles.pressed,
+        focused && !disabled && interaction.focusRing,
+        disabled && interaction.disabled,
+      ]}
     >
       <View style={styles.iconWell}>
         <MaterialCommunityIcons color={colors.accent} name="calendar-clock-outline" size={20} />

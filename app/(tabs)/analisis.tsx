@@ -6,6 +6,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native"
 import { AlokasiSheet } from "../../src/components/AlokasiSheet"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
+import { DataState } from "../../src/components/state/DataState"
+import { PartialState } from "../../src/components/state/PartialState"
+import { AnalysisSkeleton } from "../../src/components/state/skeletons/AnalysisSkeleton"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
@@ -75,7 +78,7 @@ function trendBuckets(
 
 export default function AnalisisScreen(): React.ReactElement {
   const { isLoading, loadError, retryLoad, transactions } = useTransactions()
-  const { budgets, saveBudgets } = useBudgets()
+  const { budgets, loadError: budgetsError, retryLoad: retryBudgetsLoad, saveBudgets } = useBudgets()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
   const currentMonth = toMonthKey(new Date())
@@ -139,24 +142,27 @@ export default function AnalisisScreen(): React.ReactElement {
     setSheetVisible(false)
   }
 
-  if (isLoading) {
-    return (
-      <ScreenShell>
-        <EmptyState description="Menyiapkan ringkasan keuanganmu." title="Memuat catatan..." />
-      </ScreenShell>
-    )
-  }
-
-  if (loadError) {
-    return (
-      <ScreenShell>
-        <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
-      </ScreenShell>
-    )
-  }
-
   return (
     <ScreenShell>
+      <DataState
+        emptyFallback={
+          transactions.length === 0 ? (
+            <EmptyState
+              actionLabel="Catat transaksi"
+              description="Tambah pemasukan atau pengeluaran untuk melihat analisis."
+              icon="chart-line"
+              onAction={() => router.push("/add-transaction")}
+              title="Belum ada data"
+            />
+          ) : null
+        }
+        error={loadError}
+        isEmpty={transactions.length === 0}
+        loading={isLoading}
+        loadingFallback={<AnalysisSkeleton />}
+        onRetry={() => void retryLoad()}
+        partial={null}
+      >
       {/* Total Saldo */}
       <View style={styles.balanceCard}>
         <View style={styles.glowTop} />
@@ -217,16 +223,6 @@ export default function AnalisisScreen(): React.ReactElement {
         </View>
       </View>
 
-      {transactions.length === 0 ? (
-        <EmptyState
-          actionLabel="Catat transaksi"
-          description="Tambah pemasukan atau pengeluaran untuk melihat analisis."
-          icon="chart-line"
-          onAction={() => router.push("/add-transaction")}
-          title="Belum ada data"
-        />
-      ) : (
-        <>
           {/* Tren Pengeluaran */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
@@ -368,6 +364,9 @@ export default function AnalisisScreen(): React.ReactElement {
               </Pressable>
             </View>
             <View style={styles.whiteCard}>
+              {budgetsError ? (
+                <PartialState message={budgetsError} onRetry={() => void retryBudgetsLoad()} />
+              ) : null}
               <Text style={styles.distribLabel}>
                 Distribusi Budget (Total {formatCurrency(allocationRows.totalBudget)})
               </Text>
@@ -455,8 +454,7 @@ export default function AnalisisScreen(): React.ReactElement {
             <MaterialCommunityIcons color={colors.accent} name="shield-check-outline" size={16} />
             <Text style={styles.protectedText}>Diproteksi oleh Saku Financial Assistant</Text>
           </View>
-        </>
-      )}
+      </DataState>
 
       <AlokasiSheet
         budgets={budgets}

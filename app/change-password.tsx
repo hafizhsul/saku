@@ -5,13 +5,16 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput,
 
 import { PrimaryButton } from "../src/components/PrimaryButton"
 import { ScreenShell } from "../src/components/ScreenShell"
+import { stateInteraction } from "../src/components/state/pressable"
 import { useAuth } from "../src/features/auth/AuthProvider"
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 
 export default function ChangePasswordScreen(): React.ReactElement {
   const { changePassword } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -58,8 +61,10 @@ export default function ChangePasswordScreen(): React.ReactElement {
             accessibilityLabel="Kembali"
             accessibilityRole="button"
             hitSlop={10}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("back")}
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed, focusedKey === "back" && interaction.focusRing]}
           >
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
@@ -68,10 +73,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
 
         <View style={styles.field}>
           <Text style={styles.label}>Kata sandi saat ini</Text>
-          <View style={[styles.inputShell, fieldErrors.current !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "current" && styles.inputShellFocused,
+              fieldErrors.current !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Kata sandi saat ini"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("current")}
               onChangeText={(value) => {
                 setCurrentPassword(value)
                 setFieldErrors((current) => ({ ...current, current: undefined }))
@@ -92,10 +105,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
 
         <View style={styles.field}>
           <Text style={styles.label}>Kata sandi baru</Text>
-          <View style={[styles.inputShell, fieldErrors.next !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "next" && styles.inputShellFocused,
+              fieldErrors.next !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Kata sandi baru"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("next")}
               onChangeText={(value) => {
                 setNewPassword(value)
                 setFieldErrors((current) => ({ ...current, next: undefined }))
@@ -109,10 +130,18 @@ export default function ChangePasswordScreen(): React.ReactElement {
           </View>
 
           <Text style={styles.label}>Konfirmasi kata sandi baru</Text>
-          <View style={[styles.inputShell, fieldErrors.next !== undefined && styles.inputShellError]}>
+          <View
+            style={[
+              styles.inputShell,
+              focusedKey === "confirm" && styles.inputShellFocused,
+              fieldErrors.next !== undefined && styles.inputShellError,
+            ]}
+          >
             <TextInput
               accessibilityLabel="Konfirmasi kata sandi baru"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("confirm")}
               onChangeText={setConfirmPassword}
               placeholder="Ulangi kata sandi baru"
               placeholderTextColor={colors.textTertiary}
@@ -130,8 +159,17 @@ export default function ChangePasswordScreen(): React.ReactElement {
 
         <Pressable
           accessibilityRole="button"
+          accessibilityState={{ disabled: isSaving }}
+          disabled={isSaving}
+          onBlur={() => setFocusedKey(null)}
+          onFocus={() => setFocusedKey("show")}
           onPress={() => setShowPasswords((current) => !current)}
-          style={({ pressed }) => [styles.showRow, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.showRow,
+            pressed && !isSaving && styles.pressed,
+            isSaving && styles.showRowDisabled,
+            focusedKey === "show" && !isSaving && interaction.focusRing,
+          ]}
         >
           <MaterialCommunityIcons color={colors.textSecondary} name={showPasswords ? "eye-off-outline" : "eye-outline"} size={18} />
           <Text style={styles.showText}>{showPasswords ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}</Text>
@@ -211,6 +249,10 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.error,
       borderWidth: 2,
     },
+    inputShellFocused: {
+      borderColor: colors.focus,
+      borderWidth: stateTokens.focusWidth,
+    },
     keyboard: {
       flex: 1,
     },
@@ -240,6 +282,9 @@ function createStyles(colors: ThemeColors) {
       alignItems: "center",
       flexDirection: "row",
       gap: spacing.compact,
+    },
+    showRowDisabled: {
+      opacity: stateTokens.disabledOpacity,
     },
     showText: {
       color: colors.textSecondary,

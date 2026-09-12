@@ -1,8 +1,9 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
+import { stateInteraction } from "./state/pressable"
 
 type ButtonVariant = "primary" | "secondary" | "danger"
 
@@ -39,6 +40,8 @@ export function PrimaryButton({
 }: PrimaryButtonProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(), [])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
   const isDisabled = disabled || loading || success
   const displayedLabel = success ? "Tersimpan" : loading ? "Menyimpan..." : label
   const palette = variantStyles(colors)[variant]
@@ -49,6 +52,8 @@ export function PrimaryButton({
       accessibilityRole="button"
       accessibilityState={{ busy: loading, disabled: isDisabled }}
       disabled={isDisabled}
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
       onPress={onPress}
       style={({ pressed, hovered }) => [
         styles.button,
@@ -58,6 +63,7 @@ export function PrimaryButton({
         variant === "primary" && styles.primaryShadow,
         pressed && styles.pressed,
         isDisabled && styles.disabled,
+        focused && !isDisabled && interaction.focusRing,
       ]}
     >
       <View style={styles.content}>
@@ -86,7 +92,7 @@ function createStyles() {
       justifyContent: "center",
     },
     disabled: {
-      opacity: 0.55,
+      opacity: stateTokens.disabledOpacity,
     },
     hovered: {
       opacity: 0.92,

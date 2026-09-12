@@ -7,8 +7,9 @@ import type { BudgetsMap } from "../features/budgets/types"
 import { selectBalance } from "../features/transactions/selectors"
 import type { Transaction } from "../features/transactions/types"
 import { EXPENSE_CATEGORY_OPTIONS } from "../features/transactions/types"
-import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
 import { formatCompactCurrency, formatCurrency } from "../utils/currency"
+import { stateInteraction } from "./state/pressable"
 
 const SLIDER_MIN = 0
 const SLIDER_MAX = 3_000_000
@@ -36,6 +37,8 @@ type AlokasiSheetProps = {
 export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, onClose, onSave }: AlokasiSheetProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedChip, setFocusedChip] = useState<string | null>(null)
   const [draft, setDraft] = useState<BudgetsMap>(budgets)
   const [opened, setOpened] = useState(false)
   const [fadeValue] = useState(() => new Animated.Value(0))
@@ -174,6 +177,7 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
                     </Text>
                   </View>
                   <BudgetSlider
+                    disabled={busy}
                     label={`Ubah alokasi ${category}`}
                     onChange={(next) => setDraft((prev) => ({ ...prev, [category]: next }))}
                     value={amount}
@@ -196,8 +200,10 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
                       accessibilityLabel={`Tambah anggaran ${option.key}`}
                       accessibilityRole="button"
                       key={option.key}
+                      onBlur={() => setFocusedChip(null)}
+                      onFocus={() => setFocusedChip(option.key)}
                       onPress={() => setDraft((prev) => ({ ...prev, [option.key]: DEFAULT_NEW_BUDGET }))}
-                      style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+                      style={({ pressed }) => [styles.chip, pressed && styles.pressed, focusedChip === option.key && interaction.focusRing]}
                     >
                       <Text style={styles.chipText}>{option.key}</Text>
                     </Pressable>
@@ -216,7 +222,7 @@ export function AlokasiSheet({ visible, budgets, transactions, busy, saveError, 
               accessibilityRole="button"
               disabled={busy}
               onPress={onClose}
-              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed, busy && styles.disabled]}
             >
               <Text style={styles.cancelText}>Batal</Text>
             </Pressable>
@@ -250,11 +256,12 @@ type BudgetSliderProps = {
   readonly label: string
   readonly value: number
   readonly onChange: (next: number) => void
+  readonly disabled?: boolean
 }
 
 // Slider custom (PanResponder, tanpa dep native): ketuk atau geser track
 // untuk set nilai. 44px area sentuh (R-03), berfungsi di native dan web.
-function BudgetSlider({ label, value, onChange }: BudgetSliderProps): React.ReactElement {
+function BudgetSlider({ label, value, onChange, disabled = false }: BudgetSliderProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createSliderStyles(colors), [colors])
   const [trackWidth, setTrackWidth] = useState(0)
@@ -262,8 +269,8 @@ function BudgetSlider({ label, value, onChange }: BudgetSliderProps): React.Reac
   const responder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: () => !disabled,
         onPanResponderGrant: (event) => {
           setFromX(event.nativeEvent.locationX)
         },
@@ -272,7 +279,7 @@ function BudgetSlider({ label, value, onChange }: BudgetSliderProps): React.Reac
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setFromX stabil via state setter.
-    [trackWidth],
+    [trackWidth, disabled],
   )
 
   function setFromX(x: number): void {
@@ -290,9 +297,10 @@ function BudgetSlider({ label, value, onChange }: BudgetSliderProps): React.Reac
     <View
       accessibilityLabel={label}
       accessibilityRole="adjustable"
+      accessibilityState={{ disabled }}
       accessibilityValue={{ min: SLIDER_MIN, max: SLIDER_MAX, now: value }}
       onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
-      style={styles.hitArea}
+      style={[styles.hitArea, disabled && styles.disabled]}
       {...responder.panHandlers}
     >
       <View style={styles.track}>
@@ -370,7 +378,7 @@ function createStyles(colors: ThemeColors) {
       width: 32,
     },
     disabled: {
-      opacity: 0.6,
+      opacity: stateTokens.disabledOpacity,
     },
     error: {
       backgroundColor: colors.expenseSurface,
@@ -561,6 +569,9 @@ function createStyles(colors: ThemeColors) {
 
 function createSliderStyles(colors: ThemeColors) {
   return StyleSheet.create({
+    disabled: {
+      opacity: stateTokens.disabledOpacity,
+    },
     fill: {
       backgroundColor: colors.accent,
       borderRadius: 3,

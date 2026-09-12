@@ -7,6 +7,7 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native"
 import { EmptyState } from "../../src/components/EmptyState"
 import { ScreenShell } from "../../src/components/ScreenShell"
 import { SegmentedControl } from "../../src/components/SegmentedControl"
+import { stateInteraction } from "../../src/components/state/pressable"
 import { useAuth } from "../../src/features/auth/AuthProvider"
 import { useSettings } from "../../src/features/settings/SettingsProvider"
 import { fontFamilies, radii, shadows, spacing, themePreferenceOptions, typography, useThemeColors, type ThemeColors, type ThemePreference } from "../../src/theme"
@@ -34,6 +35,8 @@ export default function SettingsScreen(): React.ReactElement {
   const { hasBiometric, user, logout, profilePhoto } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [notificationsOn, setNotificationsOn] = useState(true)
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [themePickerVisible, setThemePickerVisible] = useState(false)
@@ -66,8 +69,10 @@ export default function SettingsScreen(): React.ReactElement {
       <Pressable
         accessibilityLabel="Profil pengguna"
         accessibilityRole="button"
+        onBlur={() => setFocusedKey(null)}
+        onFocus={() => setFocusedKey("profile")}
         onPress={() => router.push("/edit-profile")}
-        style={({ pressed }) => [styles.profileRow, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.profileRow, pressed && styles.pressed, focusedKey === "profile" && interaction.focusRing]}
       >
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
@@ -215,19 +220,31 @@ export default function SettingsScreen(): React.ReactElement {
               <Pressable
                 accessibilityLabel="Konfirmasi keluar"
                 accessibilityRole="button"
+                onBlur={() => setFocusedKey(null)}
+                onFocus={() => setFocusedKey("logout-confirm")}
                 onPress={() => {
                   setConfirmLogout(false)
                   void logout()
                 }}
-                style={({ pressed }) => [styles.modalActionPrimary, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.modalActionPrimary,
+                  pressed && styles.pressed,
+                  focusedKey === "logout-confirm" && interaction.focusRing,
+                ]}
               >
                 <Text style={styles.modalActionPrimaryText}>Keluar</Text>
               </Pressable>
               <Pressable
                 accessibilityLabel="Batal keluar"
                 accessibilityRole="button"
+                onBlur={() => setFocusedKey(null)}
+                onFocus={() => setFocusedKey("logout-cancel")}
                 onPress={() => setConfirmLogout(false)}
-                style={({ pressed }) => [styles.modalActionSecondary, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.modalActionSecondary,
+                  pressed && styles.pressed,
+                  focusedKey === "logout-cancel" && interaction.focusRing,
+                ]}
               >
                 <Text style={styles.modalActionSecondaryText}>Batal</Text>
               </Pressable>
@@ -262,8 +279,14 @@ export default function SettingsScreen(): React.ReactElement {
               <Pressable
                 accessibilityLabel="Tutup pilihan tema"
                 accessibilityRole="button"
+                onBlur={() => setFocusedKey(null)}
+                onFocus={() => setFocusedKey("theme-close")}
                 onPress={() => setThemePickerVisible(false)}
-                style={({ pressed }) => [styles.modalActionSecondary, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.modalActionSecondary,
+                  pressed && styles.pressed,
+                  focusedKey === "theme-close" && interaction.focusRing,
+                ]}
               >
                 <Text style={styles.modalActionSecondaryText}>Tutup</Text>
               </Pressable>
@@ -289,6 +312,8 @@ type MenuRowProps = {
 function MenuRow({ accessibilityHint, icon, iconTone, label, subtitle, danger, trailing, onPress }: MenuRowProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
   const circleBackground = iconTone === "danger" ? colors.expenseSurface : iconTone === "muted" ? colors.tint : colors.accentSurface
   const iconColor = danger ? colors.error : iconTone === "muted" ? colors.textPrimary : colors.accent
 
@@ -298,8 +323,10 @@ function MenuRow({ accessibilityHint, icon, iconTone, label, subtitle, danger, t
       accessibilityLabel={label}
       accessibilityRole={onPress === undefined ? undefined : "button"}
       disabled={onPress === undefined}
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed, focused && onPress !== undefined && interaction.focusRing]}
     >
       <View style={[styles.iconCircle, { backgroundColor: circleBackground }]}>
         <MaterialCommunityIcons color={iconColor} name={icon} size={20} />
@@ -322,14 +349,18 @@ type ToggleSwitchProps = {
 function ToggleSwitch({ checked, label, onChange }: ToggleSwitchProps): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focused, setFocused] = useState(false)
 
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="switch"
       accessibilityState={{ checked }}
+      onBlur={() => setFocused(false)}
+      onFocus={() => setFocused(true)}
       onPress={() => onChange(!checked)}
-      style={({ pressed }) => pressed && styles.pressed}
+      style={({ pressed }) => [pressed && styles.pressed, focused && interaction.focusRing]}
     >
       <View style={[styles.toggleTrack, checked && { backgroundColor: colors.accent }]}>
         <View style={[styles.toggleKnob, checked && styles.toggleKnobOn]} />

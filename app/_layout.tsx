@@ -119,7 +119,6 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
                   <Stack.Screen name="change-password" options={{ animation: "slide_from_right" as const }} />
                   <Stack.Screen name="onboarding" options={{ animation: "fade" as const }} />
                   <Stack.Screen name="transaction/[id]" />
-                  <Stack.Screen name="showcase" />
                 </Stack>
             </BudgetsProvider>
           </TransactionsProvider>

@@ -7,8 +7,9 @@ import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, Tex
 
 import { PrimaryButton } from "../src/components/PrimaryButton"
 import { ScreenShell } from "../src/components/ScreenShell"
+import { stateInteraction } from "../src/components/state/pressable"
 import { useAuth } from "../src/features/auth/AuthProvider"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 
 type PickedAsset = { readonly uri: string; readonly mimeType?: string | null }
 
@@ -65,6 +66,8 @@ export default function EditProfileScreen(): React.ReactElement {
   const { profilePhoto, updatePhoto, updateProfile, user } = useAuth()
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const interaction = useMemo(() => stateInteraction(colors), [colors])
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [name, setName] = useState(user?.name ?? "")
   const [nameError, setNameError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -127,8 +130,10 @@ export default function EditProfileScreen(): React.ReactElement {
             accessibilityLabel="Kembali"
             accessibilityRole="button"
             hitSlop={10}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("back")}
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed, focusedKey === "back" && interaction.focusRing]}
           >
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
@@ -148,9 +153,17 @@ export default function EditProfileScreen(): React.ReactElement {
           </View>
           <Pressable
             accessibilityRole="button"
-            disabled={isPicking}
+            accessibilityState={{ busy: isPicking, disabled: isPicking || isSaving }}
+            disabled={isPicking || isSaving}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("photo")}
             onPress={() => void handlePickPhoto()}
-            style={({ pressed }) => [styles.photoButton, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.photoButton,
+              pressed && !(isPicking || isSaving) && styles.pressed,
+              (isPicking || isSaving) && styles.photoButtonDisabled,
+              focusedKey === "photo" && !(isPicking || isSaving) && interaction.focusRing,
+            ]}
           >
             <MaterialCommunityIcons color={colors.textPrimary} name="camera-outline" size={18} />
             <Text style={styles.photoButtonText}>{isPicking ? "Memilih foto..." : "Ganti Foto"}</Text>
@@ -160,11 +173,15 @@ export default function EditProfileScreen(): React.ReactElement {
         {/* Nama */}
         <View style={styles.field}>
           <Text style={styles.label}>Nama</Text>
-          <View style={[styles.inputShell, nameError !== null && styles.inputShellError]}>
+          <View
+            style={[styles.inputShell, focusedKey === "name" && styles.inputShellFocused, nameError !== null && styles.inputShellError]}
+          >
             <TextInput
               accessibilityLabel="Nama"
               autoCapitalize="words"
               editable={!isSaving}
+              onBlur={() => setFocusedKey(null)}
+              onFocus={() => setFocusedKey("name")}
               onChangeText={(value) => {
                 setName(value)
                 setNameError(null)
@@ -272,6 +289,10 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.error,
       borderWidth: 2,
     },
+    inputShellFocused: {
+      borderColor: colors.focus,
+      borderWidth: stateTokens.focusWidth,
+    },
     keyboard: {
       flex: 1,
     },
@@ -304,6 +325,9 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
       minHeight: 44,
       paddingHorizontal: spacing.lg,
+    },
+    photoButtonDisabled: {
+      opacity: stateTokens.disabledOpacity,
     },
     photoButtonText: {
       color: colors.textPrimary,
