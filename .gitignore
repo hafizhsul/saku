@@ -45,6 +45,7 @@ server/.env
 # Tooling & test artifacts
 coverage/
 .omo/
+.omp/
 .freebuff/
 .codegraph/
 output/
