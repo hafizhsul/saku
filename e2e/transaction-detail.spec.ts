@@ -9,7 +9,7 @@ test("detail transaksi menampilkan informasi dan bisa diedit", async ({ page }) 
   // Buka detail dari baris transaksi terbaru di Beranda.
   await page.getByText("Ojek ke kantor", { exact: true }).click()
   await expect(page.getByText("Detail Transaksi", { exact: true })).toBeVisible()
-  await expect(page.getByLabel(/Pengeluaran, - Rp 25\.000/)).toBeVisible()
+  await expect(page.getByLabel(/Pengeluaran, - Rp 25\.000/).last()).toBeVisible()
   // Kategori default "Makan & Minum" (home tersembunyi juga punya baris kategori, jadi .last()).
   await expect(page.getByText("Makan & Minum", { exact: true }).last()).toBeVisible()
   // Catatan muncul di baris detail (home yang tersembunyi ikut ter-mount, jadi .last()).
@@ -25,7 +25,7 @@ test("detail transaksi menampilkan informasi dan bisa diedit", async ({ page }) 
 
   // Kembali ke detail: nilai baru tampil.
   await expect(page.getByLabel("Nominal transaksi", { exact: true })).toBeHidden({ timeout: 30_000 })
-  await expect(page.getByLabel(/Pengeluaran, - Rp 30\.000/)).toBeVisible()
+  await expect(page.getByLabel(/Pengeluaran, - Rp 30\.000/).last()).toBeVisible()
   await expect(page.getByText("Ojek ke kantor (revisi)", { exact: true }).last()).toBeVisible()
 })
 
