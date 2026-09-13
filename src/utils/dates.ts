@@ -121,3 +121,33 @@ export function formatAmountInput(value: string): string {
   const amount = parseAmountInput(value)
   return amount === null ? "" : new Intl.NumberFormat("id-ID").format(amount)
 }
+
+export function formatNativeDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+export function parseNativeDate(value: string): Date | null {
+  const parts = value.split("-").map(Number)
+  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
+    return null
+  }
+
+  const [year, month, day] = parts
+  if (year === undefined || month === undefined || day === undefined || year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null
+  }
+
+  const date = new Date(year, month - 1, day)
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
+}
+
+export function chunkRows<T>(items: readonly T[], size: number): T[][] {
+  const rows: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size))
+  }
+  return rows
+}

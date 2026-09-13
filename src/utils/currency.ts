@@ -1,4 +1,4 @@
-import type { TransactionType } from "@/features/transactions/types"
+import type { TransactionType } from "../features/transactions/types"
 
 const rupiahNumberFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,

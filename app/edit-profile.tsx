@@ -138,6 +138,7 @@ export default function EditProfileScreen(): React.ReactElement {
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
           <Text style={styles.headerTitle}>Edit Profil</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Foto profil */}
@@ -237,10 +238,12 @@ function createStyles(colors: ThemeColors) {
     },
     backButton: {
       alignItems: "center",
-      borderRadius: radii.sm,
+      backgroundColor: colors.surface,
+      borderRadius: radii.pill,
       height: 40,
       justifyContent: "center",
       width: 40,
+      ...shadows.card,
     },
     content: {
       gap: spacing.section,
@@ -260,12 +263,17 @@ function createStyles(colors: ThemeColors) {
       flexDirection: "row",
       gap: spacing.sm,
     },
+    headerSpacer: {
+      width: 40,
+    },
     headerTitle: {
       color: colors.textPrimary,
+      flex: 1,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.heading.fontSize,
+      fontSize: typography.bodyLarge.fontSize,
       fontWeight: "600",
-      lineHeight: typography.heading.lineHeight,
+      lineHeight: typography.bodyLarge.lineHeight,
+      textAlign: "center",
     },
     input: {
       color: colors.textPrimary,
@@ -277,13 +285,12 @@ function createStyles(colors: ThemeColors) {
     },
     inputShell: {
       alignItems: "center",
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
+      backgroundColor: colors.authCard,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       minHeight: 56,
       paddingHorizontal: spacing.lg,
+      ...shadows.card,
     },
     inputShellError: {
       borderColor: colors.error,
@@ -317,14 +324,14 @@ function createStyles(colors: ThemeColors) {
     },
     photoButton: {
       alignItems: "center",
-      borderColor: colors.borderStrong,
+      backgroundColor: colors.surface,
       borderRadius: radii.pill,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.compact,
       justifyContent: "center",
       minHeight: 44,
       paddingHorizontal: spacing.lg,
+      ...shadows.card,
     },
     photoButtonDisabled: {
       opacity: stateTokens.disabledOpacity,

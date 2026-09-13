@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useAuth } from "../../features/auth/AuthProvider"
 import { useThemeColors } from "../../theme"
-import { AUTH_BRAND, createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
+import { createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
 
 type LoginFormProps = {
   readonly onSwitchToRegister: () => void
@@ -71,7 +71,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
   }
 
   function handleForgotPassword(): void {
-    showNotice("Pemulihan kata sandi belum tersedia. Hubungi dukungan atau gunakan biometrik untuk masuk.")
+    showNotice("Pemulihan kata sandi segera hadir. Gunakan biometrik untuk masuk.")
   }
 
   async function handleBiometricPress(): Promise<void> {
@@ -192,7 +192,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
                   onPress={handleForgotPassword}
                   style={({ pressed }) => pressed && styles.pressed}
                 >
-                  <Text style={styles.forgotText}>Lupa sandi?</Text>
+                  <Text style={styles.forgotText}>Lupa sandi? (Segera hadir)</Text>
                 </Pressable>
               </View>
             </View>
@@ -206,9 +206,9 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
               onPress={() => void handleSubmit()}
               style={({ pressed }) => [styles.primaryButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed, submitFocused && !isSubmitting && styles.focusRing]}
             >
-              {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
+              {isSubmitting ? <ActivityIndicator color={colors.onAccent} size="small" /> : null}
               <Text style={styles.primaryButtonText}>{isSubmitting ? "Memproses..." : "Masuk ke Akun"}</Text>
-              {isSubmitting ? null : <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={16} />}
+              {isSubmitting ? null : <MaterialCommunityIcons color={colors.onAccent} name="arrow-right" size={16} />}
             </Pressable>
           </View>
 
@@ -226,7 +226,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
             onPress={() => void handleBiometricPress()}
             style={({ pressed }) => [styles.biometricButton, pressed && styles.pressed]}
           >
-            <MaterialCommunityIcons color={AUTH_BRAND} name="fingerprint" size={20} />
+            <MaterialCommunityIcons color={colors.accent} name="fingerprint" size={20} />
             <Text style={styles.biometricText}>Masuk dengan Biometrik</Text>
           </Pressable>
 
@@ -239,7 +239,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
               </Text>
             </Text>
             <View style={styles.securityBadge}>
-              <MaterialCommunityIcons color={AUTH_BRAND} name="shield-check" size={14} />
+              <MaterialCommunityIcons color={colors.accent} name="shield-check" size={14} />
               <Text style={styles.securityText}>Data tersimpan aman di perangkat ini</Text>
             </View>
           </View>

@@ -10,14 +10,13 @@ import { ScreenShell } from "../../src/components/ScreenShell"
 import { DetailSkeleton } from "../../src/components/state/skeletons/DetailSkeleton"
 import { ErrorState } from "../../src/components/state/ErrorState"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
+import { selectBudgetImpact } from "../../src/features/transactions/selectors"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatCurrency, formatSignedCurrency } from "../../src/utils/currency"
 import { formatTimeOfDay, formatTransactionDate, toMonthKey } from "../../src/utils/dates"
 
-// Aksen Stitch: emerald saat Pemasukan, crimson saat Pengeluaran.
-const INCOME_ACCENT = "#006B50"
-const EXPENSE_ACCENT = "#c0263e"
+// Aksen mengikuti tipe via token tema (income/expense) agar ikut mode (R-34).
 
 export default function TransactionDetailScreen(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string | string[] }>()
@@ -30,20 +29,11 @@ export default function TransactionDetailScreen(): React.ReactElement {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // Dampak anggaran dihitung nyata dari budget + total belanja kategori bulan ini.
   const budgetImpact = useMemo(() => {
     if (transaction === undefined || transaction.type !== "expense") {
       return null
     }
-    const budget = budgets[transaction.category] ?? 0
-    if (budget <= 0) {
-      return null
-    }
-    const month = toMonthKey(new Date(transaction.date))
-    const spent = transactions
-      .filter((item) => item.type === "expense" && item.category === transaction.category && toMonthKey(new Date(item.date)) === month)
-      .reduce((total, item) => total + item.amount, 0)
-    return { budget, spent, percent: Math.min(100, Math.round((spent / budget) * 100)), rest: Math.max(0, budget - spent) }
+    return selectBudgetImpact(transactions, transaction.category, toMonthKey(new Date(transaction.date)), budgets)
   }, [budgets, transaction, transactions])
 
   async function handleDelete(): Promise<void> {
@@ -92,7 +82,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
   }
 
   const isIncome = transaction.type === "income"
-  const accent = isIncome ? INCOME_ACCENT : EXPENSE_ACCENT
+  const accent = isIncome ? colors.income : colors.expense
   const typeLabel = isIncome ? "Pemasukan" : "Pengeluaran"
   const busy = saveState === "saving"
 
@@ -107,7 +97,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
           <Text style={styles.statusPillText}>Transaksi Berhasil</Text>
         </View>
         <View style={[styles.heroIcon, { backgroundColor: accent }]}>
-          <MaterialCommunityIcons color="#FFFFFF" name={getCategoryIconName(transaction.category)} size={28} />
+          <MaterialCommunityIcons color={colors.onAccent} name={getCategoryIconName(transaction.category)} size={28} />
         </View>
         <Text numberOfLines={2} style={styles.heroTitle}>
           {transaction.note ?? transaction.category}
@@ -153,7 +143,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
           <Text style={styles.fieldLabel}>Kategori Pos</Text>
           <View style={styles.sakuValue}>
             <View style={[styles.sakuWell, { backgroundColor: accent }]}>
-              <MaterialCommunityIcons color="#FFFFFF" name={getCategoryIconName(transaction.category)} size={14} />
+              <MaterialCommunityIcons color={colors.onAccent} name={getCategoryIconName(transaction.category)} size={14} />
             </View>
             <Text style={styles.fieldValue}>{transaction.category}</Text>
           </View>
@@ -201,7 +191,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
               pressed && styles.pressed,
             ]}
           >
-            <MaterialCommunityIcons color="#FFFFFF" name="pencil-outline" size={20} />
+            <MaterialCommunityIcons color={colors.onAccent} name="pencil-outline" size={20} />
             <Text style={styles.actionPrimaryText}>Edit Transaksi</Text>
           </Pressable>
           <Pressable
@@ -266,7 +256,7 @@ function createStyles(colors: ThemeColors) {
     },
     actionPrimary: {
       alignItems: "center",
-      backgroundColor: INCOME_ACCENT,
+      backgroundColor: colors.income,
       borderRadius: radii.lg,
       flexDirection: "row",
       gap: spacing.compact,
@@ -275,7 +265,7 @@ function createStyles(colors: ThemeColors) {
       ...shadows.elevated,
     },
     actionPrimaryText: {
-      color: "#FFFFFF",
+      color: colors.onAccent,
       fontFamily: fontFamilies.bold,
       fontSize: 14,
       fontWeight: "700",
@@ -286,9 +276,7 @@ function createStyles(colors: ThemeColors) {
     backButton: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: radii.pill,
-      borderWidth: 1,
       height: 40,
       justifyContent: "center",
       width: 40,

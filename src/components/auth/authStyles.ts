@@ -3,18 +3,8 @@ import { StyleSheet } from "react-native"
 import { darkColors, fontFamilies, radii, spacing, stateTokens, typography, type ThemeColors } from "../../theme"
 import { stateInteraction } from "../state/pressable"
 
-// Token disalin dari layar Stitch "Masuk ke Akun - Saku" (brand 700 #006B50,
-// surface #F8FAF9, border #E4EBE7, muted #64748B, dark #121826). Register
-// memakai token yang sama persis agar parity terjaga.
-export const AUTH_BRAND = "#006B50"
-export const AUTH_BRAND_DARK = "#00543E"
-export const AUTH_BRAND_TEXT = "#FFFFFF"
-const AUTH_SURFACE = "#F8FAF9"
-const AUTH_CARD = "#FFFFFF"
-const AUTH_OUTLINE = "#E4EBE7"
-const AUTH_MUTED = "#64748B"
-const AUTH_DARK = "#121826"
-const AUTH_BRAND_SOFT = "#ECFDF5"
+// Warna auth hidup di src/theme (auth* + slate*): light mengikuti Stitch,
+// dark memakai turunan surface/teks agar tidak pecah (R-34).
 
 export function isDarkTheme(colors: ThemeColors): boolean {
   return colors.canvas === darkColors.canvas
@@ -22,16 +12,17 @@ export function isDarkTheme(colors: ThemeColors): boolean {
 
 export type AuthStyles = ReturnType<typeof createAuthStyles>
 
-export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
-  const inputBg = isDark ? colors.surface : AUTH_CARD
-  const outline = isDark ? colors.border : AUTH_OUTLINE
-  const textSecondaryColor = isDark ? colors.textSecondary : AUTH_MUTED
-  const titleColor = isDark ? colors.textPrimary : AUTH_DARK
+export function createAuthStyles(colors: ThemeColors, _isDark: boolean) {
+  // Cabang isDark dihapus: token auth* sudah berpasangan light/dark (R-34).
+  const inputBg = colors.authCard
+  const outline = colors.authOutline
+  const textSecondaryColor = colors.authMuted
+  const titleColor = colors.authTitle
 
   return StyleSheet.create({
     focusRing: stateInteraction(colors).focusRing,
     ambientLeft: {
-      backgroundColor: "#10B981",
+      backgroundColor: colors.accent,
       borderRadius: 160,
       bottom: -120,
       height: 320,
@@ -41,7 +32,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       width: 320,
     },
     ambientRight: {
-      backgroundColor: AUTH_BRAND,
+      backgroundColor: colors.accent,
       borderRadius: 160,
       height: 320,
       opacity: 0.08,
@@ -52,8 +43,8 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     backButton: {
       alignItems: "center",
-      backgroundColor: AUTH_CARD,
-      borderColor: AUTH_OUTLINE,
+      backgroundColor: colors.authCard,
+      borderColor: colors.authOutline,
       borderRadius: 999,
       borderWidth: 1,
       height: 44,
@@ -62,7 +53,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     biometricButton: {
       alignItems: "center",
-      backgroundColor: AUTH_CARD,
+      backgroundColor: colors.authCard,
       borderColor: outline,
       borderRadius: radii.lg,
       borderWidth: 1,
@@ -107,7 +98,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     checkbox: {
       alignItems: "center",
-      borderColor: AUTH_OUTLINE,
+      borderColor: colors.authOutline,
       borderRadius: 6,
       borderWidth: 1,
       height: 18,
@@ -115,8 +106,8 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       width: 18,
     },
     checkboxChecked: {
-      backgroundColor: AUTH_BRAND,
-      borderColor: AUTH_BRAND,
+      backgroundColor: colors.accent,
+      borderColor: colors.accent,
     },
     content: {
       alignItems: "stretch",
@@ -132,12 +123,12 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       paddingVertical: spacing.sm,
     },
     dividerLine: {
-      backgroundColor: "#E5E7EB",
+      backgroundColor: colors.border,
       flex: 1,
       height: StyleSheet.hairlineWidth,
     },
     dividerText: {
-      color: "#9CA3AF",
+      color: colors.textTertiary,
       fontFamily: fontFamilies.medium,
       fontSize: 12,
       fontWeight: "500",
@@ -145,8 +136,8 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     errorBanner: {
       alignItems: "center",
-      backgroundColor: isDark ? colors.expenseSurface : "#FFEDEB",
-      borderColor: isDark ? colors.expense : "#FFC7C1",
+      backgroundColor: colors.expenseSurface,
+      borderColor: colors.expense,
       borderRadius: radii.lg,
       borderWidth: 1,
       flexDirection: "row",
@@ -180,7 +171,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       marginTop: spacing.sm,
     },
     footerLink: {
-      color: AUTH_BRAND,
+      color: colors.accent,
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
@@ -197,7 +188,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       paddingTop: spacing.xs,
     },
     forgotText: {
-      color: AUTH_BRAND,
+      color: colors.accent,
       fontFamily: fontFamilies.semibold,
       fontSize: 12,
       fontWeight: "600",
@@ -224,14 +215,14 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     registerButton: {
       alignItems: "center",
-      backgroundColor: AUTH_BRAND,
+      backgroundColor: colors.accent,
       borderRadius: radii.lg,
       elevation: 6,
       flexDirection: "row",
       gap: spacing.compact,
       justifyContent: "center",
       minHeight: 48,
-      shadowColor: AUTH_BRAND,
+      shadowColor: colors.accent,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.35,
       shadowRadius: 20,
@@ -336,8 +327,8 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     pill: {
       alignItems: "center",
-      backgroundColor: AUTH_BRAND_SOFT,
-      borderColor: "#A7F3D0",
+      backgroundColor: colors.authSoft,
+      borderColor: colors.accentSurface,
       borderRadius: 999,
       borderWidth: 1,
       flexDirection: "row",
@@ -346,13 +337,13 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       paddingVertical: 2,
     },
     pillDot: {
-      backgroundColor: AUTH_BRAND,
+      backgroundColor: colors.accent,
       borderRadius: 3,
       height: 6,
       width: 6,
     },
     pillText: {
-      color: AUTH_BRAND,
+      color: colors.accent,
       fontFamily: fontFamilies.bold,
       fontSize: 11,
       fontWeight: "700",
@@ -363,14 +354,14 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
     },
     primaryButton: {
       alignItems: "center",
-      backgroundColor: AUTH_BRAND,
+      backgroundColor: colors.accent,
       borderRadius: radii.lg,
       elevation: 6,
       flexDirection: "row",
       gap: spacing.compact,
       justifyContent: "center",
       minHeight: 56,
-      shadowColor: AUTH_BRAND,
+      shadowColor: colors.accent,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.35,
       shadowRadius: 20,
@@ -379,21 +370,21 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       opacity: stateTokens.disabledOpacity,
     },
     primaryButtonText: {
-      color: AUTH_BRAND_TEXT,
+      color: colors.onAccent,
       fontFamily: fontFamilies.semibold,
       fontSize: 15,
       fontWeight: "600",
       lineHeight: 22,
     },
     root: {
-      backgroundColor: isDark ? colors.canvas : AUTH_SURFACE,
+      backgroundColor: colors.authSurface,
       flex: 1,
       overflow: "hidden",
     },
     securityBadge: {
       alignItems: "center",
-      backgroundColor: "rgba(255,255,255,0.7)",
-      borderColor: "#D1FAE5",
+      backgroundColor: colors.authCard,
+      borderColor: colors.accentSurface,
       borderRadius: 999,
       borderWidth: 1,
       flexDirection: "row",
@@ -433,7 +424,7 @@ export function createAuthStyles(colors: ThemeColors, isDark: boolean) {
       lineHeight: 18,
     },
     termsLink: {
-      color: AUTH_BRAND,
+      color: colors.accent,
       fontFamily: fontFamilies.semibold,
       fontWeight: "600",
     },

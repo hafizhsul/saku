@@ -42,7 +42,7 @@ export function CategoryBreakdown({ items }: CategoryBreakdownProps): React.Reac
       </View>
       {items.length === 0 ? (
         <EmptyState
-          description="Kategori akan muncul setelah kamu mencatat pengeluaran."
+          description="Kategori akan muncul setelah Anda mencatat pengeluaran."
           icon="chart-donut"
           title="Belum ada pengeluaran bulan ini"
         />

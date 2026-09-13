@@ -18,10 +18,10 @@ async function openOnboarding(page: import("@playwright/test").Page): Promise<vo
 test("onboarding selesai membawa ke Beranda dan tidak tampil lagi", async ({ page }) => {
   await openOnboarding(page)
 
-  await page.getByRole("button", { name: "Lanjutkan" }).click()
+  await page.getByRole("button", { name: "Lanjut ke Saku" }).click()
   await expect(page.getByText("Ketahui Kemana Setiap Rupiah Mengalir", { exact: true })).toBeVisible()
 
-  await page.getByRole("button", { name: "Mulai Sekarang" }).click()
+  await page.getByRole("button", { name: "Mulai catat" }).click()
 
   // Beranda dengan aksi utama tambah transaksi.
   await expect(page.getByRole("button", { name: "Tambah transaksi" })).toBeVisible({ timeout: 120_000 })

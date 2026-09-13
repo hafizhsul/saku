@@ -9,6 +9,7 @@ import { DataState } from "../../src/components/state/DataState"
 import { TransactionsSkeleton } from "../../src/components/state/skeletons/TransactionsSkeleton"
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import {
+  selectMonthlyTotals,
   selectRecentTransactions,
   selectTransactionsByQuery,
   selectTransactionsByType,
@@ -54,27 +55,7 @@ export default function TransactionsScreen(): React.ReactElement {
 
   const groups = useMemo(() => groupByDay(filteredTransactions), [filteredTransactions])
 
-  // Ringkasan bulan berjalan dihitung nyata (bukan angka statis).
-  const monthlySummary = useMemo(() => {
-    const month = toMonthKey(new Date())
-    let incomeTotal = 0
-    let incomeCount = 0
-    let expenseTotal = 0
-    let expenseCount = 0
-    for (const transaction of transactions) {
-      if (toMonthKey(new Date(transaction.date)) !== month) {
-        continue
-      }
-      if (transaction.type === "income") {
-        incomeTotal += transaction.amount
-        incomeCount += 1
-      } else {
-        expenseTotal += transaction.amount
-        expenseCount += 1
-      }
-    }
-    return { expenseCount, expenseTotal, incomeCount, incomeTotal }
-  }, [transactions])
+  const monthlySummary = useMemo(() => selectMonthlyTotals(transactions, toMonthKey(new Date())), [transactions])
 
   return (
     <ScreenShell>
@@ -84,7 +65,7 @@ export default function TransactionsScreen(): React.ReactElement {
           accessibilityLabel="Cari transaksi"
           autoCorrect={false}
           onChangeText={setQuery}
-          placeholder="Cari transaksi..."
+          placeholder="Cari kategori atau catatan..."
           placeholderTextColor={colors.textTertiary}
           style={styles.searchInput}
           value={query}
@@ -147,7 +128,7 @@ export default function TransactionsScreen(): React.ReactElement {
             description={
               hasActiveFilters
                 ? "Tidak ada transaksi yang cocok dengan pencarian atau filter ini."
-                : "Catatan yang kamu tambahkan akan muncul di sini."
+                : "Catatan yang Anda tambahkan akan muncul di sini."
             }
             icon={hasActiveFilters ? "magnify-close" : "receipt-text-outline"}
             onAction={
@@ -276,7 +257,7 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
     },
     chipLabelActive: {
-      color: "#FFFFFF",
+      color: colors.onAccent,
     },
     clearButton: {
       alignItems: "center",

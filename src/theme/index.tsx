@@ -36,6 +36,27 @@ export const lightColors = {
   chartBar: "#cee8df",
   chartToday: "#00503b",
   chartSaturday: "#ffdad6",
+  // Auth mengikuti Stitch di light; dark memakai turunan surface/teks.
+  authSurface: "#F8FAF9",
+  authCard: "#FFFFFF",
+  authOutline: "#E4EBE7",
+  authMuted: "#64748B",
+  authTitle: "#121826",
+  authSoft: "#ECFDF5",
+  // Kuning peringatan: teks di atas soft lolos AA di kedua mode.
+  warningSoft: "#FEF3C7",
+  warningText: "#92400E",
+  warningBorder: "#F59E0B",
+  // Abu slate ala referensi form (ganti textSecondary bila butuh kontras AA).
+  slateIcon: "#64748B",
+  slateText: "#1e293b",
+  slateSubtle: "#475569",
+  // Teks di atas fill aksen (putih di light, hijau-hitam di dark).
+  onAccent: "#FFFFFF",
+  // Error di atas hero emerald/crimson.
+  errorOnHero: "#FFD9D4",
+  // Track segmen: kontras label nonaktif vs track lolos AA.
+  segmentTrack: "rgba(219, 232, 226, 0.5)",
 } as const
 
 export const darkColors = {
@@ -70,6 +91,22 @@ export const darkColors = {
   chartBar: "#2C3A35",
   chartToday: "#7FC19B",
   chartSaturday: "#5A2E28",
+  // Auth dark memakai surface/teks agar tidak pecah (R-34).
+  authSurface: "#16181A",
+  authCard: "#1F2226",
+  authOutline: "#31363B",
+  authMuted: "#C3C9CD",
+  authTitle: "#F2F4F3",
+  authSoft: "#1F3228",
+  warningSoft: "#3A2E12",
+  warningText: "#EBC07A",
+  warningBorder: "#8A6A2B",
+  slateIcon: "#8E969C",
+  slateText: "#F2F4F3",
+  slateSubtle: "#C3C9CD",
+  onAccent: "#10241A",
+  errorOnHero: "#FFD9D4",
+  segmentTrack: "#262A2F",
 } as const
 
 export type ThemeColors = { readonly [Key in keyof typeof lightColors]: string }
@@ -162,10 +199,14 @@ export const shadows = {
   },
 } as const
 
+// Dial MOTION 1 (calm): hanya denyut lock-screen (1400ms, hormat reduced
+// motion) + tekan-skala 0.98 sebagai umpan balik fisik. Tanpa scroll-reveal,
+// parallax, atau loop dekoratif (R-19).
 export const motion = {
   micro: 150,
   standard: 250,
   emphasis: 400,
+  lockPulse: 1400,
 } as const
 
 export const stateTokens = {

@@ -12,16 +12,16 @@ const BAR_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
 const slides = [
   {
-    badge: "Keuangan Pintar & Mudah",
+    badge: "Catat dalam 10 detik",
     title: "Atur Gaji & Pos Pengeluaran Tanpa Ribet",
     copy: "Pisahkan anggaran belanja, tabungan, dan kebutuhan harian ke dalam kantong digital otomatis yang disiplin.",
-    cta: "Lanjutkan",
+    cta: "Lanjut ke Saku",
   },
   {
-    badge: "Analisis Cerdas & Akurat",
+    badge: "Ringkasan bulanan nyata",
     title: "Ketahui Kemana Setiap Rupiah Mengalir",
     copy: "Pantau tren pengeluaran harian dan dapatkan notifikasi cerdas sebelum kuota anggaran bulananmu terlampaui.",
-    cta: "Mulai Sekarang",
+    cta: "Mulai catat",
   },
 ] as const
 
@@ -117,6 +117,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps): Rea
             disabled={busy}
             hitSlop={10}
             onPress={() => void finish()}
+            style={styles.loginPress}
           >
             <Text style={styles.loginLink}>Masuk</Text>
           </Pressable>
@@ -126,8 +127,11 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps): Rea
   )
 }
 
-// Hero slide 1 ala Stitch: kartu emerald miring + kartu putih Makan & Minum
-// + pill hemat melayang + lencana perisai + pill Otomatis + ring geometri.
+// Hero slide 1 ala Stitch. Alasan visual (R-31): kartu miring = "kantong"
+// (motif identitas Saku, dipakai ulang di kartu hero semua layar); ring
+// geometri = orbit kedisiplinan; ikon generik (creation/contactless/
+// trending-up/shield-check) hanya penanda posisi mockup contoh, bukan klaim
+// fitur — teks klaim sudah dinetralkan (DATA LOKAL, Contoh).
 function WalletHero(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -201,8 +205,8 @@ function WalletHero(): React.ReactElement {
       <View style={styles.shieldBadge}>
         <MaterialCommunityIcons color={colors.accent} name="shield-check" size={20} />
         <View>
-          <Text style={styles.shieldTitle}>TERLINDUNGI</Text>
-          <Text style={styles.shieldSub}>Enkripsi 256-Bit</Text>
+          <Text style={styles.shieldTitle}>DATA LOKAL</Text>
+          <Text style={styles.shieldSub}>Tersimpan di perangkat ini</Text>
         </View>
       </View>
 
@@ -214,8 +218,9 @@ function WalletHero(): React.ReactElement {
   )
 }
 
-// Hero slide 2 ala Stitch: kartu emerald miring (panel grafik + garis batas
-// putus-putus) + pill status menumpuk kanan-atas + kartu kuota menumpuk bawah.
+// Hero slide 2 ala Stitch. Alasan visual (R-31): panel grafik = pratinjau
+// isi Analisis; garis batas putus = "batas anggaran"; pill menumpuk =
+// contoh status kuota (bukan data nyata).
 function CashflowHero(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -234,7 +239,7 @@ function CashflowHero(): React.ReactElement {
           </View>
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Real-time</Text>
+            <Text style={styles.liveText}>Contoh</Text>
           </View>
         </View>
         <View style={styles.chartPanel}>
@@ -299,14 +304,14 @@ function CashflowHero(): React.ReactElement {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     autoDot: {
-      backgroundColor: "#F59E0B",
+      backgroundColor: colors.warningBorder,
       borderRadius: 4,
       height: 8,
       width: 8,
     },
     autoPill: {
       alignItems: "center",
-      backgroundColor: "#FEF3C7",
+      backgroundColor: colors.warningSoft,
       borderRadius: radii.pill,
       elevation: 2,
       flexDirection: "row",
@@ -318,7 +323,7 @@ function createStyles(colors: ThemeColors) {
       top: 0,
     },
     autoText: {
-      color: "#92400E",
+      color: colors.warningText,
       fontFamily: fontFamilies.semibold,
       fontSize: 10,
       fontWeight: "600",
@@ -362,7 +367,7 @@ function createStyles(colors: ThemeColors) {
       minHeight: 64,
     },
     cardDotAmber: {
-      backgroundColor: "#FCD34D",
+      backgroundColor: colors.heroMuted,
       borderRadius: 10,
       height: 20,
       opacity: 0.85,
@@ -372,7 +377,7 @@ function createStyles(colors: ThemeColors) {
       marginLeft: -6,
     },
     cardDotRed: {
-      backgroundColor: "#F87171",
+      backgroundColor: colors.expense,
       borderRadius: 10,
       height: 20,
       opacity: 0.85,
@@ -407,7 +412,7 @@ function createStyles(colors: ThemeColors) {
       width: 14,
     },
     chartBarPeak: {
-      backgroundColor: "#A7F3D0",
+      backgroundColor: colors.heroMuted,
       elevation: 2,
     },
     chartPanel: {
@@ -419,7 +424,7 @@ function createStyles(colors: ThemeColors) {
     },
     chipBox: {
       alignItems: "center",
-      backgroundColor: "#FCD34D",
+      backgroundColor: colors.heroMuted,
       borderRadius: 4,
       height: 20,
       justifyContent: "center",
@@ -427,7 +432,7 @@ function createStyles(colors: ThemeColors) {
       width: 28,
     },
     chipInner: {
-      backgroundColor: "#F59E0B",
+      backgroundColor: colors.warningBorder,
       borderRadius: 4,
       height: 12,
       opacity: 0.4,
@@ -548,13 +553,13 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 2,
     },
     liveDot: {
-      backgroundColor: "#FBBF24",
+      backgroundColor: colors.warningBorder,
       borderRadius: 3,
       height: 6,
       width: 6,
     },
     liveText: {
-      color: "#FDE68A",
+      color: colors.heroMuted,
       fontFamily: fontFamilies.semibold,
       fontSize: 10,
       fontWeight: "600",
@@ -568,6 +573,13 @@ function createStyles(colors: ThemeColors) {
       fontFamily: fontFamilies.bold,
       fontSize: typography.bodyMedium.fontSize,
       fontWeight: "700",
+    },
+    loginPress: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      minWidth: 44,
+      paddingHorizontal: spacing.sm,
     },
     loginRow: {
       alignItems: "center",
@@ -587,6 +599,7 @@ function createStyles(colors: ThemeColors) {
       bottom: 28,
       elevation: 4,
       gap: spacing.compact,
+      maxWidth: "78%",
       padding: spacing.group,
       position: "absolute",
       right: 0,
@@ -853,6 +866,7 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radii.md,
       gap: spacing.md,
       left: 4,
+      maxWidth: "78%",
       padding: spacing.group,
       position: "absolute",
       top: 10,

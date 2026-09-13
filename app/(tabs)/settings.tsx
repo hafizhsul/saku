@@ -14,9 +14,8 @@ import { fontFamilies, radii, shadows, spacing, themePreferenceOptions, typograp
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"]
 
-// TODO: hubungkan baris "Segera hadir" ke fitur saat tersedia. Baris tanpa
-// onPress sengaja non-interaktif (R-26): dead control dilarang, placeholder
-// harus jujur dengan label yang terlihat.
+// Baris tanpa onPress sengaja non-interaktif (R-26): dead control dilarang,
+// placeholder harus jujur dengan label "Segera hadir" yang terlihat.
 
 function initialsOf(name: string | undefined, email: string | undefined): string {
   const source = (name ?? "").trim() || (email ?? "").trim()
@@ -60,7 +59,11 @@ export default function SettingsScreen(): React.ReactElement {
   )
 
   const content = isLoading ? (
-    <EmptyState description="Menyiapkan pengaturan." title="Memuat pengaturan..." />
+    <View accessibilityState={{ busy: true }} style={styles.loadingBlock}>
+      <View style={styles.loadingLine} />
+      <View style={styles.loadingLine} />
+      <View style={styles.loadingLine} />
+    </View>
   ) : loadError ? (
     <EmptyState actionLabel="Coba lagi" description={loadError} error onAction={() => void retryLoad()} title="Data belum siap" />
   ) : (
@@ -95,9 +98,9 @@ export default function SettingsScreen(): React.ReactElement {
           <Text numberOfLines={1} style={styles.profileEmail}>
             {user?.email ?? "—"}
           </Text>
-          <View accessibilityLabel="Akun terverifikasi" style={styles.verifiedBadge}>
+          <View accessibilityLabel="Akun aktif" style={styles.verifiedBadge}>
             <MaterialCommunityIcons color={colors.accent} name="check-decagram" size={14} />
-            <Text style={styles.verifiedBadgeText}>Akun Terverifikasi</Text>
+            <Text style={styles.verifiedBadgeText}>Akun Aktif</Text>
           </View>
         </View>
       </Pressable>
@@ -113,7 +116,7 @@ export default function SettingsScreen(): React.ReactElement {
             icon="account-outline"
             iconTone="accent"
             label="Edit Profil"
-            subtitle="Data pribadi & identitas KYC"
+            subtitle="Nama & foto profil"
             trailing={chevron}
             onPress={() => router.push("/edit-profile")}
           />
@@ -122,7 +125,7 @@ export default function SettingsScreen(): React.ReactElement {
             icon="shield-lock-outline"
             iconTone="accent"
             label="Keamanan & Kata Sandi"
-            subtitle="Autentikasi 2 Langkah aktif"
+            subtitle="Ubah kata sandi"
             trailing={chevron}
             onPress={() => router.push("/change-password")}
           />
@@ -167,7 +170,7 @@ export default function SettingsScreen(): React.ReactElement {
             onPress={() => setThemePickerVisible(true)}
           />
           <View style={styles.divider} />
-          <MenuRow icon="translate" iconTone="accent" label="Bahasa" subtitle="Pilihan lokalisasi" trailing={valueTrailing("Indonesia")} />
+          <MenuRow icon="translate" iconTone="accent" label="Bahasa" subtitle="Segera hadir" trailing={valueTrailing("Indonesia")} />
         </View>
       </View>
 
@@ -178,9 +181,9 @@ export default function SettingsScreen(): React.ReactElement {
           <Text style={styles.sectionCaption}>Bantuan & Legal</Text>
         </View>
         <View style={styles.card}>
-          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan & FAQ" trailing={chevron} />
+          <MenuRow icon="help-circle-outline" iconTone="muted" label="Pusat Bantuan & FAQ" subtitle="Segera hadir" trailing={chevron} />
           <View style={styles.divider} />
-          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" trailing={chevron} />
+          <MenuRow icon="shield-account-outline" iconTone="muted" label="Kebijakan Privasi" subtitle="Segera hadir" trailing={chevron} />
           <View style={styles.divider} />
           <MenuRow icon="logout" iconTone="danger" danger label="Keluar" onPress={() => setConfirmLogout(true)} />
         </View>
@@ -203,9 +206,11 @@ export default function SettingsScreen(): React.ReactElement {
         {content}
       </ScreenShell>
 
-      {/* Konfirmasi keluar: mengikuti desain referensi (keluar?, tombol vertikal pill) */}
+      {/* Konfirmasi keluar: mengikuti desain referensi (keluar?, tombol vertikal pill).
+          Escape web ditangani onRequestClose (Android back + web Esc). */}
       <Modal
         animationType="fade"
+        onDismiss={() => setConfirmLogout(false)}
         onRequestClose={() => setConfirmLogout(false)}
         transparent
         visible={confirmLogout}
@@ -253,9 +258,10 @@ export default function SettingsScreen(): React.ReactElement {
         </View>
       </Modal>
 
-      {/* Pilih tema: baris Tema membuka picker ini */}
+      {/* Pilih tema: baris Tema membuka picker ini (Esc web via onRequestClose). */}
       <Modal
         animationType="fade"
+        onDismiss={() => setThemePickerVisible(false)}
         onRequestClose={() => setThemePickerVisible(false)}
         transparent
         visible={themePickerVisible}
@@ -264,7 +270,7 @@ export default function SettingsScreen(): React.ReactElement {
           <View accessibilityLabel="Pilih tema aplikasi" accessibilityRole="alert" style={styles.modalCard}>
             <View style={styles.modalBody}>
               <Text style={styles.modalTitle}>Tema</Text>
-              <Text style={styles.modalMessage}>Pilih tampilan aplikasi sesuai preferensimu.</Text>
+              <Text style={styles.modalMessage}>Pilih tampilan aplikasi sesuai preferensi Anda.</Text>
               <SegmentedControl
                 accessibilityLabel="Pilih tema"
                 onChange={(value) => {
@@ -557,6 +563,15 @@ function createStyles(colors: ThemeColors) {
       flex: 1,
       gap: spacing.unit,
       minWidth: 0,
+    },
+    loadingBlock: {
+      gap: spacing.sm,
+      paddingVertical: spacing.xl,
+    },
+    loadingLine: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radii.sm,
+      height: 56,
     },
     verifiedBadge: {
       alignItems: "center",

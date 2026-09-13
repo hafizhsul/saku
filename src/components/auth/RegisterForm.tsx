@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useAuth } from "../../features/auth/AuthProvider"
 import { useThemeColors } from "../../theme"
-import { AUTH_BRAND, createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
+import { createAuthStyles, isDarkTheme, type AuthStyles } from "./authStyles"
 
 type RegisterFormProps = {
   readonly onSwitchToLogin: () => void
@@ -239,7 +239,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
                 </Text>
               ) : (
                 <View style={styles.checkHint}>
-                  <MaterialCommunityIcons color={AUTH_BRAND} name="check" size={14} />
+                  <MaterialCommunityIcons color={colors.accent} name="check" size={14} />
                   <Text style={styles.checkHintText}>Minimal 8 karakter kombinasi huruf dan angka</Text>
                 </View>
               )}
@@ -293,7 +293,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
                 }}
                 style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}
               >
-                {acceptedTerms ? <MaterialCommunityIcons color="#FFFFFF" name="check" size={12} /> : null}
+                {acceptedTerms ? <MaterialCommunityIcons color={colors.onAccent} name="check" size={12} /> : null}
               </Pressable>
               <Text style={styles.termsText}>
                 Saya menyetujui <Text style={styles.termsLink}>Ketentuan Layanan</Text> serta <Text style={styles.termsLink}>Kebijakan Privasi</Text> Saku.
@@ -314,9 +314,9 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
               onPress={() => void handleSubmit()}
               style={({ pressed }) => [styles.registerButton, isSubmitting && styles.primaryButtonDisabled, pressed && !isSubmitting && styles.pressed, submitFocused && !isSubmitting && styles.focusRing]}
             >
-              {isSubmitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : null}
+              {isSubmitting ? <ActivityIndicator color={colors.onAccent} size="small" /> : null}
               <Text style={styles.primaryButtonText}>{isSubmitting ? "Mendaftar..." : "Daftar Sekarang"}</Text>
-              {isSubmitting ? null : <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={16} />}
+              {isSubmitting ? null : <MaterialCommunityIcons color={colors.onAccent} name="arrow-right" size={16} />}
             </Pressable>
           </View>
 
@@ -329,7 +329,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
               </Text>
             </Text>
             <View style={styles.securityBadge}>
-              <MaterialCommunityIcons color={AUTH_BRAND} name="shield-check" size={14} />
+              <MaterialCommunityIcons color={colors.accent} name="shield-check" size={14} />
               <Text style={styles.securityText}>Data tersimpan aman di perangkat ini</Text>
             </View>
           </View>

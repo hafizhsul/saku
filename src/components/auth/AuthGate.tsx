@@ -3,7 +3,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View } from "react-native"
 
 import { useAuth } from "../../features/auth/AuthProvider"
-import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../../theme"
+import { fontFamilies, motion, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../../theme"
 import { EmptyState } from "../EmptyState"
 import { ScreenShell } from "../ScreenShell"
 import { stateInteraction } from "../state/pressable"
@@ -51,8 +51,8 @@ export function AuthGate(_props: AuthGateProps): React.ReactElement | null {
     }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { duration: 1400, toValue: 1, useNativeDriver: true }),
-        Animated.timing(pulse, { duration: 1400, toValue: 0, useNativeDriver: true }),
+        Animated.timing(pulse, { duration: motion.lockPulse, toValue: 1, useNativeDriver: true }),
+        Animated.timing(pulse, { duration: motion.lockPulse, toValue: 0, useNativeDriver: true }),
       ]),
     )
     loop.start()
@@ -218,9 +218,7 @@ function createStyles(colors: ThemeColors) {
     biometricCard: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: radii.lg,
-      borderWidth: 1,
       elevation: 3,
       padding: spacing.sm,
     },
@@ -295,9 +293,7 @@ function createStyles(colors: ThemeColors) {
     lockIcon: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: 20,
-      borderWidth: 1,
       elevation: 4,
       height: 80,
       justifyContent: "center",
@@ -371,9 +367,7 @@ function createStyles(colors: ThemeColors) {
     statusPill: {
       alignItems: "center",
       backgroundColor: colors.expenseSurface,
-      borderColor: colors.border,
       borderRadius: radii.pill,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.compact,
       paddingHorizontal: spacing.md,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { formatAmountInput, formatDayGroupLabel, formatMonthLabel, formatRelativeTransactionTime, formatShortMonthLabel, formatTimeOfDay, formatTransactionDate, parseAmountInput, shiftMonth, toMonthKey } from "./dates"
+import { chunkRows, formatAmountInput, formatDayGroupLabel, formatMonthLabel, formatNativeDate, formatRelativeTransactionTime, formatShortMonthLabel, formatTimeOfDay, formatTransactionDate, parseAmountInput, parseNativeDate, shiftMonth, toMonthKey } from "./dates"
 
 describe("month shifting", () => {
   it("shifts forward and backward within a year", () => {
@@ -77,5 +77,19 @@ describe("amount input", () => {
   it("formats digits back to the id-ID grouping", () => {
     expect(formatAmountInput("12345")).toBe("12.345")
     expect(formatAmountInput("abc")).toBe("")
+  })
+})
+
+describe("native date helpers", () => {
+  it("formats YYYY-MM-DD", () => {
+    expect(formatNativeDate(new Date(2026, 0, 5))).toBe("2026-01-05")
+  })
+  it("parses valid date and rejects invalid", () => {
+    expect(parseNativeDate("2026-02-28")?.getDate()).toBe(28)
+    expect(parseNativeDate("2026-02-30")).toBeNull()
+    expect(parseNativeDate("abc")).toBeNull()
+  })
+  it("chunks rows keeping last row left-aligned", () => {
+    expect(chunkRows([1, 2, 3, 4, 5], 4)).toEqual([[1, 2, 3, 4], [5]])
   })
 })

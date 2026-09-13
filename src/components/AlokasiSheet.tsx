@@ -434,9 +434,7 @@ function createStyles(colors: ThemeColors) {
     },
     row: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: radii.lg,
-      borderWidth: 1,
       gap: spacing.md,
       padding: spacing.group,
     },
@@ -504,9 +502,7 @@ function createStyles(colors: ThemeColors) {
     summary: {
       alignItems: "center",
       backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       justifyContent: "space-between",
       padding: spacing.group,

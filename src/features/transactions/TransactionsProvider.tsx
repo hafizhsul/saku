@@ -19,11 +19,7 @@ import {
   type Transaction,
   type TransactionDraft,
 } from "./types"
-import {
-  loadTransactions,
-  saveTransactions,
-  TransactionStorageError,
-} from "../../storage/transactions"
+import { loadTransactions, saveTransactions } from "../../storage/transactions"
 
 type SaveState = "idle" | "saving" | "saved" | "error"
 
@@ -104,13 +100,9 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
   }
 }
 
-function getStorageMessage(error: unknown, operation: "read" | "write"): string {
-  if (error instanceof TransactionStorageError) {
-    return operation === "read"
-      ? "Data keuangan belum bisa dimuat. Coba lagi."
-      : "Transaksi belum tersimpan. Coba lagi."
-  }
-
+// Pesan disamakan untuk semua jenis error agar tidak membocorkan detail
+// storage ke pengguna (R-31); diagnosis tetap tersedia via cause di error.
+function getStorageMessage(_error: unknown, operation: "read" | "write"): string {
   return operation === "read"
     ? "Data keuangan belum bisa dimuat. Coba lagi."
     : "Transaksi belum tersimpan. Coba lagi."

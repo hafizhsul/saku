@@ -75,6 +75,79 @@ export function selectMonthlySummary(
   }
 }
 
+export type MonthlyTotals = {
+  readonly incomeTotal: number
+  readonly incomeCount: number
+  readonly expenseTotal: number
+  readonly expenseCount: number
+}
+
+// Total + hitung transaksi bulan berjalan (dipakai ringkasan Riwayat).
+export function selectMonthlyTotals(
+  transactions: readonly Transaction[],
+  month: string,
+): MonthlyTotals {
+  let incomeTotal = 0
+  let incomeCount = 0
+  let expenseTotal = 0
+  let expenseCount = 0
+  for (const transaction of selectTransactionsForMonth(transactions, month)) {
+    if (transaction.type === "income") {
+      incomeTotal += transaction.amount
+      incomeCount += 1
+    } else {
+      expenseTotal += transaction.amount
+      expenseCount += 1
+    }
+  }
+  return { expenseCount, expenseTotal, incomeCount, incomeTotal }
+}
+
+export type BudgetAllocation = {
+  readonly budget: number
+  readonly category: string
+  readonly percent: number
+  readonly rest: number
+  readonly spent: number
+  readonly status: "Aman" | "Mendekati Limit" | "Melebihi Limit"
+}
+
+// Alokasi vs pemakaian bulan ini, urut % terbesar (dipakai Analisis).
+export function selectBudgetAllocations(
+  transactions: readonly Transaction[],
+  month: string,
+  budgets: Readonly<Record<string, number>>,
+): readonly BudgetAllocation[] {
+  return Object.entries(budgets)
+    .filter(([, budget]) => budget > 0)
+    .map(([category, budget]) => {
+      const spent = selectTransactionsForMonth(transactions, month)
+        .filter((transaction) => transaction.type === "expense" && transaction.category === category)
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+      const percent = Math.min(100, Math.round((spent / budget) * 100))
+      const status: BudgetAllocation["status"] = percent >= 90 ? "Melebihi Limit" : percent >= 70 ? "Mendekati Limit" : "Aman"
+      return { budget, category, percent, rest: Math.max(0, budget - spent), spent, status }
+    })
+    .sort((left, right) => right.percent - left.percent)
+}
+
+// Dampak anggaran satu transaksi expense berbujet (dipakai Detail).
+export function selectBudgetImpact(
+  transactions: readonly Transaction[],
+  category: string,
+  month: string,
+  budgets: Readonly<Record<string, number>>,
+): { readonly budget: number; readonly spent: number; readonly percent: number; readonly rest: number } | null {
+  const budget = budgets[category] ?? 0
+  if (budget <= 0) {
+    return null
+  }
+  const spent = selectTransactionsForMonth(transactions, month)
+    .filter((transaction) => transaction.type === "expense" && transaction.category === category)
+    .reduce((total, transaction) => total + transaction.amount, 0)
+  return { budget, spent, percent: Math.min(100, Math.round((spent / budget) * 100)), rest: Math.max(0, budget - spent) }
+}
+
 export function selectTransactionsByType(
   transactions: readonly Transaction[],
   type: TransactionType,

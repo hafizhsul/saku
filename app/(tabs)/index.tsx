@@ -93,12 +93,12 @@ export default function HomeScreen(): React.ReactElement {
                 <Text style={styles.countBadge}>{sakuItems.length} Kategori</Text>
               </View>
               <Pressable
-                accessibilityLabel="Lihat semua saku"
+                accessibilityLabel="Buka alokasi saku"
                 accessibilityRole="button"
                 onPress={() => setSheetVisible(true)}
                 style={({ pressed, hovered }) => [styles.seeAll, hovered && styles.seeAllHovered, pressed && styles.pressed]}
               >
-                <Text style={styles.seeAllText}>Semua</Text>
+                <Text style={styles.seeAllText}>Kelola</Text>
                 <MaterialCommunityIcons color={colors.textPrimary} name="chevron-right" size={16} />
               </Pressable>
             </View>
@@ -135,7 +135,7 @@ export default function HomeScreen(): React.ReactElement {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Transaksi Terakhir</Text>
             <Pressable
-              accessibilityLabel="Lihat semua transaksi"
+              accessibilityLabel="Lihat Semua"
               accessibilityRole="button"
               onPress={() => router.push("/transactions")}
               style={({ pressed, hovered }) => [styles.seeAll, hovered && styles.seeAllHovered, pressed && styles.pressed]}
@@ -283,7 +283,7 @@ function SakuCard({ balanceVisible, category, colors, limit, ratio, spent, style
   const icon = sakuIconConfig(colors, category)
 
   return (
-    <View style={styles.sakuCard}>
+    <View style={[styles.sakuCard, isOverBudget && styles.sakuCardOver]}>
       <View style={styles.sakuTopRow}>
         <View style={[styles.sakuIcon, { backgroundColor: icon.backgroundColor }]}>
           <MaterialCommunityIcons color={icon.iconColor} name={getCategoryIconName(category)} size={20} />
@@ -320,17 +320,9 @@ function sakuIconConfig(colors: ThemeColors, category: string): { readonly backg
     return known
   }
 
-  const variants = [
-    { backgroundColor: colors.accentSurface, iconColor: colors.accent },
-    { backgroundColor: colors.incomeSurface, iconColor: colors.income },
-    { backgroundColor: colors.expenseSurface, iconColor: colors.expense },
-    { backgroundColor: colors.surfaceMuted, iconColor: colors.textSecondary },
-  ]
-  let hash = 0
-  for (const char of category) {
-    hash = (hash * 31 + char.charCodeAt(0)) | 0
-  }
-  return variants[Math.abs(hash) % variants.length] ?? variants[0]
+  // Fallback netral: kategori tanpa pemetaan khusus memakai satu tone yang
+  // sama agar tidak terlihat "lebih penting" dari yang lain (R-31).
+  return { backgroundColor: colors.surfaceMuted, iconColor: colors.textSecondary }
 }
 
 type CashFlowCardProps = {
@@ -632,6 +624,11 @@ function createStyles(colors: ThemeColors) {
         shadowOpacity: 0.08,
         shadowRadius: 20,
       },
+    },
+    // Over-budget: satu-satunya kartu dengan latar expense agar langsung
+    // terbaca sebagai "perlu perhatian" (R-14). Tanpa border/outline.
+    sakuCardOver: {
+      backgroundColor: colors.expenseSurface,
     },
     sakuCategory: {
       color: colors.textPrimary,

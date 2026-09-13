@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native"
 import type { Transaction } from "../features/transactions/types"
 import { formatSignedCurrency } from "../utils/currency"
 import { formatRelativeTransactionTime } from "../utils/dates"
-import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../theme"
+import { fontFamilies, radii, spacing, typography, useThemeColors, type ThemeColors } from "../theme"
 import { CategoryIcon } from "./CategoryIcon"
 import { stateInteraction } from "./state/pressable"
 
@@ -27,7 +27,7 @@ export function TransactionRow({ transaction, compact = false, last = false, car
 
   return (
     <Pressable
-      accessibilityLabel={`${transaction.note ?? transaction.category}, ${typeLabel}, ${transaction.category}, ${formatRelativeTransactionTime(transaction.date)}, ${formatSignedCurrency(transaction.amount, transaction.type)}`}
+      accessibilityLabel={`${transaction.note ?? transaction.category}, ${typeLabel}, ${formatSignedCurrency(transaction.amount, transaction.type)}, ${formatRelativeTransactionTime(transaction.date)}. Ketuk untuk detail.`}
       accessibilityRole={onPress ? "button" : undefined}
       disabled={!onPress}
       onBlur={() => setFocused(false)}
@@ -41,7 +41,6 @@ export function TransactionRow({ transaction, compact = false, last = false, car
         hovered && styles.hovered,
         pressed && styles.pressed,
         focused && onPress && interaction.focusRing,
-        !onPress && { opacity: stateTokens.disabledOpacity },
       ]}
     >
       <CategoryIcon category={transaction.category} tone={tone} size={compact ? 18 : 20} />

@@ -96,9 +96,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: spacing.md,
     },
     card: {
-      borderColor: colors.border,
       borderRadius: radii.xl,
-      borderWidth: 1,
       padding: spacing["2xl"],
       ...shadows.elevated,
     },

@@ -60,9 +60,7 @@ function createStyles(colors: ThemeColors) {
     iconWell: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: 28,
-      borderWidth: 1,
       height: 88,
       justifyContent: "center",
       overflow: "visible",

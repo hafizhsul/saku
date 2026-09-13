@@ -7,7 +7,7 @@ import { PrimaryButton } from "../src/components/PrimaryButton"
 import { ScreenShell } from "../src/components/ScreenShell"
 import { stateInteraction } from "../src/components/state/pressable"
 import { useAuth } from "../src/features/auth/AuthProvider"
-import { fontFamilies, radii, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
+import { fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 
 export default function ChangePasswordScreen(): React.ReactElement {
   const { changePassword } = useAuth()
@@ -69,6 +69,7 @@ export default function ChangePasswordScreen(): React.ReactElement {
             <MaterialCommunityIcons color={colors.textPrimary} name="arrow-left" size={22} />
           </Pressable>
           <Text style={styles.headerTitle}>Keamanan &amp; Kata Sandi</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.field}>
@@ -197,10 +198,12 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     backButton: {
       alignItems: "center",
-      borderRadius: radii.sm,
+      backgroundColor: colors.surface,
+      borderRadius: radii.pill,
       height: 40,
       justifyContent: "center",
       width: 40,
+      ...shadows.card,
     },
     content: {
       gap: spacing.section,
@@ -220,12 +223,17 @@ function createStyles(colors: ThemeColors) {
       flexDirection: "row",
       gap: spacing.sm,
     },
+    headerSpacer: {
+      width: 40,
+    },
     headerTitle: {
       color: colors.textPrimary,
+      flex: 1,
       fontFamily: fontFamilies.semibold,
-      fontSize: typography.heading.fontSize,
+      fontSize: typography.bodyLarge.fontSize,
       fontWeight: "600",
-      lineHeight: typography.heading.lineHeight,
+      lineHeight: typography.bodyLarge.lineHeight,
+      textAlign: "center",
     },
     input: {
       color: colors.textPrimary,
@@ -237,13 +245,12 @@ function createStyles(colors: ThemeColors) {
     },
     inputShell: {
       alignItems: "center",
-      backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
+      backgroundColor: colors.authCard,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       minHeight: 56,
       paddingHorizontal: spacing.lg,
+      ...shadows.card,
     },
     inputShellError: {
       borderColor: colors.error,

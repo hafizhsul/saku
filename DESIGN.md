@@ -110,7 +110,12 @@ The design system is centered on the concept of "Safe Stewardship"—combining t
 The target audience is the modern Indonesian professional who values order and growth. The UI should evoke a sense of calm, security, and effortless organization. Every interaction must feel intentional and grounded, avoiding unnecessary flourishes in favor of high-utility clarity.
 
 ## Colors
-The palette is built around "Emerald Growth." 
+The palette is built around "Emerald Growth." Roles are frozen (R-29):
+emerald/accent = aksi + pemasukan; mint/accentSurface = latar aksen;
+crimson/expense = pengeluaran + error; amber/warning* = peringatan kuota
+saja; slate/slate* = ikon/teks form sekunder (bukan teks body);
+tint blue = chip insight saja. Nothing else introduces a new hue.
+
 - **Primary (#064E3B):** A deep, rich emerald used for core branding, primary actions, and headers to establish authority and trust.
 - **Secondary (#ECFDF5):** A soft mint used for large background surfaces and container fills to keep the interface airy and friendly.
 - **Tertiary (#10B981):** A vibrant accent green for positive growth indicators, success states, and call-to-action highlights.
@@ -118,7 +123,7 @@ The palette is built around "Emerald Growth."
 - **Surface:** Use an off-white (#F8FAFC) for the main background to reduce eye strain.
 
 ## Typography
-This design system utilizes **Inter** exclusively to maintain a systematic and utilitarian feel. The hierarchy is strictly enforced to guide users through complex financial data. 
+This design system utilizes **Plus Jakarta Sans** (Expo `@expo-google-fonts/plus-jakarta-sans`) to match the Indonesian fintech voice: warm geometric rounds for headings, tabular numerals for balances. Reason (R-31): Inter reads neutral-global; Plus Jakarta Sans carries the local "Saku" character while keeping tabular-nums legibility. The hierarchy is strictly enforced to guide users through complex financial data.
 
 - **Numerical Data:** Always use `tabular-nums` OpenType features for transaction lists and balances to ensure vertical alignment of digits.
 - **Language:** All micro-copy is in Bahasa Indonesia. Use clear, imperative verbs (e.g., "Bayar," "Transfer," "Tambah Saku").
@@ -137,6 +142,11 @@ Elevation in this design system is communicated through **Tonal Layers** combine
 - **Level 1 (Cards/Pockets):** Pure white background with a very soft, diffused shadow (0px 4px 20px, 5% opacity of the Primary color). This creates a "lifted" effect that makes the pockets feel interactive.
 - **Level 2 (Active States/Modals):** A slightly more pronounced shadow (0px 10px 30px, 8% opacity).
 - **Interactions:** When a user taps a "Saku" card, it should subtly shrink (scale 0.98) to mimic physical pressure.
+
+## Identity Motif
+The "tilted pocket" (kartu miring 2-6 derajat + lingkaran dekoratif) is the
+single repeated identity gesture (R-20): hero Beranda, hero tambah-transaksi,
+dan kartu contoh onboarding memakainya; elemen lain defer ke motif ini.
 
 ## Shapes
 The shape language is defined by a consistent 16px radius (`rounded-lg` in this system).

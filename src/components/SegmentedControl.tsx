@@ -17,13 +17,8 @@ type SegmentedControlProps = {
   readonly disabled?: boolean
 }
 
-// Warna toggle persis dari referensi Stitch "Tambah Transaksi"
-// (mode terang): track #dbe8e2/50 + border saku-border/40, pill putih,
-// label aktif saku-primary #006B50 + dot, nonaktif slate-500.
-const TRACK_LIGHT = "rgba(219, 232, 226, 0.5)"
-const TRACK_BORDER_LIGHT = "rgba(227, 232, 229, 0.4)"
-const ACTIVE_LABEL_LIGHT = "#006B50"
-const INACTIVE_LABEL_LIGHT = "#64748b"
+// Warna toggle dari tema (segmentTrack/Border + accent): light ikut Stitch,
+// dark memakai surface/border agar kontras (R-34, R-25).
 
 export function SegmentedControl({
   options,
@@ -74,17 +69,15 @@ export function SegmentedControl({
 function createStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     container: {
-      backgroundColor: isDark ? colors.surfaceMuted : TRACK_LIGHT,
-      borderColor: isDark ? colors.border : TRACK_BORDER_LIGHT,
+      backgroundColor: colors.segmentTrack,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.unit,
       minHeight: 50,
       padding: 4,
     },
     dot: {
-      backgroundColor: isDark ? colors.accent : ACTIVE_LABEL_LIGHT,
+      backgroundColor: colors.accent,
       borderRadius: 4,
       height: 8,
       width: 8,
@@ -93,7 +86,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       opacity: stateTokens.disabledOpacity,
     },
     label: {
-      color: isDark ? colors.textSecondary : INACTIVE_LABEL_LIGHT,
+      color: colors.textSecondary,
       fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
       fontWeight: typography.bodyMedium.fontWeight,
@@ -118,14 +111,14 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       opacity: 0.7,
     },
     selected: {
-      backgroundColor: isDark ? colors.surfaceElevated : "#FFFFFF",
+      backgroundColor: isDark ? colors.surfaceElevated : colors.authCard,
       ...shadows.card,
     },
     selectedHover: {
       opacity: 0.92,
     },
     selectedLabel: {
-      color: isDark ? colors.textPrimary : ACTIVE_LABEL_LIGHT,
+      color: isDark ? colors.textPrimary : colors.accent,
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },

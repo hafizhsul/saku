@@ -12,43 +12,11 @@ import { isTransactionType, transactionTypeOptions, type FormErrors } from "../s
 import { categoryOptionsForType, type TransactionType } from "../src/features/transactions/types"
 import { darkColors, fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../src/theme"
 import { getCategoryIconName } from "../src/components/CategoryIcon"
-import { formatAmountInput, formatTransactionDate, parseAmountInput, toTransactionDate } from "../src/utils/dates"
+import { chunkRows, formatAmountInput, formatNativeDate, formatTransactionDate, parseAmountInput, parseNativeDate, toTransactionDate } from "../src/utils/dates"
 
 // Putih di atas hero emerald/crimson terbaca di kedua mode (R-34 aman).
 const HERO_LABEL = "rgba(255, 255, 255, 0.8)"
 const HERO_PLACEHOLDER = "rgba(255, 255, 255, 0.3)"
-
-function formatNativeDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
-
-// Bagi opsi menjadi baris berukuran `size` (mis. 4 kolom) supaya baris terakhir
-// tetap rata kiri dan kolom sejajar — flex-wrap + lebar % tidak bisa diandalkan.
-function chunkRows<T>(items: readonly T[], size: number): T[][] {
-  const rows: T[][] = []
-  for (let i = 0; i < items.length; i += size) {
-    rows.push(items.slice(i, i + size))
-  }
-  return rows
-}
-
-function parseNativeDate(value: string): Date | null {
-  const parts = value.split("-").map(Number)
-  if (parts.length !== 3 || parts.some((part) => !Number.isInteger(part))) {
-    return null
-  }
-
-  const [year, month, day] = parts
-  if (year === undefined || month === undefined || day === undefined || year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) {
-    return null
-  }
-
-  const date = new Date(year, month - 1, day)
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
-}
 
 function WebDateInput({
   ariaLabel,
@@ -63,6 +31,7 @@ function WebDateInput({
 }): React.ReactElement {
   const colors = useThemeColors()
   const isDark = colors.canvas === darkColors.canvas
+  const [webFocused, setWebFocused] = useState(false)
   const style = useMemo(
     () => ({
       // Mengarahkan browser merender kalender versi gelap; input transparan
@@ -75,17 +44,20 @@ function WebDateInput({
       fontSize: typography.bodyMedium.fontSize,
       fontWeight: typography.bodyMedium.fontWeight,
       minHeight: 24,
-      outline: "none",
+      outline: webFocused ? `${stateTokens.focusWidth}px solid ${colors.focus}` : "none",
+      outlineOffset: 2,
       padding: 0,
       width: "100%",
     }),
-    [colors, isDark],
+    [colors, isDark, webFocused],
   )
 
   return createElement("input", {
     "aria-label": ariaLabel,
     disabled,
     max: formatNativeDate(new Date()),
+    onFocus: () => setWebFocused(true),
+    onBlur: () => setWebFocused(false),
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
     style,
     type: "date",
@@ -236,7 +208,7 @@ export default function AddTransactionScreen(): React.ReactElement {
 
   const isEditing = editing !== undefined
   // Aksen Stitch mengikuti tipe: emerald saat Pemasukan, crimson saat Pengeluaran.
-  const typeAccent = type === "expense" ? "#c0263e" : "#006B50"
+  const typeAccent = type === "expense" ? colors.expense : colors.income
   const amountLabel = type === "expense" ? "Jumlah Pengeluaran" : "Jumlah Pemasukan"
 
   return (
@@ -379,13 +351,13 @@ export default function AddTransactionScreen(): React.ReactElement {
                       ]}
                     >
                       <MaterialCommunityIcons
-                        color={selected ? "#FFFFFF" : "#475569"}
+                        color={selected ? colors.onAccent : colors.slateSubtle}
                         name={getCategoryIconName(option.key)}
                         size={24}
                       />
                       {selected ? (
                         <View style={styles.categoryBadge}>
-                          <MaterialCommunityIcons color="#022c22" name="check" size={10} />
+                          <MaterialCommunityIcons color={colors.authTitle} name="check" size={10} />
                         </View>
                       ) : null}
                     </View>
@@ -402,7 +374,7 @@ export default function AddTransactionScreen(): React.ReactElement {
         {/* Tanggal & Catatan */}
         <View style={styles.section}>
           <View style={styles.inputBox}>
-            <MaterialCommunityIcons color="#94a3b8" name="calendar-today" size={16} />
+            <MaterialCommunityIcons color={colors.slateIcon} name="calendar-today" size={16} />
             {Platform.OS === "web" ? (
               <WebDateInput
                 ariaLabel="Tanggal transaksi"
@@ -428,7 +400,7 @@ export default function AddTransactionScreen(): React.ReactElement {
                 <Text style={styles.dateText}>{formatTransactionDate(selectedDate.toISOString())}</Text>
               </Pressable>
             )}
-            <MaterialCommunityIcons color="#94a3b8" name="calendar-month" size={16} />
+            <MaterialCommunityIcons color={colors.slateIcon} name="calendar-month" size={16} />
             {Platform.OS !== "web" && showPicker ? (
               <DateTimePicker
                 display="default"
@@ -446,7 +418,7 @@ export default function AddTransactionScreen(): React.ReactElement {
           </View>
 
           <View style={[styles.inputBox, styles.noteBox]}>
-            <MaterialCommunityIcons color="#94a3b8" name="note-edit-outline" size={16} style={styles.noteIcon} />
+            <MaterialCommunityIcons color={colors.slateIcon} name="note-edit-outline" size={16} style={styles.noteIcon} />
             <TextInput
               accessibilityLabel="Catatan transaksi"
               editable={!saving}
@@ -454,7 +426,7 @@ export default function AddTransactionScreen(): React.ReactElement {
               multiline
               onChangeText={setNote}
               placeholder="Tambahkan catatan (opsional)..."
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor={colors.slateIcon}
               style={styles.noteInput}
               textAlignVertical="top"
               value={note}
@@ -474,7 +446,7 @@ export default function AddTransactionScreen(): React.ReactElement {
           onPress={() => void handleSave()}
           style={({ pressed, hovered }) => [
             styles.saveButton,
-            { backgroundColor: type === "expense" ? colors.expense : "#006B50" },
+            { backgroundColor: type === "expense" ? colors.expense : colors.income },
             hovered && !saving && styles.saveButtonHovered,
             pressed && !saving && styles.saveButtonPressed,
             (saving || isSaved) && styles.saveButtonDisabled,
@@ -494,7 +466,7 @@ export default function AddTransactionScreen(): React.ReactElement {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     amountError: {
-      color: "#FF9C94",
+      color: colors.errorOnHero,
       fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
       fontWeight: typography.bodyMedium.fontWeight,
@@ -545,9 +517,7 @@ function createStyles(colors: ThemeColors) {
     backButton: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: radii.pill,
-      borderWidth: 1,
       height: 40,
       justifyContent: "center",
       width: 40,
@@ -555,8 +525,8 @@ function createStyles(colors: ThemeColors) {
     },
     categoryBadge: {
       alignItems: "center",
-      backgroundColor: "#34d399",
-      borderColor: "#FFFFFF",
+      backgroundColor: colors.accent,
+      borderColor: colors.onAccent,
       borderRadius: 8,
       borderWidth: 2,
       height: 16,
@@ -580,7 +550,7 @@ function createStyles(colors: ThemeColors) {
       textAlign: "center",
     },
     categoryLabelSelected: {
-      color: "#0f172a",
+      color: colors.slateText,
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
@@ -596,17 +566,14 @@ function createStyles(colors: ThemeColors) {
     categoryWell: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: 26,
-      borderWidth: 1,
       height: 52,
       justifyContent: "center",
       width: 52,
       ...shadows.card,
     },
     categoryWellSelected: {
-      backgroundColor: "#006B50",
-      borderColor: "#006B50",
+      backgroundColor: colors.income,
     },
     content: {
       paddingBottom: spacing["3xl"],
@@ -630,7 +597,7 @@ function createStyles(colors: ThemeColors) {
       width: 96,
     },
     dateText: {
-      color: "#1e293b",
+      color: colors.slateText,
       flex: 1,
       fontFamily: fontFamilies.medium,
       fontSize: 12,
@@ -673,10 +640,8 @@ function createStyles(colors: ThemeColors) {
     },
     inputBox: {
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
-      borderColor: "rgba(227, 232, 229, 0.8)",
+      backgroundColor: colors.authCard,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.row,
       minHeight: 52,
@@ -696,7 +661,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 2,
     },
     noteInput: {
-      color: "#1e293b",
+      color: colors.slateText,
       flex: 1,
       fontFamily: typography.bodyMedium.fontFamily,
       fontSize: 12,
@@ -783,7 +748,7 @@ function createStyles(colors: ThemeColors) {
       textTransform: "uppercase",
     },
     typeDot: {
-      backgroundColor: "#006B50",
+      backgroundColor: colors.accent,
       borderRadius: 4,
       height: 8,
       width: 8,
@@ -803,26 +768,24 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
     },
     typeOptionSelected: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.authCard,
       ...shadows.card,
     },
     typeOptionText: {
-      color: "#64748b",
+      color: colors.textSecondary,
       fontSize: typography.bodyMedium.fontSize,
       fontFamily: typography.bodyMedium.fontFamily,
       fontWeight: typography.bodyMedium.fontWeight,
       lineHeight: typography.bodyMedium.lineHeight,
     },
     typeOptionTextSelected: {
-      color: "#006B50",
+      color: colors.accent,
       fontFamily: fontFamilies.bold,
       fontWeight: "700",
     },
     typeToggle: {
-      backgroundColor: "rgba(219, 232, 226, 0.5)",
-      borderColor: "rgba(227, 232, 229, 0.4)",
+      backgroundColor: colors.segmentTrack,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       marginTop: -spacing.sm,
       padding: spacing.xs,

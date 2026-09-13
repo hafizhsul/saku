@@ -12,7 +12,7 @@ import { AnalysisSkeleton } from "../../src/components/state/skeletons/AnalysisS
 import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
-import { selectBalance, selectMonthlySummary } from "../../src/features/transactions/selectors"
+import { selectBalance, selectBudgetAllocations, selectMonthlySummary } from "../../src/features/transactions/selectors"
 import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
@@ -108,22 +108,8 @@ export default function AnalisisScreen(): React.ReactElement {
   const monthChangePercent =
     previousNet === 0 ? undefined : Math.round(((monthSummary.net - previousNet) / Math.abs(previousNet)) * 100)
 
-  // Distribusi budget nyata: kategori dengan alokasi > 0 + pemakaian bulan ini.
   const totalBudget = Object.values(budgets).reduce((sum, value) => sum + value, 0)
-  const allocationList = Object.entries(budgets)
-    .filter(([, budget]) => budget > 0)
-    .map(([category, budget]) => {
-      const spent = transactions
-        .filter(
-          (transaction) =>
-            transaction.type === "expense" && transaction.category === category && transaction.date.slice(0, 7) === currentMonth,
-        )
-        .reduce((sum, transaction) => sum + transaction.amount, 0)
-      const percent = Math.min(100, Math.round((spent / budget) * 100))
-      const status = percent >= 90 ? "Melebihi Limit" : percent >= 70 ? "Mendekati Limit" : "Aman"
-      return { budget, category, percent, rest: Math.max(0, budget - spent), spent, status }
-    })
-    .sort((left, right) => right.percent - left.percent)
+  const allocationList = selectBudgetAllocations(transactions, currentMonth, budgets)
   const totalSpent = allocationList.reduce((sum, row) => sum + Math.min(row.spent, row.budget), 0)
   const usedPercent = totalBudget === 0 ? 0 : Math.round((totalSpent / totalBudget) * 100)
   const allocationRows = { rows: allocationList, totalBudget, totalSpent, usedPercent }
@@ -223,7 +209,10 @@ export default function AnalisisScreen(): React.ReactElement {
         </View>
       </View>
 
-          {/* Tren Pengeluaran */}
+          {/* Tren Pengeluaran. Ritme RHYTHM 2 (R-05): tiap blok analisis
+              punya komposisi beda — tren (kartu putih + tab periode),
+              alokasi (segment bar + baris), peringatan (kartu aksen),
+              insight (kartu ikon) — bukan grid kembar berulang. */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.trendTitleBlock}>
@@ -268,7 +257,7 @@ export default function AnalisisScreen(): React.ReactElement {
                 </View>
               </View>
               {daysTotal === 0 ? (
-                <Text style={styles.chartEmpty}>Belum ada pengeluaran {period} hari terakhir. Chart terisi setelah kamu mencatat.</Text>
+                <Text style={styles.chartEmpty}>Belum ada pengeluaran {period} hari terakhir. Chart terisi setelah Anda mencatat.</Text>
               ) : (
                 <View style={styles.chart}>
                   <View style={styles.chartWithAxis}>
@@ -445,7 +434,7 @@ export default function AnalisisScreen(): React.ReactElement {
               <Text style={styles.insightTitle}>Saku Insight</Text>
               <Text style={styles.insightText}>
                 {monthSummary.expense === 0
-                  ? "Belum ada pengeluaran tercatat bulan ini. Tambahkan transaksi untuk melihat pola keuanganmu."
+                  ? "Belum ada pengeluaran tercatat bulan ini. Tambahkan transaksi untuk melihat pola keuangan Anda."
                   : `Pengeluaran bulan ini ${formatCompactCurrency(monthSummary.expense)}. ${daysTotal > 0 ? `Rata-rata ${formatCurrency(daysAverage)}/hari dalam ${period} hari terakhir.` : ""} Tinjau kembali budgetmu agar target tetap tercapai.`}
               </Text>
             </View>
@@ -537,9 +526,7 @@ function createStyles(colors: ThemeColors) {
     averageBadge: {
       alignItems: "center",
       backgroundColor: colors.surfaceMuted,
-      borderColor: colors.border,
       borderRadius: radii.sm,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.sm,
       paddingHorizontal: spacing.sm,
@@ -714,7 +701,7 @@ function createStyles(colors: ThemeColors) {
       zIndex: 2,
     },
     benchmarkTagText: {
-      color: "#FFFFFF",
+      color: colors.onAccent,
       fontFamily: fontFamilies.bold,
       fontSize: 9,
       fontWeight: "700",
@@ -962,7 +949,7 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "600",
     },
     periodTabTextActive: {
-      color: "#FFFFFF",
+      color: colors.onAccent,
     },
     pressed: {
       opacity: 0.72,
@@ -1084,7 +1071,7 @@ function createStyles(colors: ThemeColors) {
       gap: spacing.sm,
     },
     warningActionText: {
-      color: "#FFFFFF",
+      color: colors.onAccent,
       fontFamily: fontFamilies.bold,
       fontSize: 13,
       fontWeight: "700",
@@ -1142,9 +1129,7 @@ function createStyles(colors: ThemeColors) {
     warningCard: {
       alignItems: "flex-start",
       backgroundColor: colors.expenseSurface,
-      borderColor: colors.error,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.md,
       padding: spacing.group,

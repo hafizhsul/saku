@@ -62,9 +62,7 @@ function createStyles(colors: ThemeColors) {
     card: {
       alignItems: "center",
       backgroundColor: colors.surface,
-      borderColor: colors.border,
       borderRadius: radii.lg,
-      borderWidth: 1,
       flexDirection: "row",
       gap: spacing.row,
       padding: spacing.lg,
