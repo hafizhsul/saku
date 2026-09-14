@@ -10,7 +10,8 @@ export const lightColors = {
   surfaceElevated: "#FFFFFF",
   textPrimary: "#141b2b",
   textSecondary: "#4c635c",
-  textTertiary: "#6f7a73",
+  // Tertiary 5.30 di putih (lolos AA normal); dipakai teks kecil/meta/placeholder.
+  textTertiary: "#5f6f68",
   border: "#bec9c2",
   borderStrong: "#C2C8C5",
   action: "#1D2228",
@@ -19,6 +20,9 @@ export const lightColors = {
   incomeSurface: "#cee8df",
   expense: "#ba1a1a",
   expenseSurface: "#ffdad6",
+  // Latar hero pengeluaran tetap gelap di kedua mode agar teks putih tetap
+  // terbaca (expense #E6917C di dark terlalu terang untuk putih, 2.41).
+  expenseHero: "#ba1a1a",
   accent: "#00503b",
   accentSurface: "#cee8df",
   warning: "#B8761C",
@@ -63,7 +67,9 @@ export const darkColors = {
   canvas: "#16181A",
   surface: "#1F2226",
   surfaceMuted: "#262A2F",
-  surfaceElevated: "#23272C",
+  // Dinaikkan dari #23272C agar kartu/bar terbedakan dari surface (gap
+  // 1.06 jadi 1.13); tertiary di atasnya 4.70 masih lolos AA normal.
+  surfaceElevated: "#252C34",
   textPrimary: "#F2F4F3",
   textSecondary: "#C3C9CD",
   textTertiary: "#8E969C",
@@ -82,13 +88,18 @@ export const darkColors = {
   error: "#FF9C94",
   // Hero tetap emerald gelap di mode gelap; tint mengikuti surfaceMuted.
   heroBackground: "#003527",
+  // Latar hero pengeluaran tetap gelap di kedua mode agar teks putih tetap
+  // terbaca (expense #E6917C di dark terlalu terang untuk putih, 2.41).
+  expenseHero: "#7A1F1F",
   heroText: "#FFFFFF",
   heroMuted: "#95D3BA",
   heroChip: "#004F34",
   heroChipText: "#7FD8B0",
   insightIcon: "#003623",
-  tint: "#262A2F",
-  chartBar: "#2C3A35",
+  // Dibedakan dari surfaceMuted (#262A2F, dulu sama persis 1.0); teks
+  // secondary/primary di atasnya 6.93/10.50 lolos AA.
+  tint: "#2C3A4A",
+  chartBar: "#31463C",
   chartToday: "#7FC19B",
   chartSaturday: "#5A2E28",
   // Auth dark memakai surface/teks agar tidak pecah (R-34).
@@ -196,6 +207,13 @@ export const shadows = {
   elevated: {
     boxShadow: "0 2px 4px rgba(29, 34, 40, 0.05), 0 10px 28px rgba(29, 34, 40, 0.10)",
     elevation: 4,
+  },
+  // Navbar docked: bayangan ke atas sebagai pemisah dari kartu putih di
+  // atasnya (pengganti garis border yang dihapus). iOS shadow props
+  // dipasang di pemakai dengan shadowColor token.
+  tabBar: {
+    boxShadow: "0 -2px 8px rgba(29, 34, 40, 0.05)",
+    elevation: 2,
   },
 } as const
 
