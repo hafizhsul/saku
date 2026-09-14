@@ -10,7 +10,7 @@ import { firebaseCurrentUser, isFirebaseConfigured } from "./firebaseClient"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./types"
 
 // Rangkaian state sesi: "locked" berarti token tersimpan tapi belum terverifikasi
-// (server tak terjangkau saat peluncuran — token JANGAN dihapus).
+// (server tak terjangkau saat peluncuran; token JANGAN dihapus).
 type AuthState = "unauthenticated" | "locked" | "authenticated"
 
 export type LoginResult = { readonly ok: true } | { readonly ok: false; readonly message: string }
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
 
   const boot = useCallback(async (): Promise<void> => {
     // E2E web (Playwright): flag localStorage menghindari verifikasi ke server
-    // auth — suite e2e fokus ke fitur data, bukan alur login (unit test urus itu).
+    // auth (suite e2e fokus ke fitur data, bukan alur login; unit test urus itu).
     // ponytail: flag khusus pengujian; hapus kalau e2e dipindah ke auth sungguhan.
     if (Platform.OS === "web" && localStorage.getItem("bendahara.e2e.authenticated") === "1") {
       setUser({ id: "e2e", email: "e2e@localhost", name: "E2E" })
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
     }
 
     const token = await getToken()
-    // Web: token tersimpan di cookie httpOnly (getToken mengembalikan null) —
+    // Web: token tersimpan di cookie httpOnly (getToken mengembalikan null);
     // verifikasi tetap dijalankan via cookie. Native: null berarti belum login.
     if (token === null && Platform.OS !== "web") {
       setUser(null)

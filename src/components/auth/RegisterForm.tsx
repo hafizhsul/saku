@@ -42,7 +42,7 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps): React.Reac
   const [submitFocused, setSubmitFocused] = useState(false)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // Error dari server (email sudah terdaftar, dsb.) — border ikut merah.
+  // Error dari server (email sudah terdaftar, dsb.); border ikut merah.
   const hasServerError = authError !== null && Object.keys(errors).length === 0
 
   async function handleSubmit(): Promise<void> {

@@ -219,7 +219,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps): React.ReactEl
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Biometrik — selalu tampil seperti referensi; pesan kesalahan muncul
+          {/* Biometrik selalu tampil seperti referensi; pesan kesalahan muncul
               saat perangkat tak mendukung atau autentikasi gagal. */}
           <Pressable
             accessibilityRole="button"

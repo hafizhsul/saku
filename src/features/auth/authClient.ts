@@ -52,7 +52,7 @@ async function postAuth(path: "/register" | "/login", input: RegisterRequest | L
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
       // Web: kirim/terima cookie httpOnly (server men-set cookie di respons).
-      // Native: opsi ini diabaikan RN fetch — token tetap lewat header.
+      // Native: opsi ini diabaikan RN fetch (token tetap lewat header).
       credentials: "include",
     })
   } catch {

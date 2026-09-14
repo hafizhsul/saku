@@ -213,7 +213,7 @@ export default function TransactionDetailScreen(): React.ReactElement {
   )
 }
 
-// Header: tombol kembali lingkaran + judul tengah (tanpa ikon share —
+// Header: tombol kembali lingkaran + judul tengah (tanpa ikon share,
 // tidak ada fitur bagikan di aplikasi).
 function DetailHeader({ onBack }: { readonly onBack: () => void }): React.ReactElement {
   const colors = useThemeColors()

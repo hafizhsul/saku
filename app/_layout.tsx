@@ -92,7 +92,7 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
   }
 
   if (authState !== "authenticated") {
-    // Gerbang auth inline (bukan route — deep link /login & /register
+    // Gerbang auth inline (bukan route; deep link /login & /register
     // sengaja tidak ada). Provider data di bawah TIDAK dipasang selama sesi
     // belum terverifikasi, jadi tidak ada layar yang bisa diakses tanpa login.
     // Tema di-pin ke terang: layar pra-login berpola desain terang, tidak
