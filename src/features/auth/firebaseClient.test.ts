@@ -7,6 +7,7 @@ import {
   firebaseLogin,
   firebaseRegister,
   firebaseUpdateName,
+  firebaseWaitForCurrentUser,
   isFirebaseConfigured,
 } from "./firebaseClient"
 
@@ -19,6 +20,7 @@ vi.mock("firebase/auth", () => ({
   getAuth: vi.fn(),
   initializeAuth: vi.fn(),
   getReactNativePersistence: vi.fn(),
+  onAuthStateChanged: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
   createUserWithEmailAndPassword: vi.fn(),
   updateProfile: vi.fn(),
@@ -117,6 +119,30 @@ describe("firebaseClient jalur Firebase", () => {
     await mockAuthInstance({ uid: "u", email: "a@b.c" })
     vi.mocked(reauthenticateWithCredential).mockRejectedValue({ code: "auth/invalid-credential" })
     await expect(firebaseChangePassword("salah", "baru-12345")).rejects.toThrow("Kata sandi saat ini salah.")
+  })
+
+  it("firebaseWaitForCurrentUser langsung pakai currentUser bila sudah ada", async () => {
+    await mockAuthInstance({ uid: "uid-9", email: "a@b.c", displayName: "Nama" })
+    await expect(firebaseWaitForCurrentUser(50)).resolves.toEqual({ id: "uid-9", email: "a@b.c", name: "Nama" })
+  })
+
+  it("firebaseWaitForCurrentUser menunggu restore via onAuthStateChanged", async () => {
+    const { onAuthStateChanged } = await import("firebase/auth")
+    const onChange = onAuthStateChanged as unknown as ReturnType<typeof vi.fn>
+    const restored = { uid: "uid-7", email: "a@b.c", displayName: null }
+    await mockAuthInstance(null)
+    vi.mocked(onChange).mockImplementation((_auth: unknown, next: (user: unknown) => void) => {
+      next(restored)
+      return (() => {}) as never
+    })
+    await expect(firebaseWaitForCurrentUser(50)).resolves.toEqual({ id: "uid-7", email: "a@b.c", name: "a" })
+  })
+
+  it("firebaseWaitForCurrentUser null bila timeout tanpa restore", async () => {
+    const { onAuthStateChanged } = await import("firebase/auth")
+    await mockAuthInstance(null)
+    vi.mocked(onAuthStateChanged).mockImplementation(() => (() => {}) as never)
+    await expect(firebaseWaitForCurrentUser(20)).resolves.toBeNull()
   })
 })
 

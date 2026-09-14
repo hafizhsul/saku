@@ -10,4 +10,4 @@ function defaultBaseUrl(): string {
 }
 
 export const API_BASE_URL: string =
-  (typeof process !== "undefined" ? process.env?.EXPO_PUBLIC_API_URL : undefined) ?? defaultBaseUrl()
+  (typeof process !== "undefined" ? process.env.EXPO_PUBLIC_API_URL : undefined) ?? defaultBaseUrl()

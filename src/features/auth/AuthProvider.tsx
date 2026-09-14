@@ -6,7 +6,7 @@ import { clearToken, getToken, setToken } from "../../storage/auth"
 import { loadProfilePhoto, saveProfilePhoto } from "../../storage/profile"
 import { loadSettings } from "../../storage/settings"
 import { changePassword as apiChangePassword, fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, updateProfile as apiUpdateProfile } from "./authClient"
-import { firebaseCurrentUser, isFirebaseConfigured } from "./firebaseClient"
+import { firebaseCurrentUser, firebaseWaitForCurrentUser, isFirebaseConfigured } from "./firebaseClient"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "./types"
 
 // Rangkaian state sesi: "locked" berarti token tersimpan tapi belum terverifikasi
@@ -87,8 +87,9 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
     }
 
     // Jalur Firebase: sesi dibaca dari Firebase SDK langsung, tanpa server.
+    // Tunggu restore persistence (cold start) agar tidak dianggap logout.
     if (isFirebaseConfigured()) {
-      const current = await firebaseCurrentUser()
+      const current = await firebaseWaitForCurrentUser()
       if (current) {
         setUser(current)
         setState("authenticated")
@@ -235,10 +236,11 @@ export function AuthProvider({ children }: PropsWithChildren): React.ReactElemen
       return { ok: false, message: "Autentikasi dibatalkan." }
     }
 
-    // Sidik jadi / wajah cocok: jalur Firebase cukup cek currentUser;
-    // jalur server verifikasi token tersimpan.
+    // Sidik jadi / wajah cocok: jalur Firebase cukup cek currentUser
+    // (tunggu restore persistence bila cold start); jalur server verifikasi
+    // token tersimpan.
     if (isFirebaseConfigured()) {
-      const current = await firebaseCurrentUser()
+      const current = (await firebaseCurrentUser()) ?? (await firebaseWaitForCurrentUser())
       if (current) {
         setUser(current)
         setState("authenticated")

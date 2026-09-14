@@ -20,7 +20,31 @@ export interface FirebaseSession {
 }
 
 function readEnv(name: string): string | null {
-  const value = typeof process !== "undefined" ? process.env?.[name] : undefined
+  // Akses statis langsung process.env.EXPO_PUBLIC_* agar babel-preset-expo
+  // bisa inline saat bundling native. Akses dinamis process.env[name] atau
+  // via variabel perantara tidak bisa di-inline sehingga kosong di perangkat
+  // (Firebase dianggap tak terkonfigurasi, sesi jatuh ke server dan
+  // biometrik gagal).
+  if (typeof process === "undefined") {
+    return null
+  }
+  let value: string | undefined
+  switch (name) {
+    case "EXPO_PUBLIC_FIREBASE_API_KEY":
+      value = process.env.EXPO_PUBLIC_FIREBASE_API_KEY
+      break
+    case "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN":
+      value = process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+      break
+    case "EXPO_PUBLIC_FIREBASE_PROJECT_ID":
+      value = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID
+      break
+    case "EXPO_PUBLIC_FIREBASE_APP_ID":
+      value = process.env.EXPO_PUBLIC_FIREBASE_APP_ID
+      break
+    default:
+      value = undefined
+  }
   return value && value.length > 0 ? value : null
 }
 
@@ -149,6 +173,59 @@ export async function firebaseCurrentUser(): Promise<User | null> {
     const { auth } = await getAuthInstance()
     const user = auth.currentUser
     if (!user || !user.email) {
+      return null
+    }
+    return toUser(user.uid, user.email, user.displayName)
+  } catch {
+    return null
+  }
+}
+
+// Tunggu pemulihan persistence (cold start): currentUser null sesaat walau
+// sesi tersimpan di AsyncStorage. Dipakai boot + biometric agar tidak
+// dianggap logout tiap buka ulang aplikasi.
+export async function firebaseWaitForCurrentUser(timeoutMs = 8000): Promise<User | null> {
+  try {
+    const { auth } = await getAuthInstance()
+    const current = auth.currentUser
+    if (current?.email) {
+      return toUser(current.uid, current.email, current.displayName)
+    }
+    const authModule = await import("firebase/auth")
+    // SDK baru: authStateReady menunggu restore persistence selesai.
+    const ready = (auth as unknown as { authStateReady?: () => Promise<void> }).authStateReady
+    if (typeof ready === "function") {
+      try {
+        await ready.call(auth)
+      } catch {
+        // Abaikan; lanjut ke listener di bawah.
+      }
+      const after = auth.currentUser
+      if (after?.email) {
+        return toUser(after.uid, after.email, after.displayName)
+      }
+    }
+    if (typeof authModule.onAuthStateChanged !== "function") {
+      return null
+    }
+    const user = await new Promise<import("firebase/auth").User | null>((resolve) => {
+      let settled = false
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true
+          unsub()
+          resolve(null)
+        }
+      }, timeoutMs)
+      const unsub = authModule.onAuthStateChanged(auth, (next) => {
+        if (!settled) {
+          settled = true
+          clearTimeout(timer)
+          resolve(next)
+        }
+      })
+    })
+    if (!user?.email) {
       return null
     }
     return toUser(user.uid, user.email, user.displayName)
