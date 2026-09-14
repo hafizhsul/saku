@@ -93,10 +93,10 @@ export default function SettingsScreen(): React.ReactElement {
         </View>
         <View style={styles.profileText}>
           <Text numberOfLines={1} style={styles.profileName}>
-            {user?.name ?? "—"}
+            {user?.name ?? "Belum diisi"}
           </Text>
           <Text numberOfLines={1} style={styles.profileEmail}>
-            {user?.email ?? "—"}
+            {user?.email ?? "Belum diisi"}
           </Text>
           <View accessibilityLabel="Akun aktif" style={styles.verifiedBadge}>
             <MaterialCommunityIcons color={colors.accent} name="check-decagram" size={14} />
