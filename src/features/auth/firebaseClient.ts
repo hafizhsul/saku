@@ -1,6 +1,6 @@
 import type { User } from "./types"
 
-// Firebase Auth client — OPSIONAL.
+// Firebase Auth client (OPSIONAL).
 //
 // Aktif hanya bila 4 env diset: EXPO_PUBLIC_FIREBASE_API_KEY,
 // EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN, EXPO_PUBLIC_FIREBASE_PROJECT_ID,
@@ -9,6 +9,10 @@ import type { User } from "./types"
 // startup tidak terbebani bila Firebase tak dipakai.
 
 export const FIREBASE_UNAVAILABLE = "FIREBASE_UNAVAILABLE"
+
+// Cache instance native agar initializeAuth tidak dipanggil dua kali
+// (panggilan kedua melempar auth/already-initialized).
+let cachedAuth: import("firebase/auth").Auth | null = null
 
 export interface FirebaseSession {
   readonly idToken: string
@@ -56,7 +60,40 @@ async function getAuthInstance(): Promise<{
   }
   const apps = appModule.getApps()
   const app = apps.length > 0 ? apps[0] : appModule.initializeApp(config)
-  const auth = authModule.getAuth(app)
+  // Native (Android/iOS): getAuth() default memakai memori saja sehingga sesi
+  // hilang saat restart + warning AsyncStorage. Pakai initializeAuth dengan
+  // persistence AsyncStorage (v2: default import). Web tetap getAuth.
+  // Deteksi tanpa import react-native agar hermetic di vitest/node.
+  const isReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative"
+  let auth: import("firebase/auth").Auth
+  if (isReactNative && cachedAuth !== null) {
+    auth = cachedAuth
+  } else if (isReactNative && typeof authModule.initializeAuth === "function") {
+    // Entry RN (@firebase/auth dist/rn) mengekspos getReactNativePersistence,
+    // tapi tipe default paket firebase/auth tidak mendeklarasikannya.
+    const rnAuth = authModule as unknown as {
+      initializeAuth: typeof authModule.initializeAuth
+      getReactNativePersistence?: (storage: unknown) => import("firebase/auth").Persistence
+    }
+    if (typeof rnAuth.getReactNativePersistence !== "function") {
+      auth = authModule.getAuth(app)
+    } else {
+      try {
+        const storageModule = await import("@react-native-async-storage/async-storage")
+        const storage = storageModule.default ?? storageModule
+        auth = rnAuth.initializeAuth(app, {
+          persistence: rnAuth.getReactNativePersistence(storage),
+        }) as import("firebase/auth").Auth
+        cachedAuth = auth
+      } catch {
+        // Sudah diinisialisasi (hot reload) atau gagal: fallback ke getAuth.
+        auth = cachedAuth ?? authModule.getAuth(app)
+        cachedAuth = auth
+      }
+    }
+  } else {
+    auth = authModule.getAuth(app)
+  }
   return {
     auth,
     signIn: authModule.signInWithEmailAndPassword,

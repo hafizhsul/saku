@@ -17,6 +17,8 @@ vi.mock("firebase/app", () => ({
 
 vi.mock("firebase/auth", () => ({
   getAuth: vi.fn(),
+  initializeAuth: vi.fn(),
+  getReactNativePersistence: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
   createUserWithEmailAndPassword: vi.fn(),
   updateProfile: vi.fn(),
@@ -24,6 +26,10 @@ vi.mock("firebase/auth", () => ({
   EmailAuthProvider: { credential: vi.fn() },
   reauthenticateWithCredential: vi.fn(),
   updatePassword: vi.fn(),
+}))
+
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: { getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() },
 }))
 
 // Test mengasumsikan Firebase tak terkonfigurasi; bersihkan env ambien
@@ -111,5 +117,34 @@ describe("firebaseClient jalur Firebase", () => {
     await mockAuthInstance({ uid: "u", email: "a@b.c" })
     vi.mocked(reauthenticateWithCredential).mockRejectedValue({ code: "auth/invalid-credential" })
     await expect(firebaseChangePassword("salah", "baru-12345")).rejects.toThrow("Kata sandi saat ini salah.")
+  })
+})
+
+describe("firebaseClient jalur native", () => {
+  beforeEach(() => {
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_API_KEY", "key")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN", "x.firebaseapp.com")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_PROJECT_ID", "x")
+    vi.stubEnv("EXPO_PUBLIC_FIREBASE_APP_ID", "1:2:web:3")
+    vi.stubGlobal("navigator", { product: "ReactNative" })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("memakai initializeAuth + persistence AsyncStorage di RN", async () => {
+    const appModule = await import("firebase/app")
+    const authModule = await import("firebase/auth")
+    const rnAuth = authModule as unknown as {
+      getReactNativePersistence: ReturnType<typeof vi.fn>
+      initializeAuth: ReturnType<typeof vi.fn>
+    }
+    vi.mocked(appModule.getApps).mockReturnValue([])
+    vi.mocked(rnAuth.getReactNativePersistence).mockReturnValue("persistence" as never)
+    vi.mocked(rnAuth.initializeAuth).mockReturnValue({ currentUser: null } as never)
+    await expect(firebaseCurrentUser()).resolves.toBeNull()
+    expect(rnAuth.getReactNativePersistence).toHaveBeenCalled()
+    expect(rnAuth.initializeAuth).toHaveBeenCalledWith({}, { persistence: "persistence" })
   })
 })
