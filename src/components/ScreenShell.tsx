@@ -26,10 +26,12 @@ export function ScreenShell({ children, withTabBar = true, contentStyle, ...scro
   const styles = useMemo(() => createStyles(colors), [colors])
   // Navbar docked di bawah (bukan floating), jadi konten cukup napas
   // biasa; layar tanpa tab bar tetap reserve safe-area bawah.
+  // Top inset ditempel di root (bukan contentContainer) agar tidak ketimpa
+  // contentStyle kustom yang punya paddingTop sendiri (mis. lockedContent).
   const bottomReserve = withTabBar ? spacing.xl : spacing.xl + insets.bottom
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <ScrollView
         {...scrollViewProps}

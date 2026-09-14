@@ -1,6 +1,7 @@
 import { router, Stack } from "expo-router"
 import { useMemo } from "react"
 import { StyleSheet, Text, View } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PrimaryButton } from "../src/components/PrimaryButton"
 import { spacing, typography, useThemeColors, type ThemeColors } from "../src/theme"
@@ -8,11 +9,12 @@ import { spacing, typography, useThemeColors, type ThemeColors } from "../src/th
 export default function NotFoundScreen(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const insets = useSafeAreaInsets()
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top + spacing.xl }]}>
         <Text style={styles.title}>Halaman tidak ditemukan</Text>
         <Text style={styles.subtitle}>Alamat ini tidak ada atau sudah dipindahkan.</Text>
         <View style={styles.action}>
