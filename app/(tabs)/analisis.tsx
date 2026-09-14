@@ -13,7 +13,7 @@ import { getCategoryIconName } from "../../src/components/CategoryIcon"
 import { useBudgets } from "../../src/features/budgets/BudgetsProvider"
 import { useTransactions } from "../../src/features/transactions/TransactionsProvider"
 import { selectBalance, selectBudgetAllocations, selectMonthlySummary } from "../../src/features/transactions/selectors"
-import { fontFamilies, radii, shadows, spacing, typography, useThemeColors, type ThemeColors } from "../../src/theme"
+import { fontFamilies, radii, shadows, spacing, stateTokens, typography, useThemeColors, type ThemeColors } from "../../src/theme"
 import { formatCompactCurrency, formatCurrency } from "../../src/utils/currency"
 import { shiftMonth, toMonthKey } from "../../src/utils/dates"
 
@@ -87,6 +87,7 @@ export default function AnalisisScreen(): React.ReactElement {
   const [saveBusy, setSaveBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [balanceVisible, setBalanceVisible] = useState(true)
+  const [focusedKey, setFocusedKey] = useState<string | null>(null)
 
   const balance = selectBalance(transactions)
   const monthSummary = selectMonthlySummary(transactions, currentMonth)
@@ -158,8 +159,11 @@ export default function AnalisisScreen(): React.ReactElement {
           <Pressable
             accessibilityLabel={balanceVisible ? "Sembunyikan saldo" : "Tampilkan saldo"}
             accessibilityRole="button"
+            hitSlop={8}
+            onBlur={() => setFocusedKey(null)}
+            onFocus={() => setFocusedKey("eye")}
             onPress={() => setBalanceVisible((visible) => !visible)}
-            style={({ pressed }) => [styles.eyeButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.eyeButton, pressed && styles.pressed, focusedKey === "eye" && styles.eyeButtonFocused]}
           >
             <MaterialCommunityIcons color={colors.heroMuted} name={balanceVisible ? "eye-outline" : "eye-off-outline"} size={18} />
           </Pressable>
@@ -210,9 +214,9 @@ export default function AnalisisScreen(): React.ReactElement {
       </View>
 
           {/* Tren Pengeluaran. Ritme RHYTHM 2 (R-05): tiap blok analisis
-              punya komposisi beda — tren (kartu putih + tab periode),
-              alokasi (segment bar + baris), peringatan (kartu aksen),
-              insight (kartu ikon) — bukan grid kembar berulang. */}
+              punya komposisi beda (tren: kartu putih + tab periode;
+              alokasi: segment bar + baris; peringatan: kartu aksen;
+              insight: kartu ikon), bukan grid kembar berulang. */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.trendTitleBlock}>
@@ -232,8 +236,18 @@ export default function AnalisisScreen(): React.ReactElement {
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
                       key={option.value}
-                      onPress={() => setPeriod(option.value)}
-                      style={({ pressed }) => [styles.periodTab, active && styles.periodTabActive, pressed && styles.pressed]}
+                      onBlur={() => setFocusedKey(null)}
+                      onFocus={() => setFocusedKey(`period-${option.value}`)}
+                      onPress={() => {
+                        setFocusedKey(null)
+                        setPeriod(option.value)
+                      }}
+                      style={({ pressed }) => [
+                        styles.periodTab,
+                        active && styles.periodTabActive,
+                        pressed && styles.pressed,
+                        focusedKey === `period-${option.value}` && (active ? styles.periodTabActiveFocused : styles.periodTabFocused),
+                      ]}
                     >
                       <Text style={[styles.periodTabText, active && styles.periodTabTextActive]}>{option.label}</Text>
                     </Pressable>
@@ -428,7 +442,7 @@ export default function AnalisisScreen(): React.ReactElement {
           {/* Saku Insight */}
           <View style={styles.insightCard}>
             <View style={styles.insightIcon}>
-              <MaterialCommunityIcons color={colors.surface} name="lightbulb-on-outline" size={18} />
+              <MaterialCommunityIcons color={colors.heroText} name="lightbulb-on-outline" size={18} />
             </View>
             <View style={styles.insightBody}>
               <Text style={styles.insightTitle}>Saku Insight</Text>
@@ -836,10 +850,15 @@ function createStyles(colors: ThemeColors) {
     },
     eyeButton: {
       alignItems: "center",
+      borderColor: "transparent",
       borderRadius: radii.pill,
+      borderWidth: stateTokens.focusWidth,
       height: 36,
       justifyContent: "center",
       width: 36,
+    },
+    eyeButtonFocused: {
+      borderColor: colors.heroText,
     },
     glowBottom: {
       backgroundColor: colors.heroChip,
@@ -934,13 +953,21 @@ function createStyles(colors: ThemeColors) {
     },
     periodTab: {
       alignItems: "center",
+      borderColor: "transparent",
       borderRadius: radii.pill,
+      borderWidth: stateTokens.focusWidth,
       justifyContent: "center",
-      minHeight: 36,
+      minHeight: 44,
       paddingHorizontal: spacing.md,
     },
     periodTabActive: {
       backgroundColor: colors.accent,
+    },
+    periodTabFocused: {
+      borderColor: colors.focus,
+    },
+    periodTabActiveFocused: {
+      borderColor: colors.onAccent,
     },
     periodTabText: {
       color: colors.textSecondary,

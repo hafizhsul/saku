@@ -237,7 +237,7 @@ function TotalBudgetCard({
           style={({ pressed, hovered }) => [styles.visibilityButton, hovered && styles.visibilityButtonHovered, pressed && styles.pressed]}
         >
           <MaterialCommunityIcons
-            color={colors.surface}
+            color={colors.heroText}
             name={balanceVisible ? "eye" : "eye-off"}
             size={20}
           />
@@ -259,7 +259,7 @@ function TotalBudgetCard({
           onPress={onAlokasi}
           style={({ pressed, hovered }) => [styles.actionButton, styles.actionButtonSecondary, hovered && styles.actionButtonHovered, pressed && styles.pressed]}
         >
-          <MaterialCommunityIcons color={colors.surface} name="arrow-top-right" size={18} />
+          <MaterialCommunityIcons color={colors.heroText} name="arrow-top-right" size={18} />
           <Text style={styles.actionButtonSecondaryText}>Alokasi</Text>
         </Pressable>
       </View>
@@ -417,7 +417,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: "rgba(255, 255, 255, 0.22)",
     },
     actionButtonSecondaryText: {
-      color: colors.surface,
+      color: colors.heroText,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.bodyMedium.fontSize,
       fontWeight: "600",
@@ -521,9 +521,9 @@ function createStyles(colors: ThemeColors) {
       gap: 2,
     },
     monthChip: {
-      backgroundColor: `${colors.surface}38`,
+      backgroundColor: `${colors.heroText}38`,
       borderRadius: radii.pill,
-      color: colors.surface,
+      color: colors.heroText,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.caption.fontSize,
       fontWeight: "600",
@@ -626,9 +626,12 @@ function createStyles(colors: ThemeColors) {
       },
     },
     // Over-budget: satu-satunya kartu dengan latar expense agar langsung
-    // terbaca sebagai "perlu perhatian" (R-14). Tanpa border/outline.
+    // terbaca sebagai "perlu perhatian" (R-14). Border expense 1px karena
+    // latar expenseSurface vs surface hanya 1.11 di dark.
     sakuCardOver: {
       backgroundColor: colors.expenseSurface,
+      borderColor: colors.expense,
+      borderWidth: 1,
     },
     sakuCategory: {
       color: colors.textPrimary,
@@ -658,7 +661,7 @@ function createStyles(colors: ThemeColors) {
       fontVariant: ["tabular-nums"],
     },
     totalBudgetAmount: {
-      color: colors.surface,
+      color: colors.heroText,
       fontVariant: ["tabular-nums"],
       fontFamily: fontFamilies.bold,
       fontSize: 26,
@@ -679,7 +682,7 @@ function createStyles(colors: ThemeColors) {
       },
     },
     decorCircleLarge: {
-      backgroundColor: `${colors.surface}0D`,
+      backgroundColor: `${colors.heroText}0D`,
       borderRadius: radii.pill,
       height: 128,
       position: "absolute" as const,
@@ -688,7 +691,7 @@ function createStyles(colors: ThemeColors) {
       width: 128,
     },
     decorCircleSmall: {
-      backgroundColor: `${colors.surface}0D`,
+      backgroundColor: `${colors.heroText}0D`,
       borderRadius: radii.pill,
       bottom: 34,
       height: 64,
@@ -697,7 +700,7 @@ function createStyles(colors: ThemeColors) {
       width: 64,
     },
     totalBudgetLabel: {
-      color: `${colors.surface}CC`,
+      color: `${colors.heroText}CC`,
       fontFamily: fontFamilies.semibold,
       fontSize: typography.overline.fontSize,
       fontWeight: "700",
@@ -725,7 +728,7 @@ function createStyles(colors: ThemeColors) {
       width: 44,
     },
     visibilityButtonHovered: {
-      backgroundColor: `${colors.surface}1A`,
+      backgroundColor: `${colors.heroText}1A`,
     },
   })
 }

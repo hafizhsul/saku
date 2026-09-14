@@ -12,7 +12,7 @@ const BAR_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
 const slides = [
   {
-    badge: "Catat dalam 10 detik",
+    badge: "Catat tanpa ribet",
     title: "Atur Gaji & Pos Pengeluaran Tanpa Ribet",
     copy: "Pisahkan anggaran belanja, tabungan, dan kebutuhan harian ke dalam kantong digital otomatis yang disiplin.",
     cta: "Lanjut ke Saku",
@@ -20,7 +20,7 @@ const slides = [
   {
     badge: "Ringkasan bulanan nyata",
     title: "Ketahui Kemana Setiap Rupiah Mengalir",
-    copy: "Pantau tren pengeluaran harian dan dapatkan notifikasi cerdas sebelum kuota anggaran bulananmu terlampaui.",
+    copy: "Pantau tren pengeluaran harian dan lihat ringkasan bulanan sebelum kuota anggaran terlampaui.",
     cta: "Mulai catat",
   },
 ] as const
@@ -131,7 +131,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps): Rea
 // (motif identitas Saku, dipakai ulang di kartu hero semua layar); ring
 // geometri = orbit kedisiplinan; ikon generik (creation/contactless/
 // trending-up/shield-check) hanya penanda posisi mockup contoh, bukan klaim
-// fitur — teks klaim sudah dinetralkan (DATA LOKAL, Contoh).
+// fitur (teks klaim sudah dinetralkan: DATA LOKAL, Contoh).
 function WalletHero(): React.ReactElement {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
@@ -356,7 +356,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 8,
     },
     barLabelPeak: {
-      color: colors.surface,
+      color: colors.heroText,
       fontWeight: "700",
     },
     bars: {
@@ -830,7 +830,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "center",
     },
     smartAmount: {
-      color: colors.surface,
+      color: colors.heroText,
       fontFamily: fontFamilies.bold,
       fontSize: 18,
       fontWeight: "700",

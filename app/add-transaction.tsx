@@ -231,7 +231,7 @@ export default function AddTransactionScreen(): React.ReactElement {
         </View>
 
         {/* Header nominal */}
-        <View style={[styles.amountHero, { backgroundColor: type === "expense" ? colors.expense : colors.heroBackground }]}>
+        <View style={[styles.amountHero, { backgroundColor: type === "expense" ? colors.expenseHero : colors.heroBackground }]}>
           <View style={styles.decorCircleLarge} />
           <View style={styles.decorCircleSmall} />
           <Text style={styles.amountLabel}>{amountLabel}</Text>
