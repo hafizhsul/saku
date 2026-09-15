@@ -14,6 +14,7 @@ import "react-native-reanimated"
 import OnboardingScreen from "./onboarding"
 
 import { AuthGate } from "../src/components/auth/AuthGate"
+import { BrandSplash } from "../src/components/BrandSplash"
 import { AuthProvider, useAuth } from "../src/features/auth/AuthProvider"
 import { BackupProvider } from "../src/features/backup/BackupProvider"
 import { BudgetsProvider } from "../src/features/budgets/BudgetsProvider"
@@ -76,7 +77,13 @@ function RootContent({ fontsLoaded, onboardingDone, onOnboardingDone }: RootCont
   const { state: authState } = useAuth()
 
   if (!fontsLoaded || onboardingDone === null) {
-    return null
+    // Splash bermerek (bukan layar kosong) selama font + onboarding dimuat;
+    // hilang segera setelah ready, tanpa delay buatan.
+    return (
+      <SafeAreaProvider>
+        <BrandSplash />
+      </SafeAreaProvider>
+    )
   }
 
   if (!onboardingDone) {
